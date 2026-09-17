@@ -89,6 +89,78 @@ Resources:
             Path: /api/analyze
             Method: options
 
+  OcrFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: backend/api/ocrHandler.handler
+      Policies:
+        - Statement:
+            - Sid: TextractDetectDocumentText
+              Effect: Allow
+              Action:
+                - textract:DetectDocumentText
+              Resource: "*"
+      Events:
+        OcrApi:
+          Type: Api
+          Properties:
+            Path: /api/ocr
+            Method: post
+        OcrApiOptions:
+          Type: Api
+          Properties:
+            Path: /api/ocr
+            Method: options
+
+  HealthTagsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: backend/api/healthTagsHandler.handler
+      Policies:
+        - Statement:
+            - Sid: BedrockInvokeScopedModel
+              Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}"
+      Events:
+        HealthTagsApi:
+          Type: Api
+          Properties:
+            Path: /api/health-tags
+            Method: post
+        HealthTagsApiOptions:
+          Type: Api
+          Properties:
+            Path: /api/health-tags
+            Method: options
+
+  FoodFeedbackFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: backend/api/foodFeedbackHandler.handler
+      Policies:
+        - Statement:
+            - Sid: BedrockInvokeScopedModel
+              Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}"
+      Events:
+        FoodFeedbackApi:
+          Type: Api
+          Properties:
+            Path: /api/food-feedback
+            Method: post
+        FoodFeedbackApiOptions:
+          Type: Api
+          Properties:
+            Path: /api/food-feedback
+            Method: options
+
   CasesTable:
     Type: AWS::DynamoDB::Table
     Properties:

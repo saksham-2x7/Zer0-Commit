@@ -1,25 +1,32 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { t } from "./i18n/translations";
-import LanguageToggle from "./components/LanguageToggle";
+import LanguageSelector from "./components/LanguageSelector";
 import ThemeToggle from "./components/ThemeToggle";
+import TextSizeToggle from "./components/TextSizeToggle";
+import HelpModal from "./components/HelpModal";
 import TextInput from "./components/TextInput";
 import ImageUpload from "./components/ImageUpload";
 import RedactionPreview from "./components/RedactionPreview";
 import ResultsView from "./components/ResultsView";
 import HistoryPanel from "./components/HistoryPanel";
+import HealthProfile from "./components/HealthProfile";
 import { analyzeMessage } from "./services/api";
 import { redactText } from "./utils/redact";
 import { useTheme } from "./utils/useTheme";
+import { useTextSize } from "./utils/useTextSize";
 import { loadHistory, saveHistoryEntry, clearHistory } from "./utils/history";
 
 // The QR/barcode scanner pulls in @zxing (a large decoding library) — load
 // it only when the user actually opens the Scan tab, not in the main bundle.
 const Scanner = lazy(() => import("./components/Scanner"));
 
+const HAS_SEEN_HELP_KEY = "scamsahayak-has-seen-help";
+
 export default function App() {
   const { theme, toggleTheme } = useTheme();
+  const { textSize, cycleTextSize } = useTextSize();
   const [language, setLanguage] = useState("en");
-  const [view, setView] = useState("main"); // "main" | "history"
+  const [view, setView] = useState("main"); // "main" | "history" | "health"
   const [activeTab, setActiveTab] = useState("text"); // "text" | "image" | "scan"
   const [rawText, setRawText] = useState("");
   const [imageBase64, setImageBase64] = useState(null);
@@ -29,6 +36,19 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [resultRedactedText, setResultRedactedText] = useState("");
   const [history, setHistory] = useState(loadHistory);
+  const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!window.localStorage.getItem(HAS_SEEN_HELP_KEY)) {
+        setShowHelp(true);
+        window.localStorage.setItem(HAS_SEEN_HELP_KEY, "true");
+      }
+    } catch {
+      // localStorage unavailable — just skip the auto-show, help is still
+      // reachable via the header button.
+    }
+  }, []);
 
   const canSubmit = activeTab === "text" ? rawText.trim().length > 0 : Boolean(imageBase64);
   const liveRedactedText = activeTab === "text" ? redactText(rawText) : "";
@@ -112,14 +132,25 @@ export default function App() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {!result && view === "main" && (
-            <button type="button" className="btn-secondary" onClick={() => setView("history")}>
-              {t(language, "historyButtonLabel")}
-            </button>
+            <>
+              <button type="button" className="btn-secondary" onClick={() => setView("history")}>
+                {t(language, "historyButtonLabel")}
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setView("health")}>
+                {t(language, "healthProfileButtonLabel")}
+              </button>
+            </>
           )}
+          <button type="button" className="btn-secondary" onClick={() => setShowHelp(true)}>
+            {t(language, "helpButtonLabel")}
+          </button>
+          <TextSizeToggle language={language} textSize={textSize} onCycle={cycleTextSize} />
           <ThemeToggle language={language} theme={theme} onToggle={toggleTheme} />
-          <LanguageToggle language={language} onChange={setLanguage} />
+          <LanguageSelector language={language} onChange={setLanguage} />
         </div>
       </header>
+
+      {showHelp && <HelpModal language={language} onClose={() => setShowHelp(false)} />}
 
       {view === "history" ? (
         <HistoryPanel
@@ -129,6 +160,8 @@ export default function App() {
           onClear={handleClearHistory}
           onBack={() => setView("main")}
         />
+      ) : view === "health" ? (
+        <HealthProfile language={language} onBack={() => setView("main")} />
       ) : result ? (
         <ResultsView
           language={language}
@@ -179,7 +212,11 @@ export default function App() {
           )}
           {activeTab === "scan" && (
             <Suspense fallback={<p className="text-slate-500 dark:text-slate-400">…</p>}>
-              <Scanner language={language} onQrDecoded={handleQrDecoded} />
+              <Scanner
+                language={language}
+                onQrDecoded={handleQrDecoded}
+                onSetupHealthProfile={() => setView("health")}
+              />
             </Suspense>
           )}
 

@@ -136,6 +136,39 @@ part of the app that talks to something other than our own backend:
   as anything pasted into the text box, and is never auto-submitted
   without the user reviewing it first.
 
+## Health profile data (higher sensitivity than everything above)
+
+The health-profile feature (`frontend/src/components/HealthProfile.jsx`,
+`backend/api/ocrHandler.js`, `backend/api/healthTagsHandler.js`,
+`backend/api/foodFeedbackHandler.js`) handles a more sensitive category of
+data than the rest of the app, and is designed with extra constraints:
+
+- **Human confirmation is mandatory, not optional.** `POST /api/health-tags`
+  only *proposes* tags from OCR'd text — the code has no path that saves a
+  suggested tag without the user explicitly checking it and pressing
+  "Save profile" (`HealthProfile.jsx`). The AI extraction step is
+  explicitly untrusted; see the "trust boundary" comment in
+  `backend/api/healthTagsHandler.test.js`.
+- **No server-side persistence at all.** Unlike `/api/analyze`,
+  `/api/ocr`, `/api/health-tags`, and `/api/food-feedback` never call
+  `caseStore.js` or `evidenceBundle.js` — there is no DynamoDB record, no
+  S3 object, and no case ID for anything in this feature. The confirmed
+  profile lives only in the browser's `localStorage`.
+- **The photographed document itself is never stored.** It's held in
+  memory only long enough for a single Textract call, then discarded — the
+  same as screenshot handling in the main scam-check flow.
+- **The disclaimer is enforced in code, not trusted to the model.**
+  `foodFeedbackHandler.js` appends the "not medical advice" line to
+  Bedrock's response after the fact — a malformed or unusually-phrased
+  model response cannot cause the disclaimer to go missing.
+- **Never claims a definitive verdict.** The food-feedback system prompt
+  explicitly forbids "safe to eat" / "do not eat" language; tested in
+  `foodFeedbackHandler.test.js`.
+
+This has not been reviewed by a medical or legal professional. It is a
+best-effort safety design for a hackathon feature, not a substitute for
+that review.
+
 ## Known gaps / not yet verified
 
 - This has not been deployed against a real AWS account in the environment

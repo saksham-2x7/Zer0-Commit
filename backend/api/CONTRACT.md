@@ -87,13 +87,64 @@ Error codes:
 | Code | HTTP status | Meaning |
 |---|---|---|
 | `INVALID_REQUEST` | 400 | Missing/malformed body, missing text/image |
-| `UNSUPPORTED_LANGUAGE` | 400 | `language` is not `hi` or `en` |
+| `UNSUPPORTED_LANGUAGE` | 400 | `language` is not one of `en`, `hi`, `ta`, `te`, `bn`, `mr` |
 | `UNSUPPORTED_INPUT_TYPE` | 400 | `inputType` is not `text` or `image` |
 | `INPUT_TOO_LARGE` | 413 | Text or image exceeds the configured size limit |
 | `INVALID_IMAGE` | 400 | Bad MIME type or undecodable base64 |
 | `OCR_FAILED` | 422 | Textract could not process the image |
 | `ANALYSIS_FAILED` | 422 | OCR succeeded but found no readable text |
 | `INTERNAL_ERROR` | 500 | Unexpected failure — message never includes internals |
+
+## Additional endpoints (health-profile feature)
+
+These are deliberately separate from `/api/analyze` — they don't run scam
+detection, don't use `backend/persistence/caseStore.js` or
+`backend/evidence/evidenceBundle.js`, and create no DynamoDB/S3 record.
+The confirmed health profile lives only in the browser's `localStorage`.
+
+### `POST /api/ocr`
+
+OCR-only (`backend/ocr/textractClient.js`, reused as-is). Used to read a
+photographed medical document/note before proposing tags.
+
+```json
+// request
+{ "imageBase64": "...", "imageMimeType": "image/png" }
+// response
+{ "text": "..." }
+```
+
+### `POST /api/health-tags`
+
+Proposes candidate condition/allergy tags from OCR'd or typed text —
+**never auto-saved**; the frontend always shows these for the user to
+confirm/uncheck before anything is stored. See
+`backend/api/healthTagsHandler.js`.
+
+```json
+// request
+{ "text": "...", "language": "en" }
+// response
+{ "suggestedTags": ["Type 2 Diabetes", "Peanut allergy"] }
+```
+
+### `POST /api/food-feedback`
+
+Conversational feedback on a scanned product against the user's confirmed
+health tags. Never a definitive "safe/unsafe to eat" verdict — the
+"not medical advice" disclaimer is appended by the handler itself, not
+left to the model. See `backend/api/foodFeedbackHandler.js`.
+
+```json
+// request
+{
+  "language": "en",
+  "healthTags": ["Diabetes"],
+  "product": { "name": "...", "brand": "...", "nutriScore": "E" }
+}
+// response
+{ "feedback": "..." }
+```
 
 ## Module: backend/detection/scamDetector.js (PRAHARI owns this)
 

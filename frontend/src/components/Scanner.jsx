@@ -3,8 +3,10 @@ import { BrowserMultiFormatReader } from "@zxing/browser";
 import { BarcodeFormat } from "@zxing/library";
 import { t } from "../i18n/translations";
 import { lookupProductByBarcode } from "../utils/productLookup";
+import { loadHealthProfile } from "../utils/healthProfile";
+import { getFoodFeedback } from "../services/api";
 
-export default function Scanner({ language, onQrDecoded }) {
+export default function Scanner({ language, onQrDecoded, onSetupHealthProfile }) {
   const videoRef = useRef(null);
   const readerRef = useRef(null);
   const controlsRef = useRef(null);
@@ -15,6 +17,8 @@ export default function Scanner({ language, onQrDecoded }) {
   const [decoded, setDecoded] = useState(null); // { text, isQr }
   const [product, setProduct] = useState(null);
   const [productLoading, setProductLoading] = useState(false);
+  const [foodFeedback, setFoodFeedback] = useState(null);
+  const [foodFeedbackLoading, setFoodFeedbackLoading] = useState(false);
 
   useEffect(() => {
     readerRef.current = new BrowserMultiFormatReader();
@@ -33,13 +37,29 @@ export default function Scanner({ language, onQrDecoded }) {
 
     if (!isQr) {
       setProductLoading(true);
+      let info = null;
       try {
-        const info = await lookupProductByBarcode(text);
+        info = await lookupProductByBarcode(text);
         setProduct(info);
       } catch {
         setProduct(null);
       } finally {
         setProductLoading(false);
+      }
+
+      if (info) {
+        const healthTags = loadHealthProfile();
+        if (healthTags.length > 0) {
+          setFoodFeedbackLoading(true);
+          try {
+            const { feedback } = await getFoodFeedback({ language, healthTags, product: info });
+            setFoodFeedback(feedback);
+          } catch {
+            setFoodFeedback(t(language, "foodFeedbackErrorGeneric"));
+          } finally {
+            setFoodFeedbackLoading(false);
+          }
+        }
       }
     }
   }
@@ -48,6 +68,7 @@ export default function Scanner({ language, onQrDecoded }) {
     setError(null);
     setDecoded(null);
     setProduct(null);
+    setFoodFeedback(null);
     setScanning(true);
     try {
       const controls = await readerRef.current.decodeFromVideoDevice(
@@ -74,6 +95,7 @@ export default function Scanner({ language, onQrDecoded }) {
     setError(null);
     setDecoded(null);
     setProduct(null);
+    setFoodFeedback(null);
     const url = URL.createObjectURL(file);
     try {
       const result = await readerRef.current.decodeFromImageUrl(url);
@@ -88,6 +110,7 @@ export default function Scanner({ language, onQrDecoded }) {
   function reset() {
     setDecoded(null);
     setProduct(null);
+    setFoodFeedback(null);
     setError(null);
   }
 
@@ -181,6 +204,32 @@ export default function Scanner({ language, onQrDecoded }) {
               )}
               {product.nutriScore && <p className="text-sm">Nutri-Score: {product.nutriScore}</p>}
               <p className="text-xs text-slate-400 dark:text-slate-500">{t(language, "scanProductSource")}</p>
+
+              <div className="mt-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                <h5 className="font-semibold text-slate-700 dark:text-slate-200">
+                  {t(language, "foodFeedbackHeading")}
+                </h5>
+                {foodFeedbackLoading ? (
+                  <p className="mt-1 text-slate-500 dark:text-slate-400">
+                    {t(language, "foodFeedbackLoading")}
+                  </p>
+                ) : foodFeedback ? (
+                  <p className="mt-1 text-slate-700 dark:text-slate-300">{foodFeedback}</p>
+                ) : (
+                  <div className="mt-1">
+                    <p className="text-slate-600 dark:text-slate-300">{t(language, "foodFeedbackNoProfile")}</p>
+                    {onSetupHealthProfile && (
+                      <button
+                        type="button"
+                        className="btn-secondary mt-2"
+                        onClick={onSetupHealthProfile}
+                      >
+                        {t(language, "foodFeedbackSetupLink")}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <p className="text-slate-600 dark:text-slate-300">{t(language, "scanProductNotFound")}</p>

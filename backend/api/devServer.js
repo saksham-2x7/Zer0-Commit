@@ -1,16 +1,27 @@
 /**
- * Local-only HTTP server wrapping analyzeHandler.analyze for frontend dev
- * against a real endpoint instead of mocking fetch. Not used in deployment —
- * Ship It mode uses the Lambda handler via API Gateway (see infra/template.yaml).
+ * Local-only HTTP server wrapping the Lambda handlers' inner functions for
+ * frontend dev against real endpoints instead of mocking fetch. Not used in
+ * deployment — Ship It mode uses the Lambda handlers via API Gateway (see
+ * infra/template.yaml).
  *
  * Usage: MOCK_BEDROCK=true node backend/api/devServer.js
  */
 
 const http = require("http");
 const { analyze, corsHeaders } = require("./analyzeHandler");
+const { ocr } = require("./ocrHandler");
+const { extractHealthTags } = require("./healthTagsHandler");
+const { generateFoodFeedback } = require("./foodFeedbackHandler");
 const { ApiError } = require("./errors");
 
 const PORT = process.env.PORT || 3000;
+
+const ROUTES = {
+  "/api/analyze": analyze,
+  "/api/ocr": ocr,
+  "/api/health-tags": extractHealthTags,
+  "/api/food-feedback": generateFoodFeedback,
+};
 
 function generateRequestId() {
   return "req_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -28,7 +39,8 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  if (req.method !== "POST" || req.url !== "/api/analyze") {
+  const routeFn = ROUTES[req.url];
+  if (req.method !== "POST" || !routeFn) {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: { code: "INVALID_REQUEST", message: "Not found", requestId: generateRequestId() } }));
     return;
@@ -50,7 +62,7 @@ const server = http.createServer((req, res) => {
     }
 
     try {
-      const result = await analyze(parsed);
+      const result = await routeFn(parsed);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(result));
     } catch (err) {

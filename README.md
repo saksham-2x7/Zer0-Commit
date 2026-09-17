@@ -52,7 +52,9 @@ and safety model.
 
 | Feature | Status |
 |---|---|
-| Text analysis (6 deterministic pattern categories, Hindi/English/transliteration) | **Implemented & tested** |
+| Text analysis (6 deterministic pattern categories) in 6 languages (English, Hindi, Tamil, Telugu, Bengali, Marathi) | **Implemented & tested** |
+| Language selector, dark mode, adjustable text size, first-visit "How to use" guide | **Implemented & tested** |
+| Health profile (self-reported, locally stored) + food-scan feedback against it | **Implemented & tested** — see "Health profile & food feedback" below for the safety design |
 | Client-side redaction before sending | **Implemented & tested** |
 | Server-side redaction (defense-in-depth, in case the API is called directly) | **Implemented & tested** |
 | Screenshot OCR via Amazon Textract | **Implemented & tested** (mocked Textract in tests; real AWS calls untested against a live account — see Limitations) |
@@ -133,6 +135,36 @@ separate so the product doesn't overclaim:
   Facts and shown as plain product info. This is **not** a scam or safety
   check — it's a convenience lookup, and a "not found" result is common
   and expected, not an error.
+
+## Health profile & food feedback
+
+This touches real health information, so it's designed more conservatively
+than the rest of the app:
+
+1. **Nothing is auto-saved.** You can scan a photo of a medical
+   document/note (via `POST /api/ocr`, the same Textract pipeline as
+   screenshots) and have Bedrock *suggest* candidate condition/allergy tags
+   (`POST /api/health-tags`) — but those suggestions are shown as checkboxes
+   for you to review and uncheck anything wrong. Only what you confirm gets
+   saved, and only into this browser's `localStorage`. Nothing from this
+   flow is ever written to DynamoDB or S3.
+2. **Food feedback is informational, never a verdict.** When a barcode scan
+   finds a product and you have a saved health profile, `POST
+   /api/food-feedback` asks Bedrock to point out concrete things worth
+   noticing (e.g. "contains peanuts, and you noted a peanut allergy") —
+   the system prompt explicitly forbids a definitive "safe/unsafe to eat"
+   answer, and the "this is not medical advice, confirm with a doctor or
+   pharmacist" line is appended by the backend code itself, not left to the
+   model, so it's always present regardless of what Bedrock returns.
+3. **Fails safe, not confident.** If OCR finds nothing, Bedrock is
+   unavailable, or output doesn't parse, the result is "no tags suggested"
+   or a neutral fallback message — never a fabricated guess.
+
+This is still a hackathon feature, not a clinically validated one. It has
+not been reviewed by a medical professional, and the deterministic
+fallback's "no specific match found" wording is based only on whatever
+Open Food Facts happens to have listed for that product — which is often
+incomplete.
 
 ## Build It (local) mode vs. Ship It (deployed) mode
 
@@ -256,6 +288,14 @@ never requests or reproduces OTPs, PINs, CVVs, or passwords.
 
 ## Known limitations
 
+- Tamil, Telugu, Bengali, and Marathi UI translations were written without
+  native-speaker review — meaning is intended to be correct but phrasing
+  may be unnatural in places. Have a native speaker review before relying
+  on this for a real audience. Hindi/English were reviewed more carefully
+  since the product was originally built around those two.
+- The health-profile feature has not been reviewed by a medical or legal
+  professional — see SECURITY.md's "Health profile data" section for the
+  specific safety constraints that are in place.
 - The SAM template has not been deployed against a real AWS account in this
   environment — review it yourself before a production deploy.
 - The deterministic detector is keyword/pattern-based, not a trained

@@ -1,15 +1,15 @@
 /**
- * Talks to SUTRADHAR's POST /api/analyze per backend/api/CONTRACT.md.
- * Never hardcode the API URL — always read VITE_API_BASE_URL.
+ * Talks to the backend per backend/api/CONTRACT.md. Never hardcode the API
+ * URL — always read VITE_API_BASE_URL.
  */
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-export async function analyzeMessage({ language, inputType, rawText, imageBase64, imageMimeType }) {
-  const response = await fetch(`${BASE_URL}/api/analyze`, {
+async function post(path, body) {
+  const response = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language, inputType, rawText, imageBase64, imageMimeType }),
+    body: JSON.stringify(body),
   });
 
   const data = await response.json().catch(() => null);
@@ -24,4 +24,23 @@ export async function analyzeMessage({ language, inputType, rawText, imageBase64
   }
 
   return data;
+}
+
+export function analyzeMessage({ language, inputType, rawText, imageBase64, imageMimeType }) {
+  return post("/api/analyze", { language, inputType, rawText, imageBase64, imageMimeType });
+}
+
+/** OCR-only — used by the health-profile feature. No scam analysis, nothing persisted. */
+export function ocrImage({ imageBase64, imageMimeType }) {
+  return post("/api/ocr", { imageBase64, imageMimeType });
+}
+
+/** Suggests candidate health tags from OCR'd/typed text — never auto-saved, always reviewed by the user first. */
+export function extractHealthTags({ text, language }) {
+  return post("/api/health-tags", { text, language });
+}
+
+/** Conversational feedback on a scanned product against confirmed health tags. Not medical advice. */
+export function getFoodFeedback({ language, healthTags, product }) {
+  return post("/api/food-feedback", { language, healthTags, product });
 }
