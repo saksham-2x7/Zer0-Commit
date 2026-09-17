@@ -140,4 +140,35 @@ describe("generateExplanation", () => {
     expect(result.explanation).not.toMatch(/definitely a scam/i);
     expect(result.explanation).not.toMatch(/^this is safe/i);
   });
+
+  describe("multi-language support", () => {
+    test.each(["en", "hi", "ta", "te", "bn", "mr"])(
+      "returns a non-empty fallback explanation and 4-item checklist for language '%s'",
+      async (language) => {
+        process.env.MOCK_BEDROCK = "true";
+
+        const result = await generateExplanation({
+          riskLevel: "high",
+          matchedPatterns: ["otp_request"],
+          language,
+        });
+
+        expect(result.languageUsed).toBe(language);
+        expect(result.explanation.trim().length).toBeGreaterThan(0);
+        expect(result.checklist).toHaveLength(4);
+      }
+    );
+
+    test("falls back to English for an unrecognized language code", async () => {
+      process.env.MOCK_BEDROCK = "true";
+
+      const result = await generateExplanation({
+        riskLevel: "low",
+        matchedPatterns: [],
+        language: "fr",
+      });
+
+      expect(result.languageUsed).toBe("en");
+    });
+  });
 });

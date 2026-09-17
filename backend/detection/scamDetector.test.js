@@ -237,6 +237,35 @@ describe("detectScamPatterns — evidence", () => {
   });
 });
 
+describe("detectScamPatterns — additional Indian languages", () => {
+  test("detects Tamil urgency and OTP terms", () => {
+    const result = detectScamPatterns("உடனடியாக உங்கள் ஓடிபி பகிரவும்");
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["urgency", "otp_request"]));
+  });
+
+  test("detects Telugu urgency and OTP terms", () => {
+    const result = detectScamPatterns("వెంటనే మీ ఓటిపి షేర్ చేయండి");
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["urgency", "otp_request"]));
+  });
+
+  test("detects Bengali urgency and OTP terms", () => {
+    const result = detectScamPatterns("অবিলম্বে আপনার ওটিপি শেয়ার করুন");
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["urgency", "otp_request"]));
+  });
+
+  test("detects Marathi urgency term", () => {
+    const result = detectScamPatterns("त्वरित तुमचा ओटीपी पाठवा");
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["urgency", "otp_request"]));
+  });
+
+  test("detects Tamil bank-official impersonation and prize-collect phrasing", () => {
+    const result = detectScamPatterns("வங்கி அதிகாரி பேசுகிறேன், நீங்கள் வென்றீர்கள்!");
+    expect(result.matchedPatterns).toEqual(
+      expect.arrayContaining(["impersonation", "suspicious_collect_request"])
+    );
+  });
+});
+
 describe("detectScamPatterns — pattern key integrity", () => {
   const VALID_KEYS = [
     "urgency",

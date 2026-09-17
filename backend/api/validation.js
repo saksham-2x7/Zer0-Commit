@@ -1,6 +1,6 @@
 const { ApiError } = require("./errors");
 
-const SUPPORTED_LANGUAGES = new Set(["hi", "en"]);
+const SUPPORTED_LANGUAGES = new Set(["en", "hi", "ta", "te", "bn", "mr"]);
 const SUPPORTED_INPUT_TYPES = new Set(["text", "image"]);
 const SUPPORTED_IMAGE_MIME_TYPES = new Set(["image/png", "image/jpeg"]);
 

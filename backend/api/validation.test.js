@@ -34,6 +34,11 @@ describe("validateAnalyzeRequest", () => {
     ).toThrow(expect.objectContaining({ code: "UNSUPPORTED_LANGUAGE" }));
   });
 
+  test.each(["en", "hi", "ta", "te", "bn", "mr"])("accepts language '%s'", (language) => {
+    const result = validateAnalyzeRequest({ language, inputType: "text", rawText: "hello" });
+    expect(result.language).toBe(language);
+  });
+
   test("rejects missing/blank text", () => {
     expect(() =>
       validateAnalyzeRequest({ language: "en", inputType: "text", rawText: "   " })

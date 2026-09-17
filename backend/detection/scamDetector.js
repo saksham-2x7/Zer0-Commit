@@ -30,6 +30,18 @@ const PATTERN_RULES = {
     /\bturant\b/i,
     /\bjaldi\b/i,
     /\babhi\s+abhi\b/i,
+    // Tamil
+    /உடனடியாக/,
+    /அவசரம்/,
+    // Telugu
+    /వెంటనే/,
+    /అత్యవసరం/,
+    // Bengali
+    /অবিলম্বে/,
+    /জরুরি/,
+    // Marathi
+    /त्वरित/,
+    /तातडीने/,
   ],
   otp_request: [
     /\botp\b/i,
@@ -40,6 +52,18 @@ const PATTERN_RULES = {
     /ओटीपी/,
     /पिन\s*(नंबर|कोड)?/,
     /\botp\s+(bhej|share\s+kar|bata)/i,
+    // Tamil
+    /ஓடிபி/,
+    /கடவுச்சொல்/,
+    // Telugu
+    /ఓటిపి/,
+    /పాస్‌వర్డ్/,
+    // Bengali
+    /ওটিপি/,
+    /পাসওয়ার্ড/,
+    // Marathi
+    /ओटीपी/,
+    /पासवर्ड/,
   ],
   screen_share_request: [
     /\banydesk\b/i,
@@ -52,6 +76,11 @@ const PATTERN_RULES = {
     /\bdownload\s+(this|the)?\s*apk\b/i,
     /\.apk\b/i,
     /स्क्रीन\s*शेयर/,
+    // Tamil / Telugu / Bengali — "screen share" is commonly said in English
+    // even within regional-language text; APK/remote-access terms too.
+    /திரையை\s*பகிர/,
+    /స్క్రీన్\s*షేర్/,
+    /স্ক্রিন\s*শেয়ার/,
   ],
   suspicious_link: [
     /https?:\/\/\S+/i,
@@ -61,6 +90,10 @@ const PATTERN_RULES = {
     /\bclick\s+(here|this\s+link|below)\b/i,
     /\bscan\s+(this|the)?\s*qr(\s+code)?\b/i,
     /लिंक\s*पर\s*क्लिक/,
+    // Tamil / Telugu / Bengali — "click the link"
+    /இணைப்பை\s*கிளிக்/,
+    /లింక్‌ను\s*క్లిక్/,
+    /লিঙ্কে\s*ক্লিক/,
   ],
   impersonation: [
     /\b(we are|this is)\s+(calling|writing)\s+from\b/i,
@@ -72,6 +105,13 @@ const PATTERN_RULES = {
     /\b(airtel|jio|vodafone|vi)\b.{0,20}\bsim\b.{0,10}(block|deactivat|suspend)/i,
     /सरकारी\s*अधिकारी/,
     /बैंक\s*प्रतिनिधि/,
+    // Tamil / Telugu / Bengali — "bank official" / "government official"
+    /வங்கி\s*அதிகாரி/,
+    /அரசு\s*அதிகாரி/,
+    /బ్యాంక్\s*అధికారి/,
+    /ప్రభుత్వ\s*అధికారి/,
+    /ব্যাংক\s*কর্মকর্তা/,
+    /সরকারি\s*কর্মকর্তা/,
   ],
   suspicious_collect_request: [
     /\bupi\s+collect\b/i,
@@ -87,6 +127,13 @@ const PATTERN_RULES = {
     /\bscan\s+(the\s+)?qr\s+code\s+to\s+receive\b/i,
     /यूपीआई\s*कलेक्ट/,
     /भुगतान\s*अनुरोध\s*स्वीकार/,
+    // Tamil / Telugu / Bengali — "approve payment request" / "you have won"
+    /நீங்கள்\s*வென்றீர்கள்/,
+    /பணம்\s*பெற/,
+    /మీరు\s*గెలిచారు/,
+    /డబ్బు\s*పొందడానికి/,
+    /আপনি\s*জিতেছেন/,
+    /টাকা\s*পেতে/,
   ],
 };
 
