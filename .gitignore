@@ -6,3 +6,4 @@ build/
 .aws-sam/
 *.log
 .DS_Store
+.claude/

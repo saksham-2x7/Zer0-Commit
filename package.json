@@ -5,12 +5,16 @@
   "description": "Elder-first Hindi/English scam-message risk assistant — First Commit x AWS hackathon",
   "scripts": {
     "test": "jest",
-    "smoke": "node backend/api/analyzeHandler.js"
+    "smoke": "node backend/api/analyzeHandler.js",
+    "dev:api": "node backend/api/devServer.js"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.600.0"
   },
   "devDependencies": {
     "jest": "^29.7.0"
+  },
+  "jest": {
+    "testPathIgnorePatterns": ["/node_modules/", "/frontend/"]
   }
 }
