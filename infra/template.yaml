@@ -1,52 +1,93 @@
-# SUTRADHAR'S SKELETON — DRISHYA extends this for Amplify Hosting / static
-# frontend deploy. Do not redefine the Lambda, API, or DynamoDB resources
-# below — only add what's missing (e.g. Amplify app, S3 bucket for evidence
-# bundles) in a separate section clearly marked as yours.
+# SUTRADHAR'S SKELETON, extended for a real Ship It deploy — Lambda + API
+# Gateway + DynamoDB + S3 (redacted evidence bundles). DRISHYA: add Amplify
+# Hosting / static frontend deploy resources in the marked section below;
+# don't redefine anything above it.
 
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: ScamSahayak - minimal Ship It deploy (Lambda + API Gateway + DynamoDB)
+Description: ScamSahayak - Ship It deploy (Lambda + API Gateway + DynamoDB + S3 + Textract + Bedrock)
 
 Globals:
   Function:
-    Timeout: 15
+    Timeout: 25
     Runtime: nodejs20.x
-    MemorySize: 256
+    MemorySize: 512
     Environment:
       Variables:
         BEDROCK_MODEL_ID: !Ref BedrockModelId
         MOCK_BEDROCK: !Ref MockBedrock
         CASES_TABLE_NAME: !Ref CasesTable
+        EVIDENCE_BUCKET_NAME: !Ref EvidenceBucket
+        ALLOWED_ORIGIN: !Ref AllowedOrigin
+        MAX_INPUT_BYTES: !Ref MaxInputBytes
 
 Parameters:
   BedrockModelId:
     Type: String
     Default: "anthropic.claude-3-haiku-20240307-v1:0"
+    Description: Bedrock model id used by VAANI's explanation module.
   MockBedrock:
     Type: String
-    Default: "true"
+    Default: "false"
     AllowedValues: ["true", "false"]
+    Description: >
+      "true" skips real Bedrock calls and always uses the deterministic
+      fallback — only meant for local/offline dev. A real Ship It deploy
+      should leave this "false" so Bedrock is actually used.
+  AllowedOrigin:
+    Type: String
+    Default: "*"
+    Description: >
+      CORS origin allowed to call the API (e.g. the deployed frontend's
+      URL). Restrict this to the real frontend origin in production; "*"
+      is only appropriate for local/demo use.
+  MaxInputBytes:
+    Type: Number
+    Default: 5242880
+    Description: Maximum accepted raw image size, in bytes (default 5 MB).
+  EvidenceRetentionDays:
+    Type: Number
+    Default: 30
+    Description: >
+      Days before a redacted evidence bundle is automatically deleted from
+      S3. Kept short for a hackathon demo — there is no long-term case
+      archive requirement.
 
 Resources:
   AnalyzeFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: ../backend/api/
-      Handler: analyzeHandler.handler
+      CodeUri: ../
+      Handler: backend/api/analyzeHandler.handler
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref CasesTable
+        - S3CrudPolicy:
+            BucketName: !Ref EvidenceBucket
         - Statement:
-            - Effect: Allow
+            - Sid: TextractDetectDocumentText
+              Effect: Allow
+              Action:
+                - textract:DetectDocumentText
+              # Textract does not support resource-level permissions for
+              # this API — AWS requires Resource: "*" here.
+              Resource: "*"
+            - Sid: BedrockInvokeScopedModel
+              Effect: Allow
               Action:
                 - bedrock:InvokeModel
-              Resource: "*"
+              Resource: !Sub "arn:aws:bedrock:${AWS::Region}::foundation-model/${BedrockModelId}"
       Events:
         AnalyzeApi:
           Type: Api
           Properties:
             Path: /api/analyze
             Method: post
+        AnalyzeApiOptions:
+          Type: Api
+          Properties:
+            Path: /api/analyze
+            Method: options
 
   CasesTable:
     Type: AWS::DynamoDB::Table
@@ -58,10 +99,47 @@ Resources:
       KeySchema:
         - AttributeName: caseId
           KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  EvidenceBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Suspended
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireEvidenceBundles
+            Status: Enabled
+            ExpirationInDays: !Ref EvidenceRetentionDays
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [GET]
+            AllowedOrigins: [!Ref AllowedOrigin]
+            AllowedHeaders: ["*"]
+            MaxAge: 300
 
 Outputs:
   ApiUrl:
     Description: "Invoke URL for POST /api/analyze"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/analyze"
+  CasesTableName:
+    Description: "DynamoDB table storing redacted case records"
+    Value: !Ref CasesTable
+  EvidenceBucketName:
+    Description: "S3 bucket storing redacted evidence bundles"
+    Value: !Ref EvidenceBucket
 
-# --- DRISHYA: add Amplify Hosting / S3+CloudFront / evidence-bundle bucket below this line ---
+# --- DRISHYA: add Amplify Hosting / S3+CloudFront static frontend deploy
+# resources below this line. Point the frontend's VITE_API_BASE_URL build
+# env at the ApiUrl output above (minus the /api/analyze suffix), and set
+# AllowedOrigin (redeploy the backend stack) to the frontend's real URL. ---

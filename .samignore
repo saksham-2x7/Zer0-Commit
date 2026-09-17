@@ -1,0 +1,14 @@
+# Excluded from the Lambda build artifact by `sam build`. CodeUri points at
+# the repo root (infra/template.yaml) because backend/'s AWS SDK
+# dependencies live in the root package.json/node_modules, not a nested
+# one — this keeps the deployed zip to just what backend/ actually needs.
+frontend/
+infra/
+.git/
+.claude/
+.github/
+*.test.js
+backend/api/devServer.js
+DEMO_SCRIPT.md
+SECURITY.md
+README.md
