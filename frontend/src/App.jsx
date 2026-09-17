@@ -13,11 +13,18 @@ export default function App() {
   const [inputType, setInputType] = useState("text");
   const [rawText, setRawText] = useState("");
   const [imageBase64, setImageBase64] = useState(null);
+  const [imageMimeType, setImageMimeType] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
 
   const canSubmit = inputType === "text" ? rawText.trim().length > 0 : Boolean(imageBase64);
+  const redactedText = inputType === "text" ? redactText(rawText) : "";
+
+  function handleImageSelected(base64, mimeType) {
+    setImageBase64(base64);
+    setImageMimeType(mimeType);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,15 +37,20 @@ export default function App() {
     setError(null);
 
     try {
+      // Text is redacted client-side before it ever leaves the browser.
+      // (The backend also redacts defense-in-depth, in case /api/analyze
+      // is ever called directly — see backend/redaction/redact.js.)
       const response = await analyzeMessage({
         language,
         inputType,
-        rawText: inputType === "text" ? rawText : undefined,
+        rawText: inputType === "text" ? redactedText : undefined,
         imageBase64: inputType === "image" ? imageBase64 : undefined,
+        imageMimeType: inputType === "image" ? imageMimeType : undefined,
       });
       setResult(response);
     } catch (err) {
-      setError(err.message || t(language, "errorGeneric"));
+      const message = err.code ? t(language, `errorCode_${err.code}`) : null;
+      setError(message || err.message || t(language, "errorGeneric"));
     } finally {
       setLoading(false);
     }
@@ -48,8 +60,12 @@ export default function App() {
     setResult(null);
     setRawText("");
     setImageBase64(null);
+    setImageMimeType(null);
     setError(null);
   }
+
+  const loadingLabel =
+    inputType === "image" ? t(language, "analyzingImageButton") : t(language, "analyzingButton");
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -65,7 +81,7 @@ export default function App() {
         <ResultsView
           language={language}
           result={result}
-          redactedText={inputType === "text" ? redactText(rawText) : ""}
+          redactedText={redactedText}
           onStartOver={handleStartOver}
         />
       ) : (
@@ -97,7 +113,7 @@ export default function App() {
               <RedactionPreview language={language} text={rawText} />
             </>
           ) : (
-            <ImageUpload language={language} onImageSelected={setImageBase64} />
+            <ImageUpload language={language} onImageSelected={handleImageSelected} />
           )}
 
           {error && (
@@ -107,7 +123,7 @@ export default function App() {
           )}
 
           <button type="submit" className="btn-primary w-full" disabled={loading}>
-            {loading ? t(language, "analyzingButton") : t(language, "analyzeButton")}
+            {loading ? loadingLabel : t(language, "analyzeButton")}
           </button>
         </form>
       )}

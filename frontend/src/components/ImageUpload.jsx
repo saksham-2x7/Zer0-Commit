@@ -23,7 +23,7 @@ export default function ImageUpload({ language, onImageSelected }) {
     if (!file) return;
     const base64 = await fileToBase64(file);
     setPreviewUrl(URL.createObjectURL(file));
-    onImageSelected(base64);
+    onImageSelected(base64, file.type);
   }
 
   return (

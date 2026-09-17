@@ -5,18 +5,22 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-export async function analyzeMessage({ language, inputType, rawText, imageBase64 }) {
+export async function analyzeMessage({ language, inputType, rawText, imageBase64, imageMimeType }) {
   const response = await fetch(`${BASE_URL}/api/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language, inputType, rawText, imageBase64 }),
+    body: JSON.stringify({ language, inputType, rawText, imageBase64, imageMimeType }),
   });
 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = (data && data.error) || `Request failed with status ${response.status}`;
-    throw new Error(message);
+    const apiError = data && data.error;
+    const error = new Error((apiError && apiError.message) || `Request failed with status ${response.status}`);
+    if (apiError && apiError.code) {
+      error.code = apiError.code;
+    }
+    throw error;
   }
 
   return data;
