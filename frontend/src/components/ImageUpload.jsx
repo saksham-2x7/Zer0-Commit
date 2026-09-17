@@ -56,7 +56,7 @@ export default function ImageUpload({ language, onImageSelected, onError }) {
           <img
             src={previewUrl}
             alt="Selected screenshot preview"
-            className="max-h-64 w-full rounded-lg border border-slate-200 object-contain"
+            className="max-h-64 w-full rounded-lg border border-slate-200 object-contain dark:border-slate-700"
           />
           <button
             type="button"
@@ -67,7 +67,7 @@ export default function ImageUpload({ language, onImageSelected, onError }) {
           </button>
         </div>
       )}
-      <p className="mt-2 text-sm text-slate-500">{t(language, "imageUploadHint")}</p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t(language, "imageUploadHint")}</p>
       <input
         ref={inputRef}
         type="file"

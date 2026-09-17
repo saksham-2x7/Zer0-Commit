@@ -2,9 +2,9 @@ import { t } from "../i18n/translations";
 
 export default function ReportingBlock({ language, reportingLinks }) {
   return (
-    <div className="card mt-4 border-blue-200 bg-blue-50">
-      <h3 className="text-lg font-semibold text-blue-900">{t(language, "reportingHeading")}</h3>
-      <p className="mt-1 text-blue-800">{t(language, "reportingIntro")}</p>
+    <div className="card mt-4 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+      <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-200">{t(language, "reportingHeading")}</h3>
+      <p className="mt-1 text-blue-800 dark:text-blue-300">{t(language, "reportingIntro")}</p>
       <div className="mt-4 flex flex-col gap-3 sm:flex-row">
         <a
           href={`tel:${reportingLinks.helpline}`}

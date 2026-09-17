@@ -117,6 +117,25 @@ have no code path that could accept or forward raw input, by construction
   not support resource-level ARNs, so that one statement uses
   `Resource: "*"` — documented explicitly in `infra/template.yaml`.
 
+## Third-party network calls from the browser
+
+The QR/barcode scanner (`frontend/src/components/Scanner.jsx`) is the only
+part of the app that talks to something other than our own backend:
+
+- **Camera feed / uploaded photo**: decoded entirely client-side by
+  `@zxing/browser`. Never uploaded anywhere — no network call at all for
+  the decode step itself.
+- **Barcode lookup**: the decoded barcode *number* (not the photo) is sent
+  directly from the browser to `world.openfoodfacts.org`, a free, keyless,
+  public product database, to fetch product info. A barcode number
+  identifies a product, not a person — this call carries no personal data,
+  no message text, and no redaction is needed. It never touches our
+  backend, DynamoDB, or S3.
+- A decoded **QR code**, by contrast, is treated as user-authored text: it
+  goes through the same client-side redaction and `/api/analyze` pipeline
+  as anything pasted into the text box, and is never auto-submitted
+  without the user reviewing it first.
+
 ## Known gaps / not yet verified
 
 - This has not been deployed against a real AWS account in the environment

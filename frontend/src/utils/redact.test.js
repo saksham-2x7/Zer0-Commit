@@ -40,4 +40,15 @@ describe("redactText", () => {
     const once = redactText("Call 9876543210");
     expect(() => redactText(once)).not.toThrow();
   });
+
+  test("masks an email address", () => {
+    const result = redactText("Contact me at pushpa.r@example.com");
+    expect(result).not.toContain("pushpa.r@example.com");
+  });
+
+  test("strips a URL's path/query but keeps the host (matches backend redaction)", () => {
+    const result = redactText("Click https://bit.ly/verify?token=abc123secret now");
+    expect(result).not.toContain("token=abc123secret");
+    expect(result).toContain("https://bit.ly/***");
+  });
 });

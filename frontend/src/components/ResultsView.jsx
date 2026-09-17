@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { t } from "../i18n/translations";
 import ReportingBlock from "./ReportingBlock";
 import { buildEvidenceBundle, downloadEvidenceBundle } from "../utils/evidenceBundle";
+import { isSpeechSynthesisSupported, speak, stopSpeaking } from "../utils/speech";
 
 const RISK_STYLES = {
   high: "bg-risk-high text-white",
@@ -17,8 +18,14 @@ const RISK_LABEL_KEYS = {
 
 export default function ResultsView({ language, result, redactedText, onStartOver }) {
   const [preparingDownload, setPreparingDownload] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const patternNames = t(language, "patternNames");
   const evidenceByPattern = new Map((result.evidence || []).map((e) => [e.pattern, e.snippet]));
+
+  useEffect(() => {
+    // Stop any in-progress read-aloud when the result changes or unmounts.
+    return () => stopSpeaking();
+  }, [result]);
 
   async function handleDownload() {
     // Ship It mode: the backend already stored a redacted bundle in S3 and
@@ -37,6 +44,18 @@ export default function ResultsView({ language, result, redactedText, onStartOve
     downloadEvidenceBundle(bundle);
   }
 
+  function handleToggleReadAloud() {
+    if (speaking) {
+      stopSpeaking();
+      setSpeaking(false);
+      return;
+    }
+    const riskLabel = t(language, RISK_LABEL_KEYS[result.riskLevel] || "riskLow");
+    const spokenText = [riskLabel, result.explanation, ...(result.checklist || [])].join(". ");
+    speak(spokenText, language);
+    setSpeaking(true);
+  }
+
   return (
     <div className="space-y-4" aria-live="polite">
       <div className="card">
@@ -48,19 +67,29 @@ export default function ResultsView({ language, result, redactedText, onStartOve
             {t(language, RISK_LABEL_KEYS[result.riskLevel] || "riskLow")}
           </span>
         </div>
-        <p className="mt-2 text-sm italic text-slate-500">
+        <p className="mt-2 text-sm italic text-slate-500 dark:text-slate-400">
           {result.riskDisclaimer || t(language, "riskDisclaimer")}
         </p>
 
+        {isSpeechSynthesisSupported() && (
+          <button type="button" className="btn-secondary mt-3" onClick={handleToggleReadAloud}>
+            {speaking ? t(language, "stopReadingButton") : t(language, "readAloudButton")}
+          </button>
+        )}
+
         <div className="mt-4">
-          <h3 className="font-semibold text-slate-700">{t(language, "matchedPatternsHeading")}</h3>
+          <h3 className="font-semibold text-slate-700 dark:text-slate-200">
+            {t(language, "matchedPatternsHeading")}
+          </h3>
           {result.matchedPatterns?.length > 0 ? (
             <ul className="mt-2 space-y-2">
               {result.matchedPatterns.map((pattern) => (
-                <li key={pattern} className="rounded-lg bg-slate-50 p-3">
-                  <p className="font-medium text-slate-800">{patternNames[pattern] || pattern}</p>
+                <li key={pattern} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
+                  <p className="font-medium text-slate-800 dark:text-slate-100">
+                    {patternNames[pattern] || pattern}
+                  </p>
                   {evidenceByPattern.get(pattern) && (
-                    <p className="mt-1 whitespace-pre-wrap break-words font-mono text-sm text-slate-600">
+                    <p className="mt-1 whitespace-pre-wrap break-words font-mono text-sm text-slate-600 dark:text-slate-400">
                       "{evidenceByPattern.get(pattern)}"
                     </p>
                   )}
@@ -68,18 +97,22 @@ export default function ResultsView({ language, result, redactedText, onStartOve
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-slate-600">{t(language, "noPatternsFound")}</p>
+            <p className="mt-2 text-slate-600 dark:text-slate-300">{t(language, "noPatternsFound")}</p>
           )}
         </div>
 
         <div className="mt-4">
-          <h3 className="font-semibold text-slate-700">{t(language, "explanationHeading")}</h3>
-          <p className="mt-1 text-slate-700">{result.explanation}</p>
+          <h3 className="font-semibold text-slate-700 dark:text-slate-200">
+            {t(language, "explanationHeading")}
+          </h3>
+          <p className="mt-1 text-slate-700 dark:text-slate-300">{result.explanation}</p>
         </div>
 
         <div className="mt-4">
-          <h3 className="font-semibold text-slate-700">{t(language, "checklistHeading")}</h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700">
+          <h3 className="font-semibold text-slate-700 dark:text-slate-200">
+            {t(language, "checklistHeading")}
+          </h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
             {result.checklist?.map((item, index) => (
               <li key={index}>{item}</li>
             ))}
@@ -103,7 +136,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         </button>
       </div>
 
-      <p className="text-center text-sm text-slate-500">{t(language, "disclaimer")}</p>
+      <p className="text-center text-sm text-slate-500 dark:text-slate-400">{t(language, "disclaimer")}</p>
     </div>
   );
 }

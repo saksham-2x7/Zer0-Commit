@@ -34,6 +34,13 @@ member/helper checking it on their behalf.
 6. Official reporting channels (1930 helpline, cybercrime.gov.in) are always
    shown.
 7. A redacted evidence bundle can be saved/downloaded to attach to a report.
+8. Can also scan a QR code (e.g. a UPI payment code) and run it through the
+   same scam-check pipeline, or scan a product barcode and look up what it
+   is via a free, open product database — see "Scan a code" below.
+9. Results can be read aloud, and a message can be spoken instead of typed,
+   using the browser's built-in voice features — no extra AWS service
+   involved.
+10. Dark mode, and a local (on-device only) history of past checks.
 
 **What it deliberately does *not* do:** claim a message is definitely a
 scam, claim a "low risk" result is safe, freeze funds, recover money,
@@ -54,6 +61,11 @@ and safety model.
 | DynamoDB case persistence (redacted only) | **Implemented & tested** locally against mocks; requires a deployed stack to run for real |
 | S3 redacted evidence bundle + signed download URL | **Implemented & tested** locally against mocks; requires a deployed stack to run for real |
 | Structured API errors + CORS | **Implemented & tested** |
+| Dark mode (persisted, respects system preference) | **Implemented & tested** |
+| Local history of past checks (on-device only, never sent anywhere) | **Implemented & tested** |
+| Read result aloud / speak instead of typing (Web Speech API) | **Implemented & tested** (feature-detected — hidden entirely in browsers without support) |
+| QR-code scan → same scam-check pipeline | **Implemented & tested** (verified end-to-end in a browser against a real generated QR code) |
+| Barcode scan → product lookup (Open Food Facts) | **Implemented & tested** (verified end-to-end in a browser against a real barcode and the live API) |
 | SAM infrastructure template (Lambda, API Gateway, DynamoDB, S3, IAM) | **Written, not yet deployed** — see Limitations |
 | Live AWS deployment | **Not deployed** — no AWS CLI/credentials were available in the environment this was built in |
 | Amplify/static frontend hosting | **Proposed** — marked section in `infra/template.yaml`, not implemented |
@@ -92,6 +104,35 @@ backend/api/analyzeHandler.js   ← orchestrator (Lambda)
 | **Amazon Bedrock** | Turns a risk level + matched pattern categories (never the raw message) into a bilingual, elder-friendly explanation and checklist. |
 | **Amazon DynamoDB** | Stores the redacted case record (risk level, matched patterns, evidence snippets — never raw text/images) for basic audit/debugging. |
 | **Amazon S3** | Stores the redacted evidence bundle a user can attach when filing a report, behind a short-lived signed URL. |
+
+Everything below is deliberately **not** an AWS service and does not touch
+the backend at all — it runs entirely in the browser, at no AWS cost:
+
+- **Dark mode, voice read-aloud/input, local history** — browser-native
+  APIs (`prefers-color-scheme`, Web Speech API, `localStorage`).
+- **QR/barcode scanning** — `@zxing/browser` decodes the camera feed or an
+  uploaded photo client-side. A decoded QR code is treated as a normal
+  message and run through the exact same `/api/analyze` pipeline above
+  (so it gets the same redaction, detection, and Bedrock explanation). A
+  decoded product barcode is looked up via
+  [Open Food Facts](https://world.openfoodfacts.org/) (a free, keyless,
+  public product database) directly from the browser — this is
+  product-lookup only, not a scam check, and coverage is limited (mostly
+  packaged food).
+
+## Scan a code
+
+The "Scan code" tab handles two different things, deliberately kept
+separate so the product doesn't overclaim:
+
+- **QR code** (e.g. a UPI payment QR): decoded, shown to the user for
+  review, and — only if they choose to — run through the same scam
+  analysis as pasted text. A QR code is just a link or payment string in a
+  different encoding; it gets no special treatment or trust.
+- **Barcode** (UPC/EAN, e.g. on packaged food): looked up in Open Food
+  Facts and shown as plain product info. This is **not** a scam or safety
+  check — it's a convenience lookup, and a "not found" result is common
+  and expected, not an error.
 
 ## Build It (local) mode vs. Ship It (deployed) mode
 
@@ -227,6 +268,17 @@ never requests or reproduces OTPs, PINs, CVVs, or passwords.
   and Bedrock-prompt quality is untested beyond the unit tests in this repo.
 - No demo video has been recorded (see `DEMO_SCRIPT.md` for the plan).
 - No Amplify/static-hosting deployment exists yet for the frontend.
+- The scanner's live-camera path was verified structurally against the
+  `@zxing/browser` API but not end-to-end with a physical camera in this
+  environment (no webcam available) — the upload-a-photo path *was*
+  verified end-to-end with real generated QR and barcode images, including
+  a live call to Open Food Facts. Test the camera path on a real device
+  before relying on it for a demo.
+- Voice input/read-aloud quality depends entirely on the browser's/OS's
+  installed speech engines and Hindi voice availability — not something
+  this app controls.
+- Barcode product lookup only covers what's in Open Food Facts (mostly
+  packaged food) — most non-food barcodes will correctly show "not found."
 
 ## AI coding tools used
 
