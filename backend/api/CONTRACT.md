@@ -9,28 +9,91 @@ code.
 
 ```
 POST /api/analyze
+```
 
-Request body:
+### Text request
+
+```json
 {
   "language": "hi" | "en",
-  "inputType": "text" | "image",
-  "rawText": string,       // present if inputType === "text"
-  "imageBase64": string    // present if inputType === "image"
+  "inputType": "text",
+  "rawText": "string — should already be redacted by the frontend before sending"
 }
+```
 
-Response body (200):
+### Image request
+
+```json
 {
-  "caseId": string,
+  "language": "hi" | "en",
+  "inputType": "image",
+  "imageBase64": "string — raw base64, no data: URI prefix",
+  "imageMimeType": "image/png" | "image/jpeg"
+}
+```
+
+### Response body (200)
+
+```json
+{
+  "caseId": "case_xxx",
   "riskLevel": "high" | "medium" | "low",
-  "matchedPatterns": string[],
-  "explanation": string,
-  "checklist": string[],
+  "riskDisclaimer": "This is a risk signal, not an official fraud determination.",
+  "matchedPatterns": ["urgency", "otp_request"],
+  "evidence": [
+    { "pattern": "otp_request", "snippet": "Share your OTP immediately" }
+  ],
+  "explanation": "string",
+  "checklist": ["string", "..."],
+  "languageUsed": "hi" | "en",
+  "inputSummary": {
+    "inputType": "text" | "image",
+    "ocrUsed": false,
+    "redactionApplied": true,
+    "charactersAnalyzed": 143
+  },
   "reportingLinks": {
     "helpline": "1930",
     "portal": "https://cybercrime.gov.in/"
+  },
+  "evidenceBundle": {
+    "available": false
   }
 }
 ```
+
+`evidenceBundle.available` is `true` with a `downloadUrl` (a short-lived
+signed S3 URL) only in Ship It / deployed mode (`EVIDENCE_BUCKET_NAME` set).
+In Build It / local mode it's always `{ "available": false }` — the frontend
+builds and downloads the same bundle client-side instead
+(`frontend/src/utils/evidenceBundle.js`).
+
+The response never includes the raw input text or raw image data.
+
+### Error response (4xx/5xx)
+
+```json
+{
+  "error": {
+    "code": "INVALID_REQUEST",
+    "message": "Please provide text or an image to analyze.",
+    "requestId": "..."
+  }
+}
+```
+
+Error codes:
+
+| Code | HTTP status | Meaning |
+|---|---|---|
+| `INVALID_REQUEST` | 400 | Missing/malformed body, missing text/image |
+| `UNSUPPORTED_LANGUAGE` | 400 | `language` is not `hi` or `en` |
+| `UNSUPPORTED_INPUT_TYPE` | 400 | `inputType` is not `text` or `image` |
+| `INPUT_TOO_LARGE` | 413 | Text or image exceeds the configured size limit |
+| `INVALID_IMAGE` | 400 | Bad MIME type or undecodable base64 |
+| `OCR_FAILED` | 422 | Textract could not process the image |
+| `ANALYSIS_FAILED` | 422 | OCR succeeded but found no readable text |
+| `INTERNAL_ERROR` | 500 | Unexpected failure — message never includes internals |
 
 ## Module: backend/detection/scamDetector.js (PRAHARI owns this)
 
@@ -49,35 +112,113 @@ since VAANI's prompt copy may reference them):
 
 Must be pure and synchronous. No AWS SDK, no network calls, no side effects.
 
+`riskLevel` semantics — say exactly this to users, never "safe":
+- `low`: no strong scam indicators detected (not a safety guarantee).
+- `medium`: one caution indicator detected.
+- `high`: a high-risk request (OTP/PIN, screen-share, or a suspicious
+  collect/payment request) or multiple indicators detected.
+
+## Module: backend/redaction/redact.js (shared, defense-in-depth)
+
+```
+redactText(text: string) -> string
+```
+
+Masks phone numbers, UPI IDs, emails, Aadhaar-like numbers, other long
+account/card-like digit strings, and strips the path/query of URLs. Pure and
+synchronous. Used by both the frontend (before sending) and the backend
+(before the text reaches the detector, Bedrock, logs, or storage) — the API
+may be called directly without the frontend, so the backend never trusts
+that redaction already happened.
+
+## Module: backend/ocr/textractClient.js (SUTRADHAR owns this)
+
+```
+async extractText({ imageBase64, imageMimeType }) -> { text: string }
+```
+
+Wraps Amazon Textract `DetectDocumentText`. Only ever receives image bytes —
+never persists them. Throws `ApiError("INVALID_IMAGE", ...)` for bad input
+and `ApiError("OCR_FAILED", ...)` if Textract itself fails, so the caller
+never sees a raw AWS error.
+
 ## Module: backend/ai/explainRisk.js (VAANI owns this)
 
 ```
 async generateExplanation({ riskLevel, matchedPatterns, language }) -> {
   explanation: string,
   checklist: string[],
-  languageUsed: "hi" | "en"
+  languageUsed: "hi" | "en",
+  generationMode: "bedrock" | "fallback"
 }
 ```
 
-Must never throw — falls back to a hardcoded deterministic response on any
-Bedrock/parsing failure. Supports `MOCK_BEDROCK=true` env var for offline
-integration testing by the rest of the team.
+Receives only the risk level, matched pattern *names*, and language — never
+the original message. Must never throw — falls back to a hardcoded
+deterministic response on any Bedrock/parsing failure. Supports
+`MOCK_BEDROCK=true` env var for offline integration testing by the rest of
+the team. Never claims certainty that a message *is* a scam.
+
+## Module: backend/persistence/caseStore.js (SUTRADHAR owns this)
+
+```
+async saveCase(record) -> record
+```
+
+DynamoDB when `CASES_TABLE_NAME` is set (Ship It), an in-memory `Map`
+otherwise (Build It). Stores only the redacted record shape below — never
+raw text, raw images, or raw OCR output:
+
+```json
+{
+  "caseId": "case_xxx",
+  "createdAt": "ISO-8601",
+  "language": "en",
+  "inputType": "text",
+  "riskLevel": "high",
+  "matchedPatterns": ["urgency", "otp_request"],
+  "evidence": [{ "pattern": "otp_request", "snippet": "..." }],
+  "ocrUsed": false,
+  "redactionApplied": true,
+  "generationMode": "bedrock",
+  "schemaVersion": "1.0"
+}
+```
+
+## Module: backend/evidence/evidenceBundle.js (SUTRADHAR owns this)
+
+```
+buildEvidenceBundle({ caseId, language, inputType, redactedText, riskLevel,
+  matchedPatterns, evidence, checklist, reportingLinks }) -> bundle
+
+async storeEvidenceBundle(bundle) -> { available: boolean, downloadUrl?: string }
+```
+
+Uploads to a private, encrypted S3 bucket and returns a 15-minute signed URL
+when `EVIDENCE_BUCKET_NAME` is set (Ship It); reports `{ available: false }`
+otherwise (Build It) so the frontend downloads the same bundle client-side.
 
 ## Orchestrator: backend/api/analyzeHandler.js (SUTRADHAR owns this)
 
-Wires the two modules together in this order:
+Wires the modules together in this order:
 
-1. Extract text (if `inputType === "image"`, OCR is optional/stretch — falls back
-   to requiring `rawText` if OCR isn't wired up yet).
-2. `detectScamPatterns(text)` → `{ riskLevel, matchedPatterns, evidence }`
-3. `generateExplanation({ riskLevel, matchedPatterns, language })` → `{ explanation, checklist, languageUsed }`
-4. Persist case (DynamoDB in deployed mode, in-memory/local JSON in Build It mode)
-5. Return the response body shape defined above, with a generated `caseId`.
+1. `validateAnalyzeRequest(body)` — throws a typed `ApiError` on any problem.
+2. If `inputType === "image"`: `extractText(...)` (Textract OCR).
+3. `redactText(text)` — defense-in-depth, always runs.
+4. `detectScamPatterns(redactedText)` → `{ riskLevel, matchedPatterns, evidence }`
+5. `generateExplanation({ riskLevel, matchedPatterns, language })` → `{ explanation, checklist, languageUsed, generationMode }`
+6. `saveCase(...)` (redacted record only) and `storeEvidenceBundle(...)` in parallel.
+7. Return the response body shape defined above.
 
 ## Environment variables (used across modules — keep names exact)
 
 - `BEDROCK_MODEL_ID` — used by VAANI, never hardcode a model id elsewhere
 - `MOCK_BEDROCK` — `"true"` to skip real Bedrock calls (VAANI + everyone testing locally)
+- `AWS_REGION` — region for Textract/Bedrock/DynamoDB/S3 clients
+- `CASES_TABLE_NAME` — DynamoDB table name; unset = local in-memory mode
+- `EVIDENCE_BUCKET_NAME` — S3 bucket name; unset = local client-side download mode
+- `ALLOWED_ORIGIN` — CORS origin for API Gateway responses; defaults to `*` locally
+- `MAX_INPUT_BYTES` — max raw image size in bytes (default 5 MB)
 - `VITE_API_BASE_URL` — used by DRISHYA's frontend, never hardcode the API URL
 
 ## Git workflow — everyone is on `main`

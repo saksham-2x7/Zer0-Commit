@@ -77,6 +77,18 @@ describe("detectScamPatterns — otp_request", () => {
   });
 });
 
+describe("detectScamPatterns — urgency (extended)", () => {
+  test("detects KYC expiry phrasing", () => {
+    const result = detectScamPatterns("Your KYC will expire today, please update immediately.");
+    expect(result.matchedPatterns).toContain("urgency");
+  });
+
+  test("detects transliterated Hindi urgency ('turant')", () => {
+    const result = detectScamPatterns("Apna account turant verify karein.");
+    expect(result.matchedPatterns).toContain("urgency");
+  });
+});
+
 describe("detectScamPatterns — screen_share_request", () => {
   test("detects AnyDesk", () => {
     const result = detectScamPatterns("Please install AnyDesk so I can help you.");
@@ -90,6 +102,11 @@ describe("detectScamPatterns — screen_share_request", () => {
 
   test("detects generic screen share phrasing", () => {
     const result = detectScamPatterns("Can you screen share with our support agent?");
+    expect(result.matchedPatterns).toContain("screen_share_request");
+  });
+
+  test("detects APK install requests", () => {
+    const result = detectScamPatterns("Please download this apk and install it to continue.");
     expect(result.matchedPatterns).toContain("screen_share_request");
   });
 });
@@ -126,6 +143,16 @@ describe("detectScamPatterns — impersonation", () => {
     const result = detectScamPatterns("Notice from Income Tax department regarding your refund.");
     expect(result.matchedPatterns).toContain("impersonation");
   });
+
+  test("detects courier/customs impersonation", () => {
+    const result = detectScamPatterns("This is FedEx, your parcel is held at customs.");
+    expect(result.matchedPatterns).toContain("impersonation");
+  });
+
+  test("detects telecom SIM-block impersonation", () => {
+    const result = detectScamPatterns("Your Jio SIM will be deactivated today.");
+    expect(result.matchedPatterns).toContain("impersonation");
+  });
 });
 
 describe("detectScamPatterns — suspicious_collect_request", () => {
@@ -142,6 +169,17 @@ describe("detectScamPatterns — suspicious_collect_request", () => {
   test("detects pay-re-1-to-receive scam phrasing", () => {
     const result = detectScamPatterns("Pay Rs.1 to receive your cashback instantly.");
     expect(result.matchedPatterns).toContain("suspicious_collect_request");
+  });
+
+  test("detects lottery/prize scam phrasing", () => {
+    const result = detectScamPatterns("Congratulations, you have won a lucky draw! Claim your prize now.");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+  });
+
+  test("detects QR-code payment approval phrasing", () => {
+    const result = detectScamPatterns("Scan the QR code to receive your refund of Rs.500.");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(result.matchedPatterns).toContain("suspicious_link");
   });
 });
 
