@@ -1,0 +1,67 @@
+# SUTRADHAR'S SKELETON — DRISHYA extends this for Amplify Hosting / static
+# frontend deploy. Do not redefine the Lambda, API, or DynamoDB resources
+# below — only add what's missing (e.g. Amplify app, S3 bucket for evidence
+# bundles) in a separate section clearly marked as yours.
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: ScamSahayak - minimal Ship It deploy (Lambda + API Gateway + DynamoDB)
+
+Globals:
+  Function:
+    Timeout: 15
+    Runtime: nodejs20.x
+    MemorySize: 256
+    Environment:
+      Variables:
+        BEDROCK_MODEL_ID: !Ref BedrockModelId
+        MOCK_BEDROCK: !Ref MockBedrock
+        CASES_TABLE_NAME: !Ref CasesTable
+
+Parameters:
+  BedrockModelId:
+    Type: String
+    Default: "anthropic.claude-3-haiku-20240307-v1:0"
+  MockBedrock:
+    Type: String
+    Default: "true"
+    AllowedValues: ["true", "false"]
+
+Resources:
+  AnalyzeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/api/
+      Handler: analyzeHandler.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref CasesTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+      Events:
+        AnalyzeApi:
+          Type: Api
+          Properties:
+            Path: /api/analyze
+            Method: post
+
+  CasesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: caseId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: caseId
+          KeyType: HASH
+
+Outputs:
+  ApiUrl:
+    Description: "Invoke URL for POST /api/analyze"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/analyze"
+
+# --- DRISHYA: add Amplify Hosting / S3+CloudFront / evidence-bundle bucket below this line ---

@@ -1,0 +1,13 @@
+{
+  "name": "scamsahayak",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Elder-first Hindi/English scam-message risk assistant — First Commit x AWS hackathon",
+  "scripts": {
+    "test": "jest",
+    "smoke": "node backend/api/analyzeHandler.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
