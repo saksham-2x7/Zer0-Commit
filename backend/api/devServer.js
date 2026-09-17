@@ -7,14 +7,20 @@
  */
 
 const http = require("http");
-const { analyze } = require("./analyzeHandler");
+const { analyze, corsHeaders } = require("./analyzeHandler");
+const { ApiError } = require("./errors");
 
 const PORT = process.env.PORT || 3000;
 
+function generateRequestId() {
+  return "req_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
+}
+
 const server = http.createServer((req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  const headers = corsHeaders();
+  for (const [key, value] of Object.entries(headers)) {
+    res.setHeader(key, value);
+  }
 
   if (req.method === "OPTIONS") {
     res.writeHead(204);
@@ -24,7 +30,7 @@ const server = http.createServer((req, res) => {
 
   if (req.method !== "POST" || req.url !== "/api/analyze") {
     res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Not found" }));
+    res.end(JSON.stringify({ error: { code: "INVALID_REQUEST", message: "Not found", requestId: generateRequestId() } }));
     return;
   }
 
@@ -33,14 +39,29 @@ const server = http.createServer((req, res) => {
     body += chunk;
   });
   req.on("end", async () => {
+    const requestId = generateRequestId();
+    let parsed;
     try {
-      const request = JSON.parse(body || "{}");
-      const result = await analyze(request);
+      parsed = JSON.parse(body || "{}");
+    } catch (err) {
+      res.writeHead(400, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: { code: "INVALID_REQUEST", message: "Request body must be valid JSON.", requestId } }));
+      return;
+    }
+
+    try {
+      const result = await analyze(parsed);
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(result));
     } catch (err) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: err.message }));
+      if (err instanceof ApiError) {
+        res.writeHead(err.statusCode, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: { code: err.code, message: err.message, requestId } }));
+        return;
+      }
+      console.error("Unhandled error in dev server:", err.name || "UnknownError");
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Something went wrong. Please try again.", requestId } }));
     }
   });
 });

@@ -6,12 +6,19 @@
   "scripts": {
     "test": "jest",
     "smoke": "node backend/api/analyzeHandler.js",
-    "dev:api": "node backend/api/devServer.js"
+    "dev:api": "node backend/api/devServer.js",
+    "verify": "npm test -- --runInBand && npm run smoke && cd frontend && npm run build && npm test -- --run"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.600.0"
+    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
+    "@aws-sdk/client-dynamodb": "^3.600.0",
+    "@aws-sdk/client-s3": "^3.600.0",
+    "@aws-sdk/client-textract": "^3.600.0",
+    "@aws-sdk/lib-dynamodb": "^3.600.0",
+    "@aws-sdk/s3-request-presigner": "^3.600.0"
   },
   "devDependencies": {
+    "aws-sdk-client-mock": "^4.0.1",
     "jest": "^29.7.0"
   },
   "jest": {
