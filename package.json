@@ -7,6 +7,9 @@
     "test": "jest",
     "smoke": "node backend/api/analyzeHandler.js"
   },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.600.0"
+  },
   "devDependencies": {
     "jest": "^29.7.0"
   }
