@@ -113,7 +113,11 @@ export default function App() {
               <RedactionPreview language={language} text={rawText} />
             </>
           ) : (
-            <ImageUpload language={language} onImageSelected={handleImageSelected} />
+            <ImageUpload
+              language={language}
+              onImageSelected={handleImageSelected}
+              onError={setError}
+            />
           )}
 
           {error && (

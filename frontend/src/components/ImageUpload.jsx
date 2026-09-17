@@ -1,6 +1,10 @@
 import { useRef, useState } from "react";
 import { t } from "../i18n/translations";
 
+const ALLOWED_MIME_TYPES = new Set(["image/png", "image/jpeg"]);
+// Keep in sync with the backend's default MAX_INPUT_BYTES (see CONTRACT.md).
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -15,12 +19,23 @@ function fileToBase64(file) {
   });
 }
 
-export default function ImageUpload({ language, onImageSelected }) {
+export default function ImageUpload({ language, onImageSelected, onError }) {
   const inputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
   async function handleFile(file) {
     if (!file) return;
+
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      onError?.(t(language, "errorCode_INVALID_IMAGE"));
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      onError?.(t(language, "errorCode_INPUT_TOO_LARGE"));
+      return;
+    }
+
+    onError?.(null);
     const base64 = await fileToBase64(file);
     setPreviewUrl(URL.createObjectURL(file));
     onImageSelected(base64, file.type);
