@@ -1,0 +1,43 @@
+import { describe, test, expect } from "vitest";
+import { redactText } from "./redact";
+
+describe("redactText", () => {
+  test("returns empty string for non-string or empty input", () => {
+    expect(redactText("")).toBe("");
+    expect(redactText(undefined)).toBe("");
+    expect(redactText(null)).toBe("");
+  });
+
+  test("leaves ordinary text unchanged", () => {
+    const text = "Hi, are we still meeting for lunch tomorrow?";
+    expect(redactText(text)).toBe(text);
+  });
+
+  test("masks a 10-digit Indian phone number", () => {
+    const result = redactText("Call me on 9876543210 please.");
+    expect(result).not.toContain("9876543210");
+    expect(result).toMatch(/98\*+10/);
+  });
+
+  test("masks a UPI id", () => {
+    const result = redactText("Pay to john.doe@okhdfcbank now.");
+    expect(result).not.toContain("john.doe@okhdfcbank");
+    expect(result).toMatch(/jo\*+nk/);
+  });
+
+  test("masks a long account-like number", () => {
+    const result = redactText("My account number is 123456789012.");
+    expect(result).not.toContain("123456789012");
+    expect(result).toMatch(/\*+/);
+  });
+
+  test("does not mask short numbers like OTP length (under threshold)", () => {
+    const result = redactText("Your code is 1234");
+    expect(result).toContain("1234");
+  });
+
+  test("masking is idempotent-safe (does not throw on already-masked text)", () => {
+    const once = redactText("Call 9876543210");
+    expect(() => redactText(once)).not.toThrow();
+  });
+});
