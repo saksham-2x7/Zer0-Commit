@@ -3,7 +3,8 @@ const { TextractClient, DetectDocumentTextCommand } = require("@aws-sdk/client-t
 
 const textractMock = mockClient(TextractClient);
 
-const { analyze, handler, corsHeaders } = require("./analyzeHandler");
+const { analyze, handler } = require("./analyzeHandler");
+const { corsHeaders } = require("./cors");
 
 describe("analyze — text input", () => {
   const ORIGINAL_ENV = process.env;
@@ -31,6 +32,18 @@ describe("analyze — text input", () => {
     expect(result.reportingLinks).toEqual({ helpline: "1930", portal: "https://cybercrime.gov.in/" });
     expect(result.evidenceBundle).toEqual({ available: false });
     expect(result).not.toHaveProperty("rawText");
+  });
+
+  test("uses a crypto-random UUID case id for every case", async () => {
+    const result = await analyze({
+      language: "en",
+      inputType: "text",
+      rawText: "URGENT: Share your OTP immediately to verify.",
+    });
+
+    expect(result.caseId).toMatch(
+      /^case_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+    );
   });
 
   test("redacts sensitive substrings before they reach the detector's evidence snippets", async () => {
@@ -198,10 +211,33 @@ describe("handler — Lambda proxy integration", () => {
 });
 
 describe("corsHeaders", () => {
-  test("defaults to * when ALLOWED_ORIGIN is unset", () => {
+  test("omits the origin header (fail-closed) when ALLOWED_ORIGIN is unset", () => {
     const ORIGINAL = process.env.ALLOWED_ORIGIN;
     delete process.env.ALLOWED_ORIGIN;
-    expect(corsHeaders()["Access-Control-Allow-Origin"]).toBe("*");
+    expect(corsHeaders()["Access-Control-Allow-Origin"]).toBeUndefined();
     if (ORIGINAL) process.env.ALLOWED_ORIGIN = ORIGINAL;
+    else delete process.env.ALLOWED_ORIGIN;
+  });
+
+  test("uses the configured ALLOWED_ORIGIN when set", () => {
+    const ORIGINAL = process.env.ALLOWED_ORIGIN;
+    process.env.ALLOWED_ORIGIN = "https://scamsahayak.example";
+    expect(corsHeaders()["Access-Control-Allow-Origin"]).toBe("https://scamsahayak.example");
+    if (ORIGINAL) process.env.ALLOWED_ORIGIN = ORIGINAL;
+    else delete process.env.ALLOWED_ORIGIN;
+  });
+
+  test("handler omits the origin header for OPTIONS when ALLOWED_ORIGIN is unset", async () => {
+    const ORIGINAL = process.env.ALLOWED_ORIGIN;
+    delete process.env.ALLOWED_ORIGIN;
+    try {
+      const response = await handler({ httpMethod: "OPTIONS" });
+      expect(response.statusCode).toBe(204);
+      expect(response.headers["Access-Control-Allow-Origin"]).toBeUndefined();
+      expect(response.headers["Access-Control-Allow-Methods"]).toContain("POST");
+    } finally {
+      if (ORIGINAL) process.env.ALLOWED_ORIGIN = ORIGINAL;
+      else delete process.env.ALLOWED_ORIGIN;
+    }
   });
 });

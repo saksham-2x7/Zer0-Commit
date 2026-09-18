@@ -32,7 +32,11 @@ the purpose of the recording.
 
 1. **(0:00–0:15) The scenario.** An elder receives a suspicious KYC/bank
    message on their phone. One sentence of narration: "This is the kind of
-   message that panics people into acting fast."
+   message that panics people into acting fast." Optionally add a
+   one-line stat for scale — e.g. "On India's National Cyber Crime Reporting
+   Portal, online-fraud complaints roughly quadrupled from about 75,800 in
+   FY23 to 2,92,800 in FY24 (RBI/RBI-annual-data reports)." Say it as a
+   narrator, never as something the app itself displays.
 2. **(0:15–0:30) Screenshot upload.** Open ScamSahayak (the deployed
    `FrontendWebsiteUrl`), select "Upload screenshot," choose the synthetic
    example image (must be under 4 MB).

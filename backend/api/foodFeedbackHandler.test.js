@@ -34,6 +34,53 @@ describe("generateFoodFeedback", () => {
     ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
   });
 
+  test("rejects more than 15 health tags to cap the Bedrock prompt", async () => {
+    const tags = Array.from({ length: 16 }, (_, i) => `Tag ${i}`);
+    await expect(
+      generateFoodFeedback({ language: "en", healthTags: tags, product: PRODUCT })
+    ).rejects.toMatchObject({ code: "INPUT_TOO_LARGE" });
+  });
+
+  test("rejects a health tag longer than 60 characters", async () => {
+    await expect(
+      generateFoodFeedback({
+        language: "en",
+        healthTags: ["Diabetes", "a".repeat(61)],
+        product: PRODUCT,
+      })
+    ).rejects.toMatchObject({ code: "INPUT_TOO_LARGE" });
+  });
+
+  test("rejects a blank/empty health tag", async () => {
+    await expect(
+      generateFoodFeedback({
+        language: "en",
+        healthTags: ["Diabetes", "   "],
+        product: PRODUCT,
+      })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+  });
+
+  test("rejects a product whose name exceeds 120 characters", async () => {
+    await expect(
+      generateFoodFeedback({
+        language: "en",
+        healthTags: ["Diabetes"],
+        product: { name: "a".repeat(121), brand: "Example Co" },
+      })
+    ).rejects.toMatchObject({ code: "INPUT_TOO_LARGE" });
+  });
+
+  test("accepts a product name exactly at the 120-char cap", async () => {
+    process.env.MOCK_BEDROCK = "true";
+    const result = await generateFoodFeedback({
+      language: "en",
+      healthTags: ["Diabetes"],
+      product: { name: "a".repeat(120), brand: "Example Co" },
+    });
+    expect(result.feedback.trim().length).toBeGreaterThan(0);
+  });
+
   test("always includes the not-medical-advice disclaimer, even in fallback mode", async () => {
     process.env.MOCK_BEDROCK = "true";
     const result = await generateFoodFeedback({

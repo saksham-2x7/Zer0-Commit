@@ -7,6 +7,7 @@
  *        -> persist case (redacted only) -> store evidence bundle -> respond.
  */
 
+const { randomUUID } = require("crypto");
 const { validateAnalyzeRequest } = require("./validation");
 const { ApiError } = require("./errors");
 const { redactText } = require("../redaction/redact");
@@ -15,24 +16,13 @@ const { generateExplanation } = require("../ai/explainRisk");
 const { extractText } = require("../ocr/textractClient");
 const { saveCase } = require("../persistence/caseStore");
 const { buildEvidenceBundle, storeEvidenceBundle } = require("../evidence/evidenceBundle");
+const { wrapHandler } = require("./handlerUtils");
 
 const REPORTING_LINKS = { helpline: "1930", portal: "https://cybercrime.gov.in/" };
 const RISK_DISCLAIMER = "This is a risk signal, not an official fraud determination.";
 
 function generateCaseId() {
-  return "case_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-}
-
-function getAllowedOrigin() {
-  return process.env.ALLOWED_ORIGIN || "*";
-}
-
-function corsHeaders() {
-  return {
-    "Access-Control-Allow-Origin": getAllowedOrigin(),
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-  };
+  return "case_" + randomUUID();
 }
 
 /**
@@ -47,8 +37,9 @@ async function analyze(rawRequest) {
   let ocrUsed = false;
 
   if (inputType === "image") {
+    // bytes come pre-decoded from validateAnalyzeRequest — no second decode.
     const { text: ocrText } = await extractText({
-      imageBase64: request.imageBase64,
+      bytes: request.bytes,
       imageMimeType: request.imageMimeType,
     });
     ocrUsed = true;
@@ -129,57 +120,10 @@ async function analyze(rawRequest) {
   };
 }
 
-function errorBody(code, message, requestId) {
-  return JSON.stringify({ error: { code, message, requestId } });
-}
-
 // Lambda entry point (API Gateway proxy integration shape)
-exports.handler = async (event) => {
-  const headers = corsHeaders();
-  const requestId = event.requestContext?.requestId || generateCaseId();
-
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
-
-  let body;
-  try {
-    body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-  } catch (parseErr) {
-    return {
-      statusCode: 400,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INVALID_REQUEST", "Request body must be valid JSON.", requestId),
-    };
-  }
-
-  try {
-    const result = await analyze(body);
-    return {
-      statusCode: 200,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(result),
-    };
-  } catch (err) {
-    if (err instanceof ApiError) {
-      return {
-        statusCode: err.statusCode,
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: errorBody(err.code, err.message, requestId),
-      };
-    }
-    // Never leak a raw stack trace or internal error message to the caller.
-    console.error("Unhandled error in analyzeHandler:", err.name || "UnknownError");
-    return {
-      statusCode: 500,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INTERNAL_ERROR", "Something went wrong. Please try again.", requestId),
-    };
-  }
-};
+exports.handler = wrapHandler(analyze, "analyzeHandler");
 
 exports.analyze = analyze;
-exports.corsHeaders = corsHeaders;
 
 // Quick manual smoke test: `MOCK_BEDROCK=true node backend/api/analyzeHandler.js`
 if (require.main === module) {

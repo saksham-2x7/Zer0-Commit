@@ -7,13 +7,21 @@
  * disclaimer is appended by this code itself (never left to the model),
  * so it's always present regardless of what Bedrock returns.
  *
+ * Inputs are capped before any prompt is built (<= MAX_TAGS tags, <= 60 chars
+ * per tag, <= MAX_PRODUCT_NAME_LENGTH product name) so an attacker cannot
+ * blow up the Bedrock prompt with an oversized payload.
+ *
  * Nothing here is persisted server-side.
  */
 
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
 const { ApiError } = require("./errors");
-const { corsHeaders } = require("./analyzeHandler");
+const { wrapHandler } = require("./handlerUtils");
 const { LANGUAGE_NAMES } = require("../ai/explainRisk");
+
+const MAX_TAGS = 15;
+const MAX_TAG_LENGTH = 60;
+const MAX_PRODUCT_NAME_LENGTH = 120;
 
 const DISCLAIMER = {
   en: "This is general information based on what you told us, not medical advice. Always confirm with a doctor or pharmacist, especially for allergies.",
@@ -39,6 +47,14 @@ const NO_CONCERNS_FALLBACK = {
     `तुमचे आरोग्य टॅग आणि ${productName || "या उत्पादना"}च्या सूचीबद्ध माहितीमध्ये कोणतीही विशिष्ट जुळणी आढळली नाही, परंतु उत्पादन डेटा अपूर्ण असू शकतो — लेबल स्वतः देखील तपासा.`,
 };
 
+let cachedClient = null;
+function getClient() {
+  if (!cachedClient) {
+    cachedClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+  }
+  return cachedClient;
+}
+
 function isValidFeedback(parsed) {
   return parsed && typeof parsed.feedback === "string" && parsed.feedback.trim().length > 0;
 }
@@ -47,8 +63,25 @@ async function generateFoodFeedback({ language, healthTags, product }) {
   if (!Array.isArray(healthTags) || healthTags.length === 0) {
     throw new ApiError("INVALID_REQUEST", "Please provide at least one health tag.");
   }
+  if (healthTags.length > MAX_TAGS) {
+    throw new ApiError("INPUT_TOO_LARGE", `At most ${MAX_TAGS} health tags are supported.`);
+  }
+  for (const tag of healthTags) {
+    if (typeof tag !== "string" || tag.trim().length === 0) {
+      throw new ApiError("INVALID_REQUEST", "Each health tag must be a non-empty string.");
+    }
+    if (tag.length > MAX_TAG_LENGTH) {
+      throw new ApiError("INPUT_TOO_LARGE", `Each health tag must be at most ${MAX_TAG_LENGTH} characters.`);
+    }
+  }
   if (!product || typeof product !== "object" || typeof product.name !== "string") {
     throw new ApiError("INVALID_REQUEST", "Please provide product information.");
+  }
+  if (product.name.length > MAX_PRODUCT_NAME_LENGTH) {
+    throw new ApiError(
+      "INPUT_TOO_LARGE",
+      `Product name must be ${MAX_PRODUCT_NAME_LENGTH} characters or fewer.`
+    );
   }
 
   const lang = LANGUAGE_NAMES[language] ? language : "en";
@@ -67,7 +100,7 @@ async function generateFoodFeedback({ language, healthTags, product }) {
   }
 
   try {
-    const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+    const client = getClient();
 
     const systemPrompt = `You help someone think about a food product relative to health conditions/allergies they told you about. You are NOT a doctor and must NEVER give a definitive verdict like "this is safe to eat" or "do not eat this" — instead, point out specific, concrete things worth noticing (e.g. "this contains peanuts, and you noted a peanut allergy" or "this has 28g of sugar per serving, and you noted diabetes — you may want to check with your doctor about portion size"). Only reference information actually present in the product data given to you — never invent ingredients or nutrition facts. If nothing in the product data relates to the listed health tags, say that plainly rather than inventing a concern. Keep it to 2-4 sentences, in ${LANGUAGE_NAMES[lang]}. Do NOT include a "not medical advice" disclaimer yourself — that is added separately. Return ONLY this JSON shape, no markdown fences: {"feedback": "..."}`;
 
@@ -105,55 +138,6 @@ async function generateFoodFeedback({ language, healthTags, product }) {
   }
 }
 
-function generateRequestId() {
-  return "req_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-}
-
-function errorBody(code, message, requestId) {
-  return JSON.stringify({ error: { code, message, requestId } });
-}
-
-exports.handler = async (event) => {
-  const headers = corsHeaders();
-  const requestId = event.requestContext?.requestId || generateRequestId();
-
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
-
-  let body;
-  try {
-    body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-  } catch {
-    return {
-      statusCode: 400,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INVALID_REQUEST", "Request body must be valid JSON.", requestId),
-    };
-  }
-
-  try {
-    const result = await generateFoodFeedback(body || {});
-    return {
-      statusCode: 200,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(result),
-    };
-  } catch (err) {
-    if (err instanceof ApiError) {
-      return {
-        statusCode: err.statusCode,
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: errorBody(err.code, err.message, requestId),
-      };
-    }
-    console.error("Unhandled error in foodFeedbackHandler:", err.name || "UnknownError");
-    return {
-      statusCode: 500,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INTERNAL_ERROR", "Something went wrong. Please try again.", requestId),
-    };
-  }
-};
+exports.handler = wrapHandler(generateFoodFeedback, "foodFeedbackHandler");
 
 exports.generateFoodFeedback = generateFoodFeedback;

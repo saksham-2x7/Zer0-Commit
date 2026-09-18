@@ -5,11 +5,12 @@
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-async function post(path, body) {
+async function post(path, body, signal) {
   const response = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal,
   });
 
   const data = await response.json().catch(() => null);
@@ -26,8 +27,8 @@ async function post(path, body) {
   return data;
 }
 
-export function analyzeMessage({ language, inputType, rawText, imageBase64, imageMimeType }) {
-  return post("/api/analyze", { language, inputType, rawText, imageBase64, imageMimeType });
+export function analyzeMessage({ language, inputType, rawText, imageBase64, imageMimeType }, signal) {
+  return post("/api/analyze", { language, inputType, rawText, imageBase64, imageMimeType }, signal);
 }
 
 /** OCR-only — used by the health-profile feature. No scam analysis, nothing persisted. */

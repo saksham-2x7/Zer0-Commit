@@ -9,6 +9,7 @@ export default function TextInput({ language, value, onChange }) {
   const remaining = MAX_TEXT_CHARS - value.length;
   const nearLimit = remaining <= 200;
   const [listening, setListening] = useState(false);
+  const [voiceError, setVoiceError] = useState(null);
   const recognizerRef = useRef(null);
 
   function handleVoiceInput() {
@@ -20,13 +21,22 @@ export default function TextInput({ language, value, onChange }) {
     const recognizer = createSpeechRecognizer(language);
     if (!recognizer) return;
 
+    setVoiceError(null);
     recognizer.onresult = (event) => {
       const transcript = event.results?.[0]?.[0]?.transcript || "";
       if (transcript) {
         onChange(value ? `${value} ${transcript}` : transcript);
       }
     };
-    recognizer.onerror = () => setListening(false);
+    recognizer.onerror = (event) => {
+      setListening(false);
+      const code = event && event.error;
+      setVoiceError(
+        code === "not-allowed" || code === "service-not-allowed"
+          ? t(language, "voiceInputNotAllowed")
+          : t(language, "voiceInputError")
+      );
+    };
     recognizer.onend = () => setListening(false);
 
     recognizerRef.current = recognizer;
@@ -53,11 +63,16 @@ export default function TextInput({ language, value, onChange }) {
           <span />
         )}
         {nearLimit && (
-          <p className={`text-right text-sm ${remaining <= 0 ? "text-red-600" : "text-slate-500 dark:text-slate-400"}`}>
+          <p className={`text-right text-sm tabular-nums ${remaining <= 0 ? "text-red-600" : "text-slate-500 dark:text-slate-400"}`}>
             {remaining} / {MAX_TEXT_CHARS}
           </p>
         )}
       </div>
+      {voiceError && (
+        <p role="alert" className="mt-2 text-sm font-semibold text-red-700 dark:text-red-300">
+          {voiceError}
+        </p>
+      )}
     </div>
   );
 }

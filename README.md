@@ -223,9 +223,9 @@ cd frontend && npm run dev               # http://localhost:5173
 ## Tests
 
 ```bash
-npm test                                 # backend — Jest, 84 tests
+npm test                                 # backend — Jest, 220 tests
 MOCK_BEDROCK=true npm run smoke          # one-shot orchestrator smoke test
-cd frontend && npm test -- --run         # frontend — Vitest, 13 tests
+cd frontend && npm test -- --run         # frontend — Vitest, 155 tests
 cd frontend && npm run build             # production build
 ```
 

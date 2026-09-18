@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { BrowserMultiFormatReader } from "@zxing/browser";
-import { BarcodeFormat } from "@zxing/library";
+import { BrowserMultiFormatReader, BarcodeFormat } from "@zxing/browser";
 import { t, errorCodeMessage } from "../i18n/translations";
 import { lookupProductByBarcode } from "../utils/productLookup";
 import { loadHealthProfile } from "../utils/healthProfile";
@@ -160,7 +159,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/png,image/jpeg"
+            accept="image/*"
             className="hidden"
             onChange={(e) => handleFileUpload(e.target.files?.[0])}
           />
@@ -168,7 +167,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="rounded-lg border-2 border-red-300 bg-red-50 p-3 font-semibold text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           {error}
         </p>
       )}
@@ -203,7 +202,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
               {product.imageUrl && (
                 <img
                   src={product.imageUrl}
-                  alt={product.name || "Product"}
+                  alt={product.name || t(language, "scanProductAlt")}
                   className="h-24 w-24 object-contain"
                 />
               )}
@@ -211,8 +210,12 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
               {product.brand && (
                 <p className="text-sm text-slate-500 dark:text-slate-400">{product.brand}</p>
               )}
-              {product.nutriScore && <p className="text-sm">Nutri-Score: {product.nutriScore}</p>}
-              <p className="text-xs text-slate-400 dark:text-slate-500">{t(language, "scanProductSource")}</p>
+              {product.nutriScore && (
+                <p className="text-sm">
+                  {t(language, "scanNutriScoreLabel")} {product.nutriScore}
+                </p>
+              )}
+              <p className="text-sm text-slate-600 dark:text-slate-300">{t(language, "scanProductSource")}</p>
 
               <div className="mt-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
                 <h5 className="font-semibold text-slate-700 dark:text-slate-200">

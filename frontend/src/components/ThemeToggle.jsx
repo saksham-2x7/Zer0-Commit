@@ -6,7 +6,7 @@ export default function ThemeToggle({ language, theme, onToggle }) {
       type="button"
       className="btn-secondary"
       onClick={onToggle}
-      aria-label="Toggle dark mode"
+      aria-label={t(language, "themeToggleAria")}
     >
       {theme === "dark" ? t(language, "themeToggleToLight") : t(language, "themeToggleToDark")}
     </button>

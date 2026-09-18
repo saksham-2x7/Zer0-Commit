@@ -99,8 +99,75 @@ describe("handler", () => {
   });
 
   test("responds to OPTIONS with CORS headers", async () => {
-    const response = await handler({ httpMethod: "OPTIONS" });
-    expect(response.statusCode).toBe(204);
-    expect(response.headers["Access-Control-Allow-Origin"]).toBeTruthy();
+    const ORIGINAL = process.env.ALLOWED_ORIGIN;
+    process.env.ALLOWED_ORIGIN = "https://scamsahayak.example";
+    try {
+      const response = await handler({ httpMethod: "OPTIONS" });
+      expect(response.statusCode).toBe(204);
+      expect(response.headers["Access-Control-Allow-Origin"]).toBe("https://scamsahayak.example");
+      expect(response.headers["Access-Control-Allow-Methods"]).toContain("POST");
+    } finally {
+      if (ORIGINAL) process.env.ALLOWED_ORIGIN = ORIGINAL;
+      else delete process.env.ALLOWED_ORIGIN;
+    }
+  });
+
+  test("returns 200 with extracted text for a string body", async () => {
+    textractMock.on(DetectDocumentTextCommand).resolves({
+      Blocks: [{ BlockType: "LINE", Text: "BP: 120/80" }],
+    });
+
+    const response = await handler({
+      httpMethod: "POST",
+      body: JSON.stringify({ imageBase64: VALID_PNG_BASE64, imageMimeType: "image/png" }),
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ text: "BP: 120/80" });
+  });
+
+  test("accepts an already-parsed body object and uses the requestContext requestId", async () => {
+    textractMock.on(DetectDocumentTextCommand).resolves({
+      Blocks: [{ BlockType: "LINE", Text: "ok" }],
+    });
+
+    const response = await handler({
+      httpMethod: "POST",
+      requestContext: { requestId: "req_fixed" },
+      body: { imageBase64: VALID_PNG_BASE64, imageMimeType: "image/png" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(JSON.parse(response.body)).toEqual({ text: "ok" });
+  });
+
+  test("malformed JSON body -> 400 INVALID_REQUEST", async () => {
+    const response = await handler({ httpMethod: "POST", body: "{oops" });
+    expect(response.statusCode).toBe(400);
+    const parsed = JSON.parse(response.body);
+    expect(parsed.error.code).toBe("INVALID_REQUEST");
+  });
+
+  test("non-ApiError from the pipeline -> 500 INTERNAL_ERROR, no internals leaked", async () => {
+    // Isolated module load with a textract layer that throws a raw Error, so
+    // this exercises the handler's unhandled-error path. Must run last: it
+    // resets the module registry.
+    jest.resetModules();
+    jest.doMock("../ocr/textractClient", () => ({
+      extractText: async () => {
+        throw new Error("leaky internal detail");
+      },
+    }));
+    const isolated = require("./ocrHandler");
+
+    const response = await isolated.handler({
+      httpMethod: "POST",
+      body: JSON.stringify({ imageBase64: VALID_PNG_BASE64, imageMimeType: "image/png" }),
+    });
+
+    expect(response.statusCode).toBe(500);
+    const parsed = JSON.parse(response.body);
+    expect(parsed.error.code).toBe("INTERNAL_ERROR");
+    expect(parsed.error.message).not.toMatch(/leaky/);
   });
 });

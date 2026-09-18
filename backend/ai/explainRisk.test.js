@@ -141,6 +141,22 @@ describe("generateExplanation", () => {
     expect(result.explanation).not.toMatch(/^this is safe/i);
   });
 
+  test("skips Bedrock entirely and stays 'fallback' when no patterns matched", async () => {
+    process.env.MOCK_BEDROCK = "false";
+    process.env.BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0";
+    bedrockMock.reset();
+
+    const result = await generateExplanation({
+      riskLevel: "low",
+      matchedPatterns: [],
+      language: "en",
+    });
+
+    expect(result.generationMode).toBe("fallback");
+    expect(result.explanation).toMatch(/No strong scam indicators/i);
+    expect(bedrockMock.commandCalls(InvokeModelCommand)).toHaveLength(0);
+  });
+
   describe("multi-language support", () => {
     test.each(["en", "hi", "ta", "te", "bn", "mr"])(
       "returns a non-empty fallback explanation and 4-item checklist for language '%s'",

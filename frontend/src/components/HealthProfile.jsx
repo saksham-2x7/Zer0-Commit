@@ -4,7 +4,7 @@ import { ocrImage, extractHealthTags } from "../services/api";
 import { loadHealthProfile, saveHealthProfile, clearHealthProfile } from "../utils/healthProfile";
 
 const ALLOWED_MIME_TYPES = new Set(["image/png", "image/jpeg"]);
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -36,7 +36,7 @@ export default function HealthProfile({ language, onBack }) {
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      setError(t(language, "errorCode_INPUT_TOO_LARGE"));
+      setError(`${t(language, "errorCode_INPUT_TOO_LARGE")} ${t(language, "imageUploadSizeHint")}`);
       return;
     }
 
@@ -127,7 +127,7 @@ export default function HealthProfile({ language, onBack }) {
                 <button
                   type="button"
                   aria-label={`${t(language, "healthProfileRemoveTagAria")} ${tag}`}
-                  className="text-slate-500 hover:text-red-600 dark:text-slate-400"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-slate-600 hover:text-red-600 dark:text-slate-300"
                   onClick={() => handleRemoveTag(tag)}
                 >
                   ×
@@ -174,11 +174,15 @@ export default function HealthProfile({ language, onBack }) {
       )}
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+        <label
+          htmlFor="health-profile-manual-input"
+          className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+        >
           {t(language, "healthProfileAddManualLabel")}
         </label>
         <div className="flex gap-2">
           <input
+            id="health-profile-manual-input"
             type="text"
             className="flex-1 rounded-lg border border-slate-300 p-2 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
             placeholder={t(language, "healthProfileAddManualPlaceholder")}

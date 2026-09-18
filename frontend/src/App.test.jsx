@@ -113,6 +113,44 @@ describe("App — text submission", () => {
     fireEvent.click(screen.getByRole("button", { name: /check message/i }));
     expect(screen.getByRole("alert")).toHaveTextContent(/please paste a message/i);
   });
+
+  test("shows a friendly localized network error when the fetch throws a TypeError", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+      target: { value: "URGENT: share your OTP" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/couldn't reach the server/i);
+    expect(alert).not.toHaveTextContent("Failed to fetch");
+  });
+
+  test("cancel aborts the in-flight request, hides loading, and shows no error", async () => {
+    global.fetch = vi.fn(
+      (_url, opts) =>
+        new Promise((_resolve, reject) => {
+          opts.signal.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted.", "AbortError"));
+          });
+        })
+    );
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+      target: { value: "URGENT: share your OTP" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+
+    fireEvent.click(await screen.findByRole("button", { name: /cancel/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /check message/i })).not.toBeDisabled()
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
 });
 
 describe("App — language selector", () => {
@@ -227,5 +265,213 @@ describe("App — evidence download", () => {
       "_blank",
       "noopener,noreferrer"
     );
+  });
+});
+
+describe("App — history", () => {
+  function seedHistory() {
+    window.localStorage.setItem(
+      "scamsahayak-history",
+      JSON.stringify([
+        {
+          savedAt: "2026-09-01T10:00:00.000Z",
+          language: "en",
+          redactedText: "URGENT: share your OTP",
+          result: SAMPLE_RESULT,
+        },
+        {
+          savedAt: "2026-09-02T10:00:00.000Z",
+          language: "en",
+          redactedText: "hello",
+          result: { ...SAMPLE_RESULT, caseId: "case_2", riskLevel: "low" },
+        },
+      ])
+    );
+  }
+
+  test("opens the history panel and renders saved entries", () => {
+    seedHistory();
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    expect(screen.getByText("URGENT: share your OTP")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /view this past result/i })).toHaveLength(2);
+  });
+
+  test("selecting a saved entry restores its language and result", async () => {
+    seedHistory();
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /view this past result/i })[0]);
+
+    await screen.findByText(/high risk/i);
+    expect(screen.getByText(/this message shows urgency and asks for your OTP/i)).toBeInTheDocument();
+  });
+
+  test("clears all history and returns to the main view", () => {
+    seedHistory();
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear history" }));
+
+    expect(screen.getByText(/no checks yet/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /back/i }));
+    expect(screen.getByPlaceholderText(/paste the sms/i)).toBeInTheDocument();
+    expect(window.localStorage.getItem("scamsahayak-history")).toBeNull();
+  });
+
+  test("shows the empty state when history is empty", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    expect(screen.getByText(/no checks yet/i)).toBeInTheDocument();
+  });
+});
+
+describe("App — start over", () => {
+  test("resets back to the input form after a completed analysis", async () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+      target: { value: "URGENT: share your OTP" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    await screen.findByText(/high risk/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /check another message/i }));
+
+    expect(screen.getByPlaceholderText(/paste the sms/i)).toBeInTheDocument();
+    expect(screen.queryByText(/high risk/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("App — keyboard tab navigation", () => {
+  test("arrow keys move between paste / upload / scan tabs", () => {
+    render(<App />);
+    const tablist = screen.getByRole("tablist", { name: /input tabs/i });
+
+    fireEvent.keyDown(tablist, { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: /upload screenshot/i })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+
+    fireEvent.keyDown(tablist, { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: /scan code/i })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+
+    fireEvent.keyDown(tablist, { key: "ArrowLeft" });
+    expect(screen.getByRole("tab", { name: /upload screenshot/i })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+
+    fireEvent.keyDown(tablist, { key: "ArrowLeft" });
+    fireEvent.keyDown(tablist, { key: "End" });
+    expect(screen.getByRole("tab", { name: /paste message/i })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+  });
+});
+
+describe("App — theme", () => {
+  test("the theme toggle switches the dark class and persists the choice", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle dark mode" }));
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("dark");
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle dark mode" }));
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("light");
+  });
+
+  test("restores a saved dark theme", () => {
+    window.localStorage.setItem("scamsahayak-theme", "dark");
+    render(<App />);
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+  });
+});
+
+describe("App — read aloud", () => {
+  test("reads the result aloud and stops on the second click", async () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    window.speechSynthesis = { cancel: vi.fn(), speak: vi.fn(), getVoices: () => [] };
+    global.SpeechSynthesisUtterance = vi.fn(function SpeechSynthesisUtterance(text) {
+      this.text = text;
+    });
+    try {
+      render(<App />);
+      fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+        target: { value: "URGENT: share your OTP" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+      await screen.findByText(/high risk/i);
+
+      fireEvent.click(screen.getByRole("button", { name: /read result aloud/i }));
+      expect(screen.getByText(/reading the result aloud/i)).toBeInTheDocument();
+      expect(window.speechSynthesis.speak).toHaveBeenCalled();
+
+      fireEvent.click(screen.getByRole("button", { name: /stop reading/i }));
+      expect(screen.getByText(/stopped reading/i)).toBeInTheDocument();
+    } finally {
+      delete window.speechSynthesis;
+      delete global.SpeechSynthesisUtterance;
+    }
+  });
+});
+
+describe("App — evidence download fallback", () => {
+  test("builds and downloads the bundle client-side when there is no signed URL", async () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    const createUrl = vi.fn(() => "blob:evidence");
+    const revokeUrl = vi.fn();
+    vi.stubGlobal("URL", { createObjectURL: createUrl, revokeObjectURL: revokeUrl });
+    const clickSpy = vi.spyOn(window.HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+
+    render(<App />);
+    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+      target: { value: "URGENT: share your OTP" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    await screen.findByText(/high risk/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /save a copy of this result/i }));
+
+    expect(createUrl).toHaveBeenCalled();
+    expect(clickSpy).toHaveBeenCalled();
+    expect(revokeUrl).toHaveBeenCalledWith("blob:evidence");
+  });
+});
+
+describe("App — empty result sections", () => {
+  test("shows the no-patterns and no-checklist fallbacks when arrays are empty", async () => {
+    mockFetchOnce({ ...SAMPLE_RESULT, matchedPatterns: [], evidence: [], checklist: [] });
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+      target: { value: "hello there" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+
+    await screen.findByText(/no specific warning signs were matched/i);
+    expect(screen.getByText(/no recommended steps/i)).toBeInTheDocument();
+  });
+});
+
+describe("App — help modal keyboard", () => {
+  test("pressing Escape closes the help modal", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /how to use/i }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

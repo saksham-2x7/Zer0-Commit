@@ -11,12 +11,20 @@
 
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
 const { ApiError } = require("./errors");
-const { corsHeaders } = require("./analyzeHandler");
+const { wrapHandler } = require("./handlerUtils");
 const { LANGUAGE_NAMES } = require("../ai/explainRisk");
 const { redactText } = require("../redaction/redact");
 
 const MAX_TEXT_CHARS = 8000;
 const MAX_TAGS = 15;
+
+let cachedClient = null;
+function getClient() {
+  if (!cachedClient) {
+    cachedClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+  }
+  return cachedClient;
+}
 
 function isValidTagList(parsed) {
   return (
@@ -48,7 +56,7 @@ async function extractHealthTags({ text, language }) {
   }
 
   try {
-    const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+    const client = getClient();
 
     const systemPrompt = `You extract a short list of candidate health condition/allergy TAGS (like "diabetes", "peanut allergy", "high blood pressure", "lactose intolerance") from OCR'd text of a medical document or note. This is NOT a diagnosis and NOT medical advice — you are only proposing short tags for a human to review and confirm before anything is saved.
 
@@ -95,55 +103,6 @@ Rules:
   }
 }
 
-function generateRequestId() {
-  return "req_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-}
-
-function errorBody(code, message, requestId) {
-  return JSON.stringify({ error: { code, message, requestId } });
-}
-
-exports.handler = async (event) => {
-  const headers = corsHeaders();
-  const requestId = event.requestContext?.requestId || generateRequestId();
-
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
-
-  let body;
-  try {
-    body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-  } catch {
-    return {
-      statusCode: 400,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INVALID_REQUEST", "Request body must be valid JSON.", requestId),
-    };
-  }
-
-  try {
-    const result = await extractHealthTags(body || {});
-    return {
-      statusCode: 200,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(result),
-    };
-  } catch (err) {
-    if (err instanceof ApiError) {
-      return {
-        statusCode: err.statusCode,
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: errorBody(err.code, err.message, requestId),
-      };
-    }
-    console.error("Unhandled error in healthTagsHandler:", err.name || "UnknownError");
-    return {
-      statusCode: 500,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INTERNAL_ERROR", "Something went wrong. Please try again.", requestId),
-    };
-  }
-};
+exports.handler = wrapHandler(extractHealthTags, "healthTagsHandler");
 
 exports.extractHealthTags = extractHealthTags;

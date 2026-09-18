@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { t } from "../i18n/translations";
 import ReportingBlock from "./ReportingBlock";
 import { buildEvidenceBundle, downloadEvidenceBundle } from "../utils/evidenceBundle";
@@ -11,9 +11,9 @@ const RISK_STYLES = {
 };
 
 const RISK_ICONS = {
-  high: "!",
-  medium: "!",
-  low: "✓",
+  high: "\u26A0",
+  medium: "?",
+  low: "\u2713",
 };
 
 const RISK_LABEL_KEYS = {
@@ -26,8 +26,16 @@ export default function ResultsView({ language, result, redactedText, onStartOve
   const [preparingDownload, setPreparingDownload] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [hasSpoken, setHasSpoken] = useState(false);
+  const headingRef = useRef(null);
   const patternNames = t(language, "patternNames");
   const evidenceByPattern = new Map((result.evidence || []).map((e) => [e.pattern, e.snippet]));
+
+  useEffect(() => {
+    // The clicked trigger (e.g. the Check button) has unmounted with the view
+    // swap — move focus onto the result heading so screen-reader + keyboard
+    // users land somewhere meaningful instead of the <body>.
+    headingRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     // Stop any in-progress read-aloud when the result changes or unmounts.
@@ -69,7 +77,13 @@ export default function ResultsView({ language, result, redactedText, onStartOve
     <div className="space-y-4" aria-live="polite">
       <div className="card">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xl font-bold">{t(language, "resultsHeading")}</h2>
+          <h2
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-xl font-bold outline-none"
+          >
+            {t(language, "resultsHeading")}
+          </h2>
           <span
             role="status"
             className={`inline-flex items-center gap-2 ${RISK_STYLES[result.riskLevel] || RISK_STYLES.low}`}
@@ -100,7 +114,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         )}
 
         <div className="mt-4">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200">
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
             {t(language, "matchedPatternsHeading")}
           </h3>
           {result.matchedPatterns?.length > 0 ? (
@@ -124,21 +138,25 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         </div>
 
         <div className="mt-4">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200">
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
             {t(language, "explanationHeading")}
           </h3>
           <p className="mt-1 text-slate-700 dark:text-slate-300">{result.explanation}</p>
         </div>
 
         <div className="mt-4">
-          <h3 className="font-semibold text-slate-700 dark:text-slate-200">
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
             {t(language, "checklistHeading")}
           </h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-            {result.checklist?.map((item, index) => (
-              <li key={index}>{item}</li>
-            ))}
-          </ul>
+          {result.checklist?.length > 0 ? (
+            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
+              {result.checklist?.map((item, index) => (
+                <li key={index}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-slate-600 dark:text-slate-300">{t(language, "noChecklistItems")}</p>
+          )}
         </div>
       </div>
 

@@ -1,7 +1,9 @@
 # SUTRADHAR'S SKELETON, extended for a real Ship It deploy — Lambda + API
 # Gateway + DynamoDB + S3 (redacted evidence bundles) + S3 static frontend
-# hosting (see FrontendHostingBucket below). Deploy, then aws s3 sync
-# frontend/dist into the FrontendBucketName output.
+# hosting fronted by CloudFront (private bucket, Origin Access Control,
+# HTTPS via the default *.cloudfront.net domain). Deploy, then aws s3 sync
+# frontend/dist into the FrontendBucketName output; the site is served at
+# the FrontendUrl output.
 
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
@@ -10,8 +12,9 @@ Description: ScamSahayak - Ship It deploy (Lambda + API Gateway + DynamoDB + S3 
 Globals:
   Function:
     Timeout: 60
-    Runtime: nodejs20.x
+    Runtime: nodejs22.x
     MemorySize: 512
+    Tracing: Active
     Environment:
       Variables:
         BEDROCK_MODEL_ID: !Ref BedrockModelId
@@ -24,8 +27,11 @@ Globals:
 Parameters:
   BedrockModelId:
     Type: String
-    Default: "anthropic.claude-3-haiku-20240307-v1:0"
-    Description: Bedrock model id used by VAANI's explanation module.
+    Default: "anthropic.claude-3-5-haiku-20241022-v1:0"
+    Description: >
+      Bedrock model id used by VAANI's explanation module. Current Haiku
+      line is 3.5 (the old 3-haiku ids were retired); check the Bedrock
+      console for the newest available haiku model id.
   MockBedrock:
     Type: String
     Default: "false"
@@ -38,10 +44,10 @@ Parameters:
     Type: String
     Default: "https://YOUR_DOMAIN.example.com"
     Description: >
-      CORS origin allowed to call the API (e.g. the deployed frontend's
-      URL). REPLACE this placeholder with the real frontend URL before
-      deploying — a placeholder value blocks every real browser origin.
-      Do not use "*" in production: it lets any website call the API.
+      CORS origin allowed to call the API. Set this to the deployed
+      frontend's CloudFront URL (see FrontendUrl output) before deploying —
+      a placeholder value blocks every real browser origin. Do not use "*"
+      in production: it lets any website call the API.
   MaxInputBytes:
     Type: Number
     Default: 4194304
@@ -55,11 +61,31 @@ Parameters:
       archive requirement.
 
 Resources:
+  # Explicit API Gateway: per-stage throttling replaces the implicit
+  # ServerlessRestApi so burst/sustain limits are actually enforced.
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: ScamSahayakApi
+      StageName: Prod
+      ThrottlingBurstLimit: 20
+      ThrottlingRateLimit: 10
+      TracingEnabled: true
+      MethodSettings:
+        - HttpMethod: "*"
+          ResourcePath: "/*"
+          ThrottlingBurstLimit: 20
+          ThrottlingRateLimit: 10
+          DataTraceEnabled: false
+          LoggingLevel: ERROR
+          MetricsEnabled: true
+
   AnalyzeFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../
       Handler: backend/api/analyzeHandler.handler
+      ReservedConcurrentExecutions: 10
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref CasesTable
@@ -82,11 +108,13 @@ Resources:
         AnalyzeApi:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/analyze
             Method: post
         AnalyzeApiOptions:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/analyze
             Method: options
 
@@ -95,6 +123,7 @@ Resources:
     Properties:
       CodeUri: ../
       Handler: backend/api/ocrHandler.handler
+      ReservedConcurrentExecutions: 10
       Policies:
         - Statement:
             - Sid: TextractDetectDocumentText
@@ -106,19 +135,25 @@ Resources:
         OcrApi:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/ocr
             Method: post
         OcrApiOptions:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/ocr
             Method: options
 
+  # Pure-Bedrock handler: smaller memory, shorter timeout is plenty.
   HealthTagsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../
       Handler: backend/api/healthTagsHandler.handler
+      Timeout: 30
+      MemorySize: 256
+      ReservedConcurrentExecutions: 10
       Policies:
         - Statement:
             - Sid: BedrockInvokeScopedModel
@@ -130,19 +165,25 @@ Resources:
         HealthTagsApi:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/health-tags
             Method: post
         HealthTagsApiOptions:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/health-tags
             Method: options
 
+  # Pure-Bedrock handler: smaller memory, shorter timeout is plenty.
   FoodFeedbackFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../
       Handler: backend/api/foodFeedbackHandler.handler
+      Timeout: 30
+      MemorySize: 256
+      ReservedConcurrentExecutions: 10
       Policies:
         - Statement:
             - Sid: BedrockInvokeScopedModel
@@ -154,11 +195,13 @@ Resources:
         FoodFeedbackApi:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/food-feedback
             Method: post
         FoodFeedbackApiOptions:
           Type: Api
           Properties:
+            RestApiId: !Ref ApiGatewayApi
             Path: /api/food-feedback
             Method: options
 
@@ -174,6 +217,9 @@ Resources:
           KeyType: HASH
       SSESpecification:
         SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
 
   EvidenceBucket:
     Type: AWS::S3::Bucket
@@ -201,13 +247,9 @@ Resources:
             AllowedHeaders: ["*"]
             MaxAge: 300
 
-  # Static frontend hosting: serves the built React site (frontend/dist).
-  # Simplest SAM-valid setup — an S3 static-website bucket + public-read
-  # bucket policy. The site is not secret (same code the repo ships), it
-  # only serves static assets, and it holds no user data (the private
-  # EvidenceBucket above is fully blocked from public access). HTTPS is not
-  # provided by the s3-website endpoint — wrap with CloudFront for
-  # production/public use (see README "Frontend hosting").
+  # Static frontend hosting: the bucket is PRIVATE. CloudFront reaches it
+  # through Origin Access Control (OAC) and serves the site over HTTPS on
+  # the default *.cloudfront.net domain (no ACM/custom domain needed).
   FrontendHostingBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -215,10 +257,57 @@ Resources:
         IndexDocument: index.html
         ErrorDocument: index.html
       PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  FrontendOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: ScamSahayakFrontendOAC
+        Description: OAC allowing CloudFront to read the private frontend bucket
+        SigningBehavior: always
+        OriginAccessControlOriginType: s3
+
+  FrontendDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: FrontendOrigin
+            DomainName: !GetAtt FrontendHostingBucket.RegionalDomainName
+            OriginAccessControlId: !Ref FrontendOriginAccessControl
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        Enabled: true
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: FrontendOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          MinTTL: 0
+          DefaultTTL: 60
+          MaxTTL: 300
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 200
+            ResponsePagePath: /index.html
+          - ErrorCode: 404
+            ResponseCode: 200
+            ResponsePagePath: /index.html
 
   FrontendHostingBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -226,16 +315,66 @@ Resources:
       Bucket: !Ref FrontendHostingBucket
       PolicyDocument:
         Statement:
-          - Sid: PublicReadGetObject
+          - Sid: AllowCloudFrontServicePrincipalReadOnly
             Effect: Allow
-            Principal: "*"
+            Principal:
+              Service: cloudfront.amazonaws.com
             Action: s3:GetObject
             Resource: !Sub "${FrontendHostingBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${FrontendDistribution}"
+
+  # One CloudWatch Log Group per function, 30-day retention.
+  AnalyzeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${AnalyzeFunction}"
+      RetentionInDays: 30
+
+  OcrFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${OcrFunction}"
+      RetentionInDays: 30
+
+  HealthTagsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${HealthTagsFunction}"
+      RetentionInDays: 30
+
+  FoodFeedbackFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${FoodFeedbackFunction}"
+      RetentionInDays: 30
+
+  # Simple guardrail: alert when the API Gateway stage returns any 5xx in a
+  # 5-minute window.
+  ApiGateway5XXAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ScamSahayak-ApiGateway-5XX
+      AlarmDescription: Alert when the ScamSahayak Prod stage returns 5xx errors
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Period: 300
+      Statistic: Sum
+      Threshold: 0
+      TreatMissingData: notBreaching
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: ScamSahayakApi
+        - Name: Stage
+          Value: Prod
 
 Outputs:
   ApiUrl:
     Description: "Invoke URL for POST /api/analyze"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/analyze"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/analyze"
   CasesTableName:
     Description: "DynamoDB table storing redacted case records"
     Value: !Ref CasesTable
@@ -243,8 +382,11 @@ Outputs:
     Description: "S3 bucket storing redacted evidence bundles"
     Value: !Ref EvidenceBucket
   FrontendBucketName:
-    Description: "S3 bucket serving the built frontend — run: aws s3 sync frontend/dist s3://<this> --delete"
+    Description: "S3 bucket holding the built frontend — run: aws s3 sync frontend/dist s3://<this> --delete"
     Value: !Ref FrontendHostingBucket
+  FrontendUrl:
+    Description: "HTTPS URL of the deployed frontend (CloudFront, OAC, private bucket)"
+    Value: !Sub "https://${FrontendDistribution.DomainName}"
   FrontendWebsiteUrl:
-    Description: "Static website URL of the deployed frontend (plain HTTP — use CloudFront for HTTPS)"
+    Description: "S3 static-website URL for reference — the CloudFront FrontendUrl is the real endpoint (HTTPS)"
     Value: !Sub "http://${FrontendHostingBucket.WebsiteURL}"

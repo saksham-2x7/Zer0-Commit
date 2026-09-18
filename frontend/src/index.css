@@ -76,15 +76,15 @@ html.dark :is(button, a, [role="tab"], [tabindex], textarea, input, select):focu
 }
 
 .risk-badge-high {
-  background-color: #991b1b;
+  @apply bg-risk-high;
 }
 
 .risk-badge-medium {
-  background-color: #92400e;
+  @apply bg-risk-medium;
 }
 
 .risk-badge-low {
-  background-color: #166534;
+  @apply bg-risk-low;
 }
 
 @media (prefers-reduced-motion: reduce) {

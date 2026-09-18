@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from "react";
-import { t, errorCodeMessage } from "./i18n/translations";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { t, errorCodeMessage, detectNavigatorLanguage } from "./i18n/translations";
 import LanguageSelector from "./components/LanguageSelector";
 import ThemeToggle from "./components/ThemeToggle";
 import TextSizeToggle from "./components/TextSizeToggle";
@@ -22,6 +22,7 @@ import { loadHistory, saveHistoryEntry, clearHistory } from "./utils/history";
 const Scanner = lazy(() => import("./components/Scanner"));
 
 const HAS_SEEN_HELP_KEY = "scamsahayak-has-seen-help";
+const TABS = ["text", "image", "scan"];
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
@@ -38,6 +39,10 @@ export default function App() {
   const [resultRedactedText, setResultRedactedText] = useState("");
   const [history, setHistory] = useState(loadHistory);
   const [showHelp, setShowHelp] = useState(false);
+  const [restoreFocusFlag, setRestoreFocusFlag] = useState(0);
+  const abortControllerRef = useRef(null);
+  const tabRefs = useRef({});
+  const textTabRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -51,8 +56,21 @@ export default function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (restoreFocusFlag > 0) textTabRef.current?.focus();
+  }, [restoreFocusFlag]);
+
   const canSubmit = activeTab === "text" ? rawText.trim().length > 0 : Boolean(imageBase64);
-  const liveRedactedText = activeTab === "text" ? redactText(rawText) : "";
+  // Recomputing the client-side redaction on every keystroke is fine for short
+  // input but gets expensive on pasted walls of text — memoize on the raw text.
+  const liveRedactedText = useMemo(
+    () => (activeTab === "text" ? redactText(rawText) : ""),
+    [activeTab, rawText]
+  );
+
+  // Help content should match the reader's own language when they haven't
+  // picked one, and follow the selector once they have.
+  const helpLanguage = language === "en" ? detectNavigatorLanguage() : language;
 
   function handleImageSelected(base64, mimeType) {
     setImageBase64(base64);
@@ -74,27 +92,52 @@ export default function App() {
 
     setLoading(true);
     setError(null);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       // Text is redacted client-side before it ever leaves the browser.
       // (The backend also redacts defense-in-depth, in case /api/analyze
       // is ever called directly — see backend/redaction/redact.js.)
-      const response = await analyzeMessage({
-        language,
-        inputType: activeTab,
-        rawText: activeTab === "text" ? liveRedactedText : undefined,
-        imageBase64: activeTab === "image" ? imageBase64 : undefined,
-        imageMimeType: activeTab === "image" ? imageMimeType : undefined,
-      });
+      const response = await analyzeMessage(
+        {
+          language,
+          inputType: activeTab,
+          rawText: activeTab === "text" ? liveRedactedText : undefined,
+          imageBase64: activeTab === "image" ? imageBase64 : undefined,
+          imageMimeType: activeTab === "image" ? imageMimeType : undefined,
+        },
+        controller.signal
+      );
       setResult(response);
       setResultRedactedText(liveRedactedText);
       setHistory(saveHistoryEntry({ language, redactedText: liveRedactedText, result: response }));
     } catch (err) {
-      const message = errorCodeMessage(language, err?.code);
-      setError(message || err.message || t(language, "errorGeneric"));
+      if (err?.name === "AbortError") return;
+      // "Failed to fetch" / TypeError covers offline, DNS failure, server
+      // went away mid-request — surface a friendly, localizable message.
+      const networkFailure =
+        err?.name === "TypeError" || /Failed to fetch|NetworkError|ENOTFOUND/i.test(err?.message || "");
+      setError(networkFailure ? t(language, "errorNetwork") : errorCodeMessage(language, err?.code) || err?.message || t(language, "errorGeneric"));
     } finally {
+      if (abortControllerRef.current === controller) abortControllerRef.current = null;
       setLoading(false);
     }
+  }
+
+  function handleCancel() {
+    abortControllerRef.current?.abort();
+  }
+
+  function handleTablistKey(e) {
+    const idx = TABS.indexOf(activeTab);
+    let next = -1;
+    if (e.key === "ArrowRight") next = (idx + 1) % TABS.length;
+    if (e.key === "ArrowLeft") next = (idx + TABS.length - 1) % TABS.length;
+    if (next < 0) return;
+    e.preventDefault();
+    setActiveTab(TABS[next]);
+    tabRefs.current[TABS[next]]?.focus();
   }
 
   function handleStartOver() {
@@ -105,6 +148,7 @@ export default function App() {
     setImageMimeType(null);
     setError(null);
     setActiveTab("text");
+    setRestoreFocusFlag((n) => n + 1);
   }
 
   function handleSelectHistoryEntry(entry) {
@@ -123,7 +167,14 @@ export default function App() {
     activeTab === "image" ? t(language, "analyzingImageButton") : t(language, "analyzingButton");
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
+    <>
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-blue-900 dark:focus:bg-slate-800 dark:focus:text-blue-200"
+      >
+        {t(language, "skipToContent")}
+      </a>
+      <main id="main" className="mx-auto max-w-2xl px-4 py-8">
       <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-extrabold text-blue-900 dark:text-blue-300">
@@ -151,7 +202,7 @@ export default function App() {
         </div>
       </header>
 
-      {showHelp && <HelpModal language={language} onClose={() => setShowHelp(false)} />}
+      {showHelp && <HelpModal language={helpLanguage} onClose={() => setShowHelp(false)} />}
 
       {view === "history" ? (
         <HistoryPanel
@@ -172,20 +223,34 @@ export default function App() {
         />
       ) : (
         <form onSubmit={handleSubmit} className="card space-y-4">
-          <div className="flex gap-2" role="tablist">
+          <div
+            className="flex gap-2"
+            role="tablist"
+            aria-label={t(language, "inputTabsLabel")}
+            onKeyDown={handleTablistKey}
+          >
             <button
               type="button"
               role="tab"
+              id="tab-text"
+              ref={textTabRef}
               aria-selected={activeTab === "text"}
+              aria-controls="panel-text"
               className={activeTab === "text" ? "btn-primary flex-1" : "btn-secondary flex-1"}
-              onClick={() => setActiveTab("text")}
+              onClick={() => {
+                setActiveTab("text");
+                tabRefs.current.text?.focus();
+              }}
             >
               {t(language, "tabText")}
             </button>
             <button
               type="button"
               role="tab"
+              id="tab-image"
+              ref={(el) => (tabRefs.current.image = el)}
               aria-selected={activeTab === "image"}
+              aria-controls="panel-image"
               className={activeTab === "image" ? "btn-primary flex-1" : "btn-secondary flex-1"}
               onClick={() => setActiveTab("image")}
             >
@@ -194,7 +259,10 @@ export default function App() {
             <button
               type="button"
               role="tab"
+              id="tab-scan"
+              ref={(el) => (tabRefs.current.scan = el)}
               aria-selected={activeTab === "scan"}
+              aria-controls="panel-scan"
               className={activeTab === "scan" ? "btn-primary flex-1" : "btn-secondary flex-1"}
               onClick={() => setActiveTab("scan")}
             >
@@ -202,24 +270,48 @@ export default function App() {
             </button>
           </div>
 
-          {activeTab === "text" && (
-            <>
-              <TextInput language={language} value={rawText} onChange={setRawText} />
-              <RedactionPreview language={language} text={rawText} />
-            </>
-          )}
-          {activeTab === "image" && (
-            <ImageUpload language={language} onImageSelected={handleImageSelected} onError={setError} />
-          )}
-          {activeTab === "scan" && (
-            <Suspense fallback={<p className="text-slate-500 dark:text-slate-400">…</p>}>
-              <Scanner
-                language={language}
-                onQrDecoded={handleQrDecoded}
-                onSetupHealthProfile={() => setView("health")}
-              />
-            </Suspense>
-          )}
+          <div
+            role="tabpanel"
+            id="panel-text"
+            aria-labelledby="tab-text"
+            hidden={activeTab !== "text"}
+            tabIndex={activeTab === "text" ? 0 : undefined}
+          >
+            {activeTab === "text" && (
+              <>
+                <TextInput language={language} value={rawText} onChange={setRawText} />
+                <RedactionPreview language={language} text={liveRedactedText} />
+              </>
+            )}
+          </div>
+          <div
+            role="tabpanel"
+            id="panel-image"
+            aria-labelledby="tab-image"
+            hidden={activeTab !== "image"}
+            tabIndex={activeTab === "image" ? 0 : undefined}
+          >
+            {activeTab === "image" && (
+              <ImageUpload language={language} onImageSelected={handleImageSelected} onError={setError} />
+            )}
+          </div>
+          <div
+            role="tabpanel"
+            id="panel-scan"
+            aria-labelledby="tab-scan"
+            hidden={activeTab !== "scan"}
+            tabIndex={activeTab === "scan" ? 0 : undefined}
+          >
+            {activeTab === "scan" && (
+              <Suspense fallback={<p className="text-slate-500 dark:text-slate-400">{t(language, "loadingScanner")}</p>}>
+                <Scanner
+                  language={language}
+                  onQrDecoded={handleQrDecoded}
+                  onSetupHealthProfile={() => setView("health")}
+                />
+              </Suspense>
+            )}
+          </div>
 
           {error && (
             <p role="alert" className="rounded-lg border-2 border-red-300 bg-red-50 p-3 font-semibold text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
@@ -231,13 +323,24 @@ export default function App() {
             {loading ? loadingLabel : ""}
           </p>
 
-          {activeTab !== "scan" && (
-            <button type="submit" className="btn-primary w-full" disabled={loading}>
-              {loading ? loadingLabel : t(language, "analyzeButton")}
-            </button>
-          )}
+          {activeTab !== "scan" &&
+            (loading ? (
+              <div className="flex gap-2">
+                <button type="button" className="btn-secondary flex-1" onClick={handleCancel}>
+                  {t(language, "cancelButton")}
+                </button>
+                <button type="submit" className="btn-primary flex-1" disabled>
+                  {loadingLabel}
+                </button>
+              </div>
+            ) : (
+              <button type="submit" className="btn-primary w-full">
+                {t(language, "analyzeButton")}
+              </button>
+            ))}
         </form>
       )}
-    </div>
+      </main>
+    </>
   );
 }

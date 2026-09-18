@@ -77,6 +77,20 @@ describe("redactText (backend)", () => {
     expect(result).toContain("98******10");
   });
 
+  test("strips bidi embedding/override ranges so a phone split by U+202A/U+202C still masks", () => {
+    const raw = "9876\u202a5432\u202c10";
+    const result = redactText(`Call ${raw} now`);
+    expect(result).not.toContain(raw);
+    expect(result).toContain("98******10");
+  });
+
+  test("strips bidi isolate ranges so a phone split by U+2066/U+2069 still masks", () => {
+    const raw = "9876\u20665432\u206910";
+    const result = redactText(`Call ${raw} now`);
+    expect(result).not.toContain(raw);
+    expect(result).toContain("98******10");
+  });
+
   test("masks a suspicious link's path/query but keeps the host visible", () => {
     const result = redactText("Click https://bit.ly/verify?token=abc123secret");
     expect(result).not.toContain("token=abc123secret");

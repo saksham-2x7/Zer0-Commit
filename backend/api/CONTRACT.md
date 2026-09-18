@@ -307,6 +307,41 @@ Wires the modules together in this order:
 - `MAX_INPUT_BYTES` — max raw image size in bytes (default 4 MiB = 4194304; 4 MiB of base64 is ~5.33 MiB, kept under the ~6 MiB Lambda synchronous-invoke payload ceiling)
 - `VITE_API_BASE_URL` — used by DRISHYA's frontend, never hardcode the API URL
 
+## Team & workflow
+
+This repo is a solo build: one human (working as a team of one) with an
+AI coding assistant, so the "team" below is a set of *personas*, not
+separate humans. Each persona owns one slice of the stack and reviews
+the code through its personas' lens, but a single brain wrote all of it.
+
+The four personas (also appeared in the README ownership table):
+
+- **VAANI (Vaani)** — the voice-and-explain persona. Owns the human-facing
+  explanation copy: the "In plain words" block, risk badges, the Hindi-first
+  toggle, and the read-aloud experience)Skip. Responsible for language
+  quality and accessibility of every user-facing string.
+- **PRAHARI (Prahari)** — the alert persona. Owns the deterministic rule
+  engine (scam detector, redaction, risk labels) that walks elders through
+  what could be a scam. Cross-checks with VAANI's Bedrock explanation.
+- **SUTRADHAR (Sutradhar)** — the infrastructure persona. AWS provisioning,
+  SAM/CloudFormation, OCR pipeline, persistence, CI/CD, security. Keeps the
+  "climate-friendly, cheap to run" No-SQL stack honest.
+- **DRISHYA (Drishya)** — the visual persona. Owns the frontend: screenshots
+  upload, QR/camera scanning, the redaction preview, and the results
+  rendering.
+
+Workflow rules that keep the build reviewable even when one person runs
+every role:
+
+- Add the persona tag to a commit message so a reviewer can tell which
+  slice a change touches: `feat(detection)`, `feat(ai)`, `feat(api)`,
+  `feat(frontend)`, `feat(infra)`.
+- Only touch files inside your persona's folder (see README ownership
+  table). The backend/api/CONTRACT.md names the owner of each module.
+- Change anything in `backend/api/CONTRACT.md`? Flag it to the whole team
+  first — it is the shared source of truth for how modules speak to each
+  other.
+
 ## Git workflow — everyone is on `main`
 
 - Only touch files inside your own folder (see README ownership table).

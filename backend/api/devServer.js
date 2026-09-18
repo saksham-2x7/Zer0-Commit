@@ -12,10 +12,11 @@
  */
 
 const http = require("http");
-const { analyze, corsHeaders } = require("./analyzeHandler");
+const { analyze } = require("./analyzeHandler");
 const { ocr } = require("./ocrHandler");
 const { extractHealthTags } = require("./healthTagsHandler");
 const { generateFoodFeedback } = require("./foodFeedbackHandler");
+const { corsHeaders } = require("./cors");
 const { ApiError } = require("./errors");
 const { getMaxInputBytes } = require("./validation");
 

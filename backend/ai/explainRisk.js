@@ -1,5 +1,14 @@
 const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
 
+// Hoisted across requests — same client reused for every Bedrock call.
+let cachedClient = null;
+function getClient() {
+  if (!cachedClient) {
+    cachedClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+  }
+  return cachedClient;
+}
+
 // Keep this list in sync with backend/api/validation.js SUPPORTED_LANGUAGES.
 const LANGUAGE_NAMES = {
   en: "English",
@@ -129,6 +138,13 @@ async function generateExplanation({ riskLevel, matchedPatterns, language }) {
     return { ...fallback, languageUsed: lang, generationMode: "fallback" };
   }
 
+  // No matched patterns: the deterministic fallback already answers in the
+  // requested language, and there is nothing for Bedrock to elaborate on —
+  // skip building the client/prompt entirely.
+  if (!matchedPatterns || matchedPatterns.length === 0) {
+    return { ...fallback, languageUsed: lang, generationMode: "fallback" };
+  }
+
   const modelId = process.env.BEDROCK_MODEL_ID;
   if (!modelId) {
     console.warn("BEDROCK_MODEL_ID is not set, falling back to deterministic response");
@@ -136,7 +152,7 @@ async function generateExplanation({ riskLevel, matchedPatterns, language }) {
   }
 
   try {
-    const client = new BedrockRuntimeClient({ region: process.env.AWS_REGION || "ap-south-1" });
+    const client = getClient();
 
     const systemPrompt = `You are a cautious cybersecurity assistant helping an elder decide whether a message is safe. You never receive the original message — only a risk level and a list of observable pattern categories. Respond with ONLY a valid JSON object:
 {

@@ -4,7 +4,7 @@ const { extractText } = require("./textractClient");
 
 const textractMock = mockClient(TextractClient);
 
-const VALID_PNG_BASE64 = Buffer.from("fake-png-bytes").toString("base64");
+const VALID_IMAGE_BYTES = Buffer.from("fake-png-bytes");
 
 beforeEach(() => {
   textractMock.reset();
@@ -22,20 +22,34 @@ describe("extractText", () => {
     });
 
     const result = await extractText({
-      imageBase64: VALID_PNG_BASE64,
+      bytes: VALID_IMAGE_BYTES,
       imageMimeType: "image/png",
     });
 
     expect(result.text).toBe("URGENT: Your account will be blocked.\nShare your OTP immediately.");
   });
 
+  test("accepts pre-decoded bytes and does not re-decode base64", async () => {
+    textractMock.on(DetectDocumentTextCommand).resolves({
+      Blocks: [{ BlockType: "LINE", Text: "hello" }],
+    });
+
+    const result = await extractText({
+      bytes: VALID_IMAGE_BYTES,
+      imageBase64: "!!!this is not valid base64!!!",
+      imageMimeType: "image/png",
+    });
+
+    expect(result.text).toBe("hello");
+  });
+
   test("rejects an unsupported MIME type", async () => {
     await expect(
-      extractText({ imageBase64: VALID_PNG_BASE64, imageMimeType: "image/gif" })
+      extractText({ bytes: VALID_IMAGE_BYTES, imageMimeType: "image/gif" })
     ).rejects.toMatchObject({ code: "INVALID_IMAGE" });
   });
 
-  test("rejects invalid base64 data", async () => {
+  test("rejects invalid base64 data (legacy imageBase64 path)", async () => {
     await expect(
       extractText({ imageBase64: "not base64 at all !!! ***", imageMimeType: "image/png" })
     ).rejects.toMatchObject({ code: "INVALID_IMAGE" });
@@ -45,7 +59,7 @@ describe("extractText", () => {
     textractMock.on(DetectDocumentTextCommand).resolves({ Blocks: [] });
 
     const result = await extractText({
-      imageBase64: VALID_PNG_BASE64,
+      bytes: VALID_IMAGE_BYTES,
       imageMimeType: "image/png",
     });
 
@@ -56,7 +70,7 @@ describe("extractText", () => {
     textractMock.on(DetectDocumentTextCommand).rejects(new Error("Textract unavailable"));
 
     await expect(
-      extractText({ imageBase64: VALID_PNG_BASE64, imageMimeType: "image/png" })
+      extractText({ bytes: VALID_IMAGE_BYTES, imageMimeType: "image/png" })
     ).rejects.toMatchObject({ code: "OCR_FAILED" });
   });
 });

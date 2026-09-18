@@ -17,6 +17,18 @@ export const translations = {
     scanUnknownProductLabel: "Unknown product",
     healthProfileErrorNetwork:
       "We couldn't reach the server. Check your internet connection and try again.",
+    errorNetwork: "We couldn't reach the server. Check your internet connection and try again.",
+    inputTabsLabel: "Input tabs",
+    skipToContent: "Skip to main content",
+    themeToggleAria: "Toggle dark mode",
+    imagePreviewAlt: "Selected screenshot preview",
+    imageUploadSizeHint: "Images up to 4 MB are accepted.",
+    scanProductAlt: "Product",
+    scanNutriScoreLabel: "Nutri-Score:",
+    loadingScanner: "Loading the scanner…",
+    cancelButton: "Cancel",
+    voiceInputError: "Voice input failed. Try typing instead.",
+    noChecklistItems: "No recommended steps were given for this result.",
     speechStatusReading: "Reading the result aloud.",
     speechStatusStopped: "Stopped reading.",
     selectLanguageLabel: "Select language",
@@ -155,6 +167,18 @@ export const translations = {
     scanUnknownProductLabel: "अज्ञात उत्पाद",
     healthProfileErrorNetwork:
       "हम सर्वर तक नहीं पहुंच सके। अपना इंटरनेट कनेक्शन जांचें और फिर से प्रयास करें।",
+    errorNetwork: "हम सर्वर तक नहीं पहुंच सके। अपना इंटरनेट कनेक्शन जांचें और फिर से प्रयास करें।",
+    inputTabsLabel: "इनपुट टैब",
+    skipToContent: "मुख्य सामग्री पर जाएं",
+    themeToggleAria: "डार्क मोड टॉगल करें",
+    imagePreviewAlt: "चयनित स्क्रीनशॉट पूर्वावलोकन",
+    imageUploadSizeHint: "4 MB तक की इमेज स्वीकार की जाती हैं।",
+    scanProductAlt: "उत्पाद",
+    scanNutriScoreLabel: "न्यूट्री-स्कोर:",
+    loadingScanner: "स्कैनर लोड हो रहा है…",
+    cancelButton: "रद्द करें",
+    voiceInputError: "वॉइस इनपुट विफल रहा। इसके बजाय टाइप करके देखें।",
+    noChecklistItems: "इस परिणाम के लिए कोई अनुशंसित कदम नहीं दिए गए।",
     speechStatusReading: "परिणाम ज़ोर से पढ़ा जा रहा है।",
     speechStatusStopped: "पढ़ना रोक दिया गया।",
     selectLanguageLabel: "भाषा चुनें",
@@ -293,6 +317,18 @@ export const translations = {
     scanUnknownProductLabel: "தெரியாத தயாரிப்பு",
     healthProfileErrorNetwork:
       "எங்களால் சேவையகத்தை அடைய முடியவில்லை. உங்கள் இணைய இணைப்பைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+    errorNetwork: "எங்களால் சேவையகத்தை அடைய முடியவில்லை. உங்கள் இணைய இணைப்பைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+    inputTabsLabel: "உள்ளீட்டு தாவல்கள்",
+    skipToContent: "முக்கிய உள்ளடக்கத்திற்குச் செல்லவும்",
+    themeToggleAria: "இருண்ட பயன்முறையை மாற்றவும்",
+    imagePreviewAlt: "தேர்ந்தெடுக்கப்பட்ட ஸ்கிரீன்ஷாட் முன்னோட்டம்",
+    imageUploadSizeHint: "4 MB வரையிலான படங்கள் ஏற்கப்படும்.",
+    scanProductAlt: "தயாரிப்பு",
+    scanNutriScoreLabel: "நியூட்ரி-ஸ்கோர்:",
+    loadingScanner: "ஸ்கேனர் ஏற்றப்படுகிறது…",
+    cancelButton: "ரத்துசெய்",
+    voiceInputError: "குரல் உள்ளீடு தோல்வியடைந்தது. பதிலாக தட்டச்சு செய்து முயற்சிக்கவும்.",
+    noChecklistItems: "இந்த முடிவுக்கு பரிந்துரைக்கப்பட்ட படிகள் எதுவும் இல்லை.",
     speechStatusReading: "முடிவை சத்தமாகப் படிக்கிறது.",
     speechStatusStopped: "படிப்பது நிறுத்தப்பட்டது.",
     selectLanguageLabel: "மொழியைத் தேர்ந்தெடுக்கவும்",
@@ -431,6 +467,18 @@ export const translations = {
     scanUnknownProductLabel: "తెలియని ఉత్పత్తి",
     healthProfileErrorNetwork:
       "మాకు సర్వర్‌ను చేరుకోలేకపోయాము. మీ ఇంటర్నెట్ కనెక్షన్‌ను తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.",
+    errorNetwork: "మాకు సర్వర్‌ను చేరుకోలేకపోయాము. మీ ఇంటర్నెట్ కనెక్షన్‌ను తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.",
+    inputTabsLabel: "ఇన్‌పుట్ ట్యాబ్‌లు",
+    skipToContent: "ప్రధాన కంటెంట్‌కు దాటవేయండి",
+    themeToggleAria: "డార్క్ మోడ్‌ను టోగుల్ చేయండి",
+    imagePreviewAlt: "ఎంచుకున్న స్క్రీన్‌షాట్ ప్రివ్యూ",
+    imageUploadSizeHint: "4 MB వరకు ఉన్న చిత్రాలు అంగీకరించబడతాయి.",
+    scanProductAlt: "ఉత్పత్తి",
+    scanNutriScoreLabel: "న్యూట్రీ-స్కోర్:",
+    loadingScanner: "స్కానర్ లోడ్ అవుతోంది…",
+    cancelButton: "రద్దు",
+    voiceInputError: "వాయిస్ ఇన్‌పుట్ విఫలమైంది. బదులుగా టైప్ చేసి ప్రయత్నించండి.",
+    noChecklistItems: "ఈ ఫలితానికి సిఫార్సు చేసిన దశలు ఏవీ లేవు.",
     speechStatusReading: "ఫలితాన్ని బిగ్గరగా చదువుతోంది.",
     speechStatusStopped: "చదవడం ఆపివేయబడింది.",
     selectLanguageLabel: "భాషను ఎంచుకోండి",
@@ -569,6 +617,18 @@ export const translations = {
     scanUnknownProductLabel: "অজানা পণ্য",
     healthProfileErrorNetwork:
       "আমরা সার্ভারে পৌঁছাতে পারিনি। আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    errorNetwork: "আমরা সার্ভারে পৌঁছাতে পারিনি। আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    inputTabsLabel: "ইনপুট ট্যাব",
+    skipToContent: "প্রধান বিষয়বস্তুতে যান",
+    themeToggleAria: "ডার্ক মোড টগল করুন",
+    imagePreviewAlt: "নির্বাচিত স্ক্রিনশট প্রিভিউ",
+    imageUploadSizeHint: "4 MB পর্যন্ত ছবি গ্রহণ করা হয়।",
+    scanProductAlt: "পণ্য",
+    scanNutriScoreLabel: "নিউট্রি-স্কোর:",
+    loadingScanner: "স্ক্যানার লোড হচ্ছে…",
+    cancelButton: "বাতিল",
+    voiceInputError: "ভয়েস ইনপুট ব্যর্থ হয়েছে। পরিবর্তে টাইপ করে দেখুন।",
+    noChecklistItems: "এই ফলাফলের জন্য কোনো প্রস্তাবিত পদক্ষেপ দেওয়া নেই।",
     speechStatusReading: "ফলাফল জোরে পড়া হচ্ছে।",
     speechStatusStopped: "পড়া বন্ধ করা হয়েছে।",
     selectLanguageLabel: "ভাষা নির্বাচন করুন",
@@ -707,6 +767,18 @@ export const translations = {
     scanUnknownProductLabel: "अज्ञात उत्पादन",
     healthProfileErrorNetwork:
       "आम्ही सर्व्हरपर्यंत पोहोचू शकलो नाही. तुमचे इंटरनेट कनेक्शन तपासून पुन्हा प्रयत्न करा.",
+    errorNetwork: "आम्ही सर्व्हरपर्यंत पोहोचू शकलो नाही. तुमचे इंटरनेट कनेक्शन तपासून पुन्हा प्रयत्न करा.",
+    inputTabsLabel: "इनपुट टॅब",
+    skipToContent: "मुख्य सामग्रीवर जा",
+    themeToggleAria: "डार्क मोड टॉगल करा",
+    imagePreviewAlt: "निवडलेला स्क्रीनशॉट प्रिव्ह्यू",
+    imageUploadSizeHint: "4 MB पर्यंतच्या प्रतिमा स्वीकारल्या जातात.",
+    scanProductAlt: "उत्पादन",
+    scanNutriScoreLabel: "न्यूट्री-स्कोअर:",
+    loadingScanner: "स्कॅनर लोड होत आहे…",
+    cancelButton: "रद्द करा",
+    voiceInputError: "व्हॉइस इनपुट अयशस्वी. त्याऐवजी टाइप करून पहा.",
+    noChecklistItems: "या निकालासाठी कोणतीही शिफारस केलेली पायरी नाही.",
     speechStatusReading: "निकाल मोठ्याने वाचला जात आहे.",
     speechStatusStopped: "वाचणे थांबवले.",
     selectLanguageLabel: "भाषा निवडा",
@@ -842,6 +914,14 @@ export const translations = {
 export function t(language, key) {
   const dict = translations[language] || translations.en;
   return dict[key] ?? translations.en[key] ?? key;
+}
+
+// Best-guess initial UI language from the browser, mapped onto the languages
+// we actually ship. Falls back to English for any unmapped locale.
+export function detectNavigatorLanguage() {
+  if (typeof navigator === "undefined") return "en";
+  const primary = (navigator.language || "en").toLowerCase().split("-")[0];
+  return translations[primary] ? primary : "en";
 }
 
 // Map a backend error code to a user-facing message. Codes without a

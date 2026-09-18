@@ -7,68 +7,19 @@
  */
 
 const { extractText } = require("../ocr/textractClient");
-const { ApiError } = require("./errors");
 const { validateImageBytes } = require("./validation");
-const { corsHeaders } = require("./analyzeHandler");
+const { wrapHandler } = require("./handlerUtils");
 
 async function ocr({ imageBase64, imageMimeType }) {
   // Shared with /api/analyze: size cap (MAX_INPUT_BYTES), base64 charset,
   // encoded-length check before decoding, exact MIME match, and magic bytes.
-  validateImageBytes(imageBase64, imageMimeType);
+  // The decoded Buffer is reused by Textract — no second base64 decode.
+  const { bytes } = validateImageBytes(imageBase64, imageMimeType);
 
-  const { text } = await extractText({ imageBase64, imageMimeType });
+  const { text } = await extractText({ bytes, imageMimeType });
   return { text };
 }
 
-function generateRequestId() {
-  return "req_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
-}
-
-function errorBody(code, message, requestId) {
-  return JSON.stringify({ error: { code, message, requestId } });
-}
-
-exports.handler = async (event) => {
-  const headers = corsHeaders();
-  const requestId = event.requestContext?.requestId || generateRequestId();
-
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
-  }
-
-  let body;
-  try {
-    body = typeof event.body === "string" ? JSON.parse(event.body) : event.body;
-  } catch {
-    return {
-      statusCode: 400,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INVALID_REQUEST", "Request body must be valid JSON.", requestId),
-    };
-  }
-
-  try {
-    const result = await ocr(body || {});
-    return {
-      statusCode: 200,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify(result),
-    };
-  } catch (err) {
-    if (err instanceof ApiError) {
-      return {
-        statusCode: err.statusCode,
-        headers: { ...headers, "Content-Type": "application/json" },
-        body: errorBody(err.code, err.message, requestId),
-      };
-    }
-    console.error("Unhandled error in ocrHandler:", err.name || "UnknownError");
-    return {
-      statusCode: 500,
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: errorBody("INTERNAL_ERROR", "Something went wrong. Please try again.", requestId),
-    };
-  }
-};
+exports.handler = wrapHandler(ocr, "ocrHandler");
 
 exports.ocr = ocr;

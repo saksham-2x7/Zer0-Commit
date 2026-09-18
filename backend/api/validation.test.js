@@ -10,7 +10,7 @@ describe("validateAnalyzeRequest", () => {
     expect(result).toEqual({ language: "en", inputType: "text", rawText: "hello" });
   });
 
-  test("normalizes a valid image request", () => {
+  test("normalizes a valid image request and returns the pre-decoded bytes", () => {
     const result = validateAnalyzeRequest({
       language: "hi",
       inputType: "image",
@@ -22,7 +22,15 @@ describe("validateAnalyzeRequest", () => {
       inputType: "image",
       imageBase64: VALID_PNG_BASE64,
       imageMimeType: "image/png",
+      bytes: Buffer.concat([PNG_MAGIC, Buffer.from("fake-png-body")]),
     });
+  });
+
+  test("validateImageBytes returns the decoded bytes so callers avoid a second base64 decode", () => {
+    const { validateImageBytes } = require("./validation");
+    const { bytes } = validateImageBytes(VALID_PNG_BASE64, "image/png");
+    expect(Buffer.isBuffer(bytes)).toBe(true);
+    expect(bytes.equals(Buffer.concat([PNG_MAGIC, Buffer.from("fake-png-body")]))).toBe(true);
   });
 
   test("rejects a non-object body", () => {

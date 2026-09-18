@@ -35,7 +35,11 @@ function hasValidMagicBytes(bytes, mimeType) {
  * Single shared image validator used by BOTH /api/analyze and /api/ocr so the
  * two entry points can never drift: raw-size cap (configurable MAX_INPUT_BYTES),
  * base64 charset, base64 length BEFORE decoding (memory hygiene), exact MIME
- * match, and magic-byte verification. Returns the decoded bytes.
+ * match, and magic-byte verification.
+ *
+ * Returns { bytes, imageBase64, imageMimeType } where `bytes` is the decoded
+ * Buffer — callers (the Textract flow) reuse it instead of decoding base64 a
+ * second time.
  * Throws ApiError on any failure.
  */
 function validateImageBytes(imageBase64, imageMimeType) {
@@ -67,12 +71,13 @@ function validateImageBytes(imageBase64, imageMimeType) {
       "Image data does not match its declared type (expected a valid PNG or JPEG file)."
     );
   }
-  return bytes;
+  return { bytes, imageBase64, imageMimeType };
 }
 
 /**
  * Validates and normalizes an incoming /api/analyze request body.
  * Throws ApiError on any problem. Returns the normalized request otherwise.
+ * For image input the normalized request carries the pre-decoded `bytes`.
  */
 function validateAnalyzeRequest(body) {
   if (!body || typeof body !== "object") {
@@ -100,15 +105,16 @@ function validateAnalyzeRequest(body) {
   }
 
   // inputType === "image"
-  validateImageBytes(imageBase64, imageMimeType);
+  const validated = validateImageBytes(imageBase64, imageMimeType);
 
-  return { language, inputType, imageBase64, imageMimeType };
+  return { language, inputType, ...validated };
 }
 
 module.exports = {
   validateAnalyzeRequest,
   validateImageBytes,
   getMaxInputBytes,
+  BASE64_PATTERN,
   SUPPORTED_LANGUAGES,
   SUPPORTED_INPUT_TYPES,
   SUPPORTED_IMAGE_MIME_TYPES,
