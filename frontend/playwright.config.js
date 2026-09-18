@@ -19,7 +19,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'cd .. && MOCK_BEDROCK=true npm run dev:api',
+      // Cross-platform: inline `MOCK_BEDROCK=true cmd` shell syntax only
+      // works on POSIX shells and fails on Windows cmd.exe (which is what
+      // Node spawns commands through by default on Windows) — use
+      // Playwright's own `env` option instead, which sets it via the
+      // child_process env, not shell syntax.
+      command: "npm run dev:api",
+      cwd: "..",
+      env: { MOCK_BEDROCK: "true" },
       port: 3000,
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,

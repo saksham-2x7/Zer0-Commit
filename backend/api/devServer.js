@@ -22,6 +22,17 @@ const { getMaxInputBytes } = require("./validation");
 
 const PORT = process.env.PORT || 3000;
 
+// cors.js is deliberately fail-closed (no Access-Control-Allow-Origin
+// without ALLOWED_ORIGIN) for the deployed Lambda path. This dev server only
+// ever exists to be called by the local Vite dev server, so default it here
+// rather than requiring every local-dev invocation to set it — without this,
+// `MOCK_BEDROCK=true npm run dev:api` (the command the README and
+// Playwright's webServer both use) emits no CORS header at all, and the
+// frontend's fetch() calls fail with an opaque "couldn't reach the server".
+if (!process.env.ALLOWED_ORIGIN) {
+  process.env.ALLOWED_ORIGIN = "http://localhost:5173";
+}
+
 const ROUTES = {
   "/api/analyze": analyze,
   "/api/ocr": ocr,
