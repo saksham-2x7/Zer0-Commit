@@ -71,7 +71,11 @@ describe("analyze — text input", () => {
 
 describe("analyze — image input", () => {
   const ORIGINAL_ENV = process.env;
-  const VALID_PNG_BASE64 = Buffer.from("fake-png-bytes").toString("base64");
+  const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+  const VALID_PNG_BASE64 = Buffer.concat([PNG_MAGIC, Buffer.from("fake-png-body")]).toString(
+    "base64"
+  );
 
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV, MOCK_BEDROCK: "true" };
@@ -104,6 +108,17 @@ describe("analyze — image input", () => {
   test("rejects an unsupported image MIME type", async () => {
     await expect(
       analyze({ language: "en", inputType: "image", imageBase64: VALID_PNG_BASE64, imageMimeType: "image/gif" })
+    ).rejects.toMatchObject({ code: "INVALID_IMAGE" });
+  });
+
+  test("rejects image bytes whose magic does not match the declared MIME (M2)", async () => {
+    await expect(
+      analyze({
+        language: "en",
+        inputType: "image",
+        imageBase64: JPEG_MAGIC.toString("base64"),
+        imageMimeType: "image/png",
+      })
     ).rejects.toMatchObject({ code: "INVALID_IMAGE" });
   });
 

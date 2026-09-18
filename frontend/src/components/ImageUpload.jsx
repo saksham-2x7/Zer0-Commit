@@ -3,7 +3,7 @@ import { t } from "../i18n/translations";
 
 const ALLOWED_MIME_TYPES = new Set(["image/png", "image/jpeg"]);
 // Keep in sync with the backend's default MAX_INPUT_BYTES (see CONTRACT.md).
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -31,7 +31,7 @@ export default function ImageUpload({ language, onImageSelected, onError }) {
       return;
     }
     if (file.size > MAX_IMAGE_BYTES) {
-      onError?.(t(language, "errorCode_INPUT_TOO_LARGE"));
+      onError?.(`${t(language, "errorCode_INPUT_TOO_LARGE")} Images up to 4 MB are accepted.`);
       return;
     }
 

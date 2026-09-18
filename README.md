@@ -1,6 +1,7 @@
 # ScamSahayak
 
-An elder-first, Hindi/English assistant that checks a suspicious UPI, SMS,
+An elder-first, six-language assistant (English, Hindi, Tamil, Telugu,
+Bengali, Marathi) that checks a suspicious UPI, SMS,
 KYC, or bank message and gives a **risk signal, an explanation, and a safe
 next step** — not a verdict.
 
@@ -70,7 +71,7 @@ and safety model.
 | Barcode scan → product lookup (Open Food Facts) | **Implemented & tested** (verified end-to-end in a browser against a real barcode and the live API) |
 | SAM infrastructure template (Lambda, API Gateway, DynamoDB, S3, IAM) | **Written, not yet deployed** — see Limitations |
 | Live AWS deployment | **Not deployed** — no AWS CLI/credentials were available in the environment this was built in |
-| Amplify/static frontend hosting | **Proposed** — marked section in `infra/template.yaml`, not implemented |
+| S3 static frontend hosting (bucket + policy + Outputs in `infra/template.yaml`) | **Implemented in the template**, not yet deployed — requires `aws s3 sync frontend/dist s3://<FrontendBucketName>` after `sam deploy` (see "Frontend hosting") |
 | Demo video | **Not recorded** — see [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the planned script |
 
 ## Architecture
@@ -79,8 +80,8 @@ and safety model.
 User (elder / family helper)
    │
    ▼
-frontend/  (React + Vite)
-  - language toggle (hi/en)
+frontend/  (React + Vite) — served as a static site from an S3 bucket
+  - language toggle (en/hi/ta/te/bn/mr)
   - paste text OR upload screenshot
   - client-side redaction (masks phone/UPI/email/account-like strings)
     BEFORE sending
@@ -96,6 +97,13 @@ backend/api/analyzeHandler.js   ← orchestrator (Lambda)
    └─▶ backend/evidence/evidenceBundle.js   (S3 — redacted evidence bundle + signed URL)
 ```
 
+Hosting: the built frontend (`frontend/dist`) is served from an S3
+static-website bucket created by `infra/template.yaml`
+(`FrontendHostingBucket` + a public-read policy); the `FrontendWebsiteUrl`
+output is its URL (plain HTTP — wrap in CloudFront for HTTPS). The API lives
+behind API Gateway and **must** be given the frontend's real origin via the
+`AllowedOrigin` parameter.
+
 ## AWS services used, and why
 
 | Service | Why |
@@ -106,6 +114,7 @@ backend/api/analyzeHandler.js   ← orchestrator (Lambda)
 | **Amazon Bedrock** | Turns a risk level + matched pattern categories (never the raw message) into a bilingual, elder-friendly explanation and checklist. |
 | **Amazon DynamoDB** | Stores the redacted case record (risk level, matched patterns, evidence snippets — never raw text/images) for basic audit/debugging. |
 | **Amazon S3** | Stores the redacted evidence bundle a user can attach when filing a report, behind a short-lived signed URL. |
+| **Amazon S3 (frontend hosting)** | Serves the built `frontend/dist` site as a static website (public-read bucket + policy in `infra/template.yaml`). Static assets only — no user data; HTTPS requires CloudFront. |
 
 Everything below is deliberately **not** an AWS service and does not touch
 the backend at all — it runs entirely in the browser, at no AWS cost:
@@ -187,7 +196,7 @@ variables, not by a separate code path:
 | `CASES_TABLE_NAME` | `backend/persistence/caseStore.js` | DynamoDB table name; unset = local mode |
 | `EVIDENCE_BUCKET_NAME` | `backend/evidence/evidenceBundle.js` | S3 bucket name; unset = local mode |
 | `ALLOWED_ORIGIN` | `backend/api/analyzeHandler.js` | CORS origin for API responses |
-| `MAX_INPUT_BYTES` | `backend/api/validation.js` | Max raw image size (default 5 MB) |
+| `MAX_INPUT_BYTES` | `backend/api/validation.js` | Max raw image size in bytes (default 4 MiB = 4194304; keep the base64 payload under the ~6 MiB Lambda synchronous-invoke limit) |
 | `VITE_API_BASE_URL` | `frontend/src/services/api.js` | Base URL the frontend calls |
 
 ## Local setup
@@ -246,8 +255,11 @@ On first deploy, `--guided` will ask for a stack name/region and walk
 through the parameters in `infra/template.yaml` (`BedrockModelId`,
 `MockBedrock`, `AllowedOrigin`, `MaxInputBytes`, `EvidenceRetentionDays`).
 Set `MockBedrock=false` and `AllowedOrigin` to your deployed frontend's real
-URL for a production-like deploy. Note the `ApiUrl` output — that's what
-`VITE_API_BASE_URL` should point the frontend build at.
+URL for a production-like deploy. The template's `AllowedOrigin` default is a
+placeholder (`https://YOUR_DOMAIN.example.com`) — leaving it as-is **breaks**
+browser calls to the API, and `"*"` in production lets any website call it.
+Note the `ApiUrl` and `FrontendWebsiteUrl` outputs — those are what
+`VITE_API_BASE_URL` and the deployed URL should be.
 
 **This template has not been deployed or tested against a real AWS
 account** — the environment this was built in had no AWS CLI, SAM CLI, or
@@ -256,11 +268,35 @@ deploying to anything beyond a personal sandbox account.
 
 ### Frontend hosting
 
-Not yet implemented. `infra/template.yaml` has a marked section for
-DRISHYA to add Amplify Hosting (or S3+CloudFront) resources; until then,
-`npm run build && npm run preview` (or any static host pointed at
-`frontend/dist`) works, configured with `VITE_API_BASE_URL` set to the
-deployed `ApiUrl`.
+`infra/template.yaml` creates an S3 static-website bucket
+(`FrontendHostingBucket`) with a public-read policy and exposes its name and
+URL as `FrontendBucketName` / `FrontendWebsiteUrl` outputs. After `sam
+deploy`, build the site and sync it into the bucket (bucket name = the
+`FrontendBucketName` output):
+
+```bash
+cd frontend && npm run build
+aws s3 sync frontend/dist s3://<FrontendBucketName> --delete
+```
+
+Open `FrontendWebsiteUrl` (e.g.
+`http://<stack>-frontendhostingbucket-xxxxx.s3-website-<region>.amazonaws.com`)
+— that's the deployable URL the demo shows. Points to remember:
+
+- The S3 static-website endpoint serves **plain HTTP**. For HTTPS (or a
+  friendly domain) put a CloudFront distribution in front — out of scope for
+  the hackathon, see SECURITY.md for the caveat that implies.
+- The bucket is public **only** for the static site assets. It holds no user
+  data; the private `EvidenceBucket` stays fully blocked. Account-level
+  "Block public access" must allow the bucket-level settings in the template.
+- Set the stack's `AllowedOrigin` to the `FrontendWebsiteUrl` (or the
+  CloudFront URL) and redeploy so the API's CORS accepts the served origin.
+- Build with `VITE_API_BASE_URL` pointing at the `ApiUrl` output minus the
+  `/api/analyze` suffix, i.e. `https://<api-id>.execute-api.<region>.amazonaws.com/Prod`
+  (the frontend appends `/api/analyze` itself).
+
+Before SAM hosting existed, `npm run build && npm run preview` (or any
+static host pointed at `frontend/dist`) worked the same way — it still does.
 
 ### Teardown
 
@@ -268,8 +304,8 @@ deployed `ApiUrl`.
 sam delete
 ```
 
-This removes the Lambda function, API Gateway, DynamoDB table, and S3
-bucket (and its contents) created by the stack.
+This removes the Lambda function, API Gateway, DynamoDB table, and both S3
+buckets (frontend hosting + evidence, and their contents) created by the stack.
 
 ## Cost controls
 
@@ -307,7 +343,10 @@ never requests or reproduces OTPs, PINs, CVVs, or passwords.
 - No automated evaluation harness/benchmark dataset exists yet — pattern
   and Bedrock-prompt quality is untested beyond the unit tests in this repo.
 - No demo video has been recorded (see `DEMO_SCRIPT.md` for the plan).
-- No Amplify/static-hosting deployment exists yet for the frontend.
+- Static frontend hosting exists in the SAM template (S3 bucket + policy +
+  Outputs), but it is plain HTTP (no CloudFront/HTTPS), and neither it nor
+  the stack itself has been deployed against a real AWS account here —
+  see "Deploying (Ship It mode)".
 - The scanner's live-camera path was verified structurally against the
   `@zxing/browser` API but not end-to-end with a physical camera in this
   environment (no webcam available) — the upload-a-photo path *was*

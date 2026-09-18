@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 import { BarcodeFormat } from "@zxing/library";
-import { t } from "../i18n/translations";
+import { t, errorCodeMessage } from "../i18n/translations";
 import { lookupProductByBarcode } from "../utils/productLookup";
 import { loadHealthProfile } from "../utils/healthProfile";
 import { getFoodFeedback } from "../services/api";
@@ -40,6 +40,12 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
       let info = null;
       try {
         info = await lookupProductByBarcode(text);
+        // The product lookup leaves `name` null when the catalog match has no
+        // name. The food-feedback API rejects that (400), so fall back to a
+        // clear, localized label before it leaves this component.
+        if (info && !info.name) {
+          info = { ...info, name: t(language, "scanUnknownProductLabel") };
+        }
         setProduct(info);
       } catch {
         setProduct(null);
@@ -54,8 +60,9 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
           try {
             const { feedback } = await getFoodFeedback({ language, healthTags, product: info });
             setFoodFeedback(feedback);
-          } catch {
-            setFoodFeedback(t(language, "foodFeedbackErrorGeneric"));
+          } catch (err) {
+            const codeMessage = errorCodeMessage(language, err?.code);
+            setFoodFeedback(codeMessage || t(language, "foodFeedbackErrorGeneric"));
           } finally {
             setFoodFeedbackLoading(false);
           }
@@ -167,7 +174,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
       )}
 
       {decoded && decoded.isQr && (
-        <div className="card space-y-3">
+        <div className="card space-y-3" aria-live="polite">
           <h3 className="font-semibold">{t(language, "scanQrFoundHeading")}</h3>
           <p className="text-sm text-slate-600 dark:text-slate-300">{t(language, "scanQrFoundHint")}</p>
           <p className="whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 font-mono text-sm dark:bg-slate-900">
@@ -183,11 +190,13 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
       )}
 
       {decoded && !decoded.isQr && (
-        <div className="card space-y-3">
+        <div className="card space-y-3" aria-live="polite">
           <h3 className="font-semibold">{t(language, "scanBarcodeFoundHeading")}</h3>
           <p className="font-mono text-sm text-slate-600 dark:text-slate-300">{decoded.text}</p>
           {productLoading ? (
-            <p className="text-slate-500 dark:text-slate-400">{t(language, "scanProductLookingUp")}</p>
+            <p className="text-slate-500 dark:text-slate-400" role="status">
+              {t(language, "scanProductLookingUp")}
+            </p>
           ) : product ? (
             <div className="space-y-1">
               <h4 className="font-semibold">{t(language, "scanProductFoundHeading")}</h4>

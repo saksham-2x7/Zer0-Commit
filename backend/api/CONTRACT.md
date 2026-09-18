@@ -32,6 +32,10 @@ POST /api/analyze
 }
 ```
 
+Images are capped at a raw size of 4 MiB (default `MAX_INPUT_BYTES`,
+4194304 bytes — base64 ~5.33 MiB). The frontend enforces the same cap before
+sending.
+
 ### Response body (200)
 
 ```json
@@ -82,6 +86,14 @@ The response never includes the raw input text or raw image data.
 }
 ```
 
+### Timeouts (deployed / Ship It)
+
+The Lambda functions run with a **60-second timeout** (`infra/template.yaml`,
+`Globals.Function.Timeout`) because OCR (Textract) plus a Bedrock call can
+take a while. The frontend should allow up to ~60 s for an image request
+before giving up; the API Gateway integration is synchronous, so a Lambda
+that stays under 60 s returns normally.
+
 Error codes:
 
 | Code | HTTP status | Meaning |
@@ -89,10 +101,11 @@ Error codes:
 | `INVALID_REQUEST` | 400 | Missing/malformed body, missing text/image |
 | `UNSUPPORTED_LANGUAGE` | 400 | `language` is not one of `en`, `hi`, `ta`, `te`, `bn`, `mr` |
 | `UNSUPPORTED_INPUT_TYPE` | 400 | `inputType` is not `text` or `image` |
-| `INPUT_TOO_LARGE` | 413 | Text or image exceeds the configured size limit |
-| `INVALID_IMAGE` | 400 | Bad MIME type or undecodable base64 |
+| `INPUT_TOO_LARGE` | 413 | Text exceeds the 8000-char limit, or image raw size exceeds `MAX_INPUT_BYTES` (default **4 MiB** = 4194304 → max ~5.33 MiB of base64) |
+| `INVALID_IMAGE` | 400 | Bad MIME type, undecodable base64, or image bytes whose magic header does not match the declared PNG/JPEG type |
 | `OCR_FAILED` | 422 | Textract could not process the image |
 | `ANALYSIS_FAILED` | 422 | OCR succeeded but found no readable text |
+| `NOT_FOUND` | 404 | Unknown route or non-POST request on the dev server (API Gateway handles routing in deployed mode) |
 | `INTERNAL_ERROR` | 500 | Unexpected failure — message never includes internals |
 
 ## Additional endpoints (health-profile feature)
@@ -114,6 +127,11 @@ photographed medical document/note before proposing tags.
 { "text": "..." }
 ```
 
+Raw images are validated the same way as `/api/analyze`:
+`INPUT_TOO_LARGE` (max 4 MiB) and magic-byte checking — the decoded bytes
+must match the declared PNG/JPEG type or `INVALID_IMAGE` is returned. WebP
+bytes are detected but not accepted (Textract does not support WebP).
+
 ### `POST /api/health-tags`
 
 Proposes candidate condition/allergy tags from OCR'd or typed text —
@@ -127,6 +145,9 @@ confirm/uncheck before anything is stored. See
 // response
 { "suggestedTags": ["Type 2 Diabetes", "Peanut allergy"] }
 ```
+
+Before the text is sent to Bedrock it is run through `redactText(...)`, so
+phone/Aadhaar/card numbers never leave the backend.
 
 ### `POST /api/food-feedback`
 
@@ -163,6 +184,13 @@ since VAANI's prompt copy may reference them):
 
 Must be pure and synchronous. No AWS SDK, no network calls, no side effects.
 
+`otp_request` and `suspicious_collect_request` are **context-aware** (the
+responsibility of PRAHARI): a bare OTP/PIN/CVV mention or a "UPI collect"
+notification is NOT an indicator by itself — transactional/chatty messages
+stay low. They count only when combined with an action/urgency hook
+(share/send/enter/verify…, prize/refund/pay-Rs-1, approve/accept/pay) that is
+NOT protective advice ("Never share your PIN", "Approve only if you recognize").
+
 `riskLevel` semantics — say exactly this to users, never "safe":
 - `low`: no strong scam indicators detected (not a safety guarantee).
 - `medium`: one caution indicator detected.
@@ -181,6 +209,13 @@ synchronous. Used by both the frontend (before sending) and the backend
 (before the text reaches the detector, Bedrock, logs, or storage) — the API
 may be called directly without the frontend, so the backend never trusts
 that redaction already happened.
+
+Rule-for-rule aligned with `frontend/src/utils/redact.js`: UPI, email, phone,
+and long digit strings mask to first-2/last-2 visible; URL host is kept.
+There is intentionally NO separate Aadhaar rule — a 4-4-4 regex inside a
+16-digit card number would leak the middle digits. A Devanagari-digit (०-९)
+and zero-width-character (U+200B/C/D, FEFF) normalization pass catches
+disguised numbers too.
 
 ## Module: backend/ocr/textractClient.js (SUTRADHAR owns this)
 
@@ -269,7 +304,7 @@ Wires the modules together in this order:
 - `CASES_TABLE_NAME` — DynamoDB table name; unset = local in-memory mode
 - `EVIDENCE_BUCKET_NAME` — S3 bucket name; unset = local client-side download mode
 - `ALLOWED_ORIGIN` — CORS origin for API Gateway responses; defaults to `*` locally
-- `MAX_INPUT_BYTES` — max raw image size in bytes (default 5 MB)
+- `MAX_INPUT_BYTES` — max raw image size in bytes (default 4 MiB = 4194304; 4 MiB of base64 is ~5.33 MiB, kept under the ~6 MiB Lambda synchronous-invoke payload ceiling)
 - `VITE_API_BASE_URL` — used by DRISHYA's frontend, never hardcode the API URL
 
 ## Git workflow — everyone is on `main`

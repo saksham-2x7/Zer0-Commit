@@ -90,6 +90,24 @@ describe("App — text submission", () => {
     expect(alert).toHaveTextContent(/readable text/i);
   });
 
+  test("falls back to the generic error message for an untranslated error code", async () => {
+    mockFetchOnce(
+      { error: { code: "SOME_FUTURE_CODE", message: "opaque internal detail" } },
+      false
+    );
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+      target: { value: "hello there" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/Something went wrong/i);
+    expect(alert).not.toHaveTextContent("errorCode_SOME_FUTURE_CODE");
+    expect(alert).not.toHaveTextContent("opaque internal detail");
+  });
+
   test("blocks submission with a friendly message when there is no input", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: /check message/i }));
@@ -121,6 +139,31 @@ describe("App — language selector", () => {
 
     fireEvent.change(selector, { target: { value: "en" } });
     expect(screen.getByText("ScamSahayak")).toBeInTheDocument();
+  });
+
+  test("persists the selected language and syncs <html lang> and <title>", () => {
+    render(<App />);
+    const selector = screen.getByRole("combobox", { name: /select language/i });
+
+    fireEvent.change(selector, { target: { value: "hi" } });
+    expect(window.localStorage.getItem("scamsahayak-language")).toBe("hi");
+    expect(document.documentElement.lang).toBe("hi");
+    expect(document.title).toBe("स्कैम सहायक — कार्रवाई से पहले संदिग्ध संदेश जांचें");
+
+    fireEvent.change(selector, { target: { value: "en" } });
+    expect(window.localStorage.getItem("scamsahayak-language")).toBe("en");
+    expect(document.documentElement.lang).toBe("en");
+    expect(document.title).toBe("ScamSahayak — Check a suspicious message before you act");
+  });
+
+  test("restores a previously saved language on the next visit", () => {
+    window.localStorage.setItem("scamsahayak-language", "ta");
+    render(<App />);
+
+    const selector = screen.getByRole("combobox");
+    expect(selector.value).toBe("ta");
+    expect(document.documentElement.lang).toBe("ta");
+    expect(screen.getByText("ஸ்காம் சஹாயக்")).toBeInTheDocument();
   });
 });
 

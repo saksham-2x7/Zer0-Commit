@@ -13,6 +13,12 @@ export const translations = {
   en: {
     appTitle: "ScamSahayak",
     appTagline: "Check a suspicious message before you act on it.",
+    docTitle: "ScamSahayak — Check a suspicious message before you act",
+    scanUnknownProductLabel: "Unknown product",
+    healthProfileErrorNetwork:
+      "We couldn't reach the server. Check your internet connection and try again.",
+    speechStatusReading: "Reading the result aloud.",
+    speechStatusStopped: "Stopped reading.",
     selectLanguageLabel: "Select language",
     tabText: "Paste message",
     tabImage: "Upload screenshot",
@@ -35,6 +41,8 @@ export const translations = {
     errorCode_OCR_FAILED: "We couldn't read the screenshot. Please try pasting the message text instead.",
     errorCode_ANALYSIS_FAILED: "We couldn't find any readable text in that screenshot. Please try pasting the message text instead.",
     errorCode_INTERNAL_ERROR: "Something went wrong on our end. Please try again in a moment.",
+    errorCode_NOT_FOUND: "That page or action doesn't exist anymore. Please go back and try again.",
+    errorCode_UNKNOWN: "Something went wrong. Please try again in a moment.",
     resultsHeading: "Result",
     riskHigh: "High risk",
     riskMedium: "Medium risk — some caution needed",
@@ -143,6 +151,12 @@ export const translations = {
   hi: {
     appTitle: "स्कैम सहायक",
     appTagline: "किसी भी संदिग्ध संदेश पर भरोसा करने से पहले उसकी जांच करें।",
+    docTitle: "स्कैम सहायक — कार्रवाई से पहले संदिग्ध संदेश जांचें",
+    scanUnknownProductLabel: "अज्ञात उत्पाद",
+    healthProfileErrorNetwork:
+      "हम सर्वर तक नहीं पहुंच सके। अपना इंटरनेट कनेक्शन जांचें और फिर से प्रयास करें।",
+    speechStatusReading: "परिणाम ज़ोर से पढ़ा जा रहा है।",
+    speechStatusStopped: "पढ़ना रोक दिया गया।",
     selectLanguageLabel: "भाषा चुनें",
     tabText: "संदेश पेस्ट करें",
     tabImage: "स्क्रीनशॉट अपलोड करें",
@@ -165,6 +179,8 @@ export const translations = {
     errorCode_OCR_FAILED: "हम स्क्रीनशॉट नहीं पढ़ पाए। कृपया संदेश का टेक्स्ट पेस्ट करके देखें।",
     errorCode_ANALYSIS_FAILED: "उस स्क्रीनशॉट में कोई पढ़ने योग्य टेक्स्ट नहीं मिला। कृपया संदेश का टेक्स्ट पेस्ट करके देखें।",
     errorCode_INTERNAL_ERROR: "हमारी तरफ़ से कुछ गड़बड़ हुई। कृपया थोड़ी देर बाद फिर से प्रयास करें।",
+    errorCode_NOT_FOUND: "यह पेज या कार्रवाई अब मौजूद नहीं है। कृपया वापस जाकर फिर से प्रयास करें।",
+    errorCode_UNKNOWN: "कुछ गड़बड़ हुई। कृपया थोड़ी देर बाद फिर से प्रयास करें।",
     resultsHeading: "परिणाम",
     riskHigh: "उच्च जोखिम",
     riskMedium: "मध्यम जोखिम — सावधानी बरतें",
@@ -273,6 +289,12 @@ export const translations = {
   ta: {
     appTitle: "ஸ்காம் சஹாயக்",
     appTagline: "நடவடிக்கை எடுப்பதற்கு முன் சந்தேகத்திற்குரிய செய்தியை சரிபார்க்கவும்.",
+    docTitle: "ஸ்காம் சஹாயக் — நடவடிக்கைக்கு முன் சந்தேகச் செய்தியைச் சரிபார்",
+    scanUnknownProductLabel: "தெரியாத தயாரிப்பு",
+    healthProfileErrorNetwork:
+      "எங்களால் சேவையகத்தை அடைய முடியவில்லை. உங்கள் இணைய இணைப்பைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+    speechStatusReading: "முடிவை சத்தமாகப் படிக்கிறது.",
+    speechStatusStopped: "படிப்பது நிறுத்தப்பட்டது.",
     selectLanguageLabel: "மொழியைத் தேர்ந்தெடுக்கவும்",
     tabText: "செய்தியை ஒட்டவும்",
     tabImage: "ஸ்கிரீன்ஷாட்டை பதிவேற்றவும்",
@@ -295,6 +317,8 @@ export const translations = {
     errorCode_OCR_FAILED: "ஸ்கிரீன்ஷாட்டைப் படிக்க முடியவில்லை. செய்தி உரையை ஒட்டி முயற்சிக்கவும்.",
     errorCode_ANALYSIS_FAILED: "அந்த ஸ்கிரீன்ஷாட்டில் படிக்கக்கூடிய உரை எதுவும் கிடைக்கவில்லை. செய்தி உரையை ஒட்டி முயற்சிக்கவும்.",
     errorCode_INTERNAL_ERROR: "எங்கள் பக்கத்தில் ஏதோ தவறு நடந்தது. சிறிது நேரம் கழித்து முயற்சிக்கவும்.",
+    errorCode_NOT_FOUND: "அந்தப் பக்கம் அல்லது செயல் இப்போது இல்லை. தயவுசெய்து திரும்பிச் சென்று மீண்டும் முயற்சிக்கவும்.",
+    errorCode_UNKNOWN: "ஏதோ தவறு நடந்தது. சிறிது நேரம் கழித்து மீண்டும் முயற்சிக்கவும்.",
     resultsHeading: "முடிவு",
     riskHigh: "அதிக ஆபத்து",
     riskMedium: "நடுத்தர ஆபத்து — சிறிது கவனம் தேவை",
@@ -403,6 +427,12 @@ export const translations = {
   te: {
     appTitle: "స్కామ్ సహాయక్",
     appTagline: "చర్య తీసుకునే ముందు అనుమానాస్పద సందేశాన్ని తనిఖీ చేయండి.",
+    docTitle: "స్కామ్ సహాయక్ — చర్యకు ముందు సందేశాన్ని తనిఖీ చేయండి",
+    scanUnknownProductLabel: "తెలియని ఉత్పత్తి",
+    healthProfileErrorNetwork:
+      "మాకు సర్వర్‌ను చేరుకోలేకపోయాము. మీ ఇంటర్నెట్ కనెక్షన్‌ను తనిఖీ చేసి మళ్ళీ ప్రయత్నించండి.",
+    speechStatusReading: "ఫలితాన్ని బిగ్గరగా చదువుతోంది.",
+    speechStatusStopped: "చదవడం ఆపివేయబడింది.",
     selectLanguageLabel: "భాషను ఎంచుకోండి",
     tabText: "సందేశాన్ని అతికించండి",
     tabImage: "స్క్రీన్‌షాట్‌ను అప్‌లోడ్ చేయండి",
@@ -425,6 +455,8 @@ export const translations = {
     errorCode_OCR_FAILED: "స్క్రీన్‌షాట్‌ను చదవలేకపోయాము. దయచేసి సందేశం టెక్స్ట్‌ను అతికించి ప్రయత్నించండి.",
     errorCode_ANALYSIS_FAILED: "ఆ స్క్రీన్‌షాట్‌లో చదవగలిగే టెక్స్ట్ ఏదీ కనుగొనబడలేదు. దయచేసి సందేశం టెక్స్ట్‌ను అతికించి ప్రయత్నించండి.",
     errorCode_INTERNAL_ERROR: "మా వైపు ఏదో తప్పు జరిగింది. దయచేసి కొద్దిసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి.",
+    errorCode_NOT_FOUND: "ఆ పేజీ లేదా చర్య ఇక ఉండదు. దయచేసి వెనుకకు వెళ్లి మళ్ళీ ప్రయత్నించండి.",
+    errorCode_UNKNOWN: "ఏదో తప్పు జరిగింది. దయచేసి కొద్దిసేపటి తర్వాత మళ్ళీ ప్రయత్నించండి.",
     resultsHeading: "ఫలితం",
     riskHigh: "అధిక ప్రమాదం",
     riskMedium: "మధ్యస్థ ప్రమాదం — కొంత జాగ్రత్త అవసరం",
@@ -533,6 +565,12 @@ export const translations = {
   bn: {
     appTitle: "স্ক্যাম সহায়ক",
     appTagline: "কোনো পদক্ষেপ নেওয়ার আগে সন্দেহজনক বার্তা যাচাই করুন।",
+    docTitle: "স্ক্যাম সহায়ক — পদক্ষেপের আগে বার্তা যাচাই করুন",
+    scanUnknownProductLabel: "অজানা পণ্য",
+    healthProfileErrorNetwork:
+      "আমরা সার্ভারে পৌঁছাতে পারিনি। আপনার ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    speechStatusReading: "ফলাফল জোরে পড়া হচ্ছে।",
+    speechStatusStopped: "পড়া বন্ধ করা হয়েছে।",
     selectLanguageLabel: "ভাষা নির্বাচন করুন",
     tabText: "বার্তা পেস্ট করুন",
     tabImage: "স্ক্রিনশট আপলোড করুন",
@@ -555,6 +593,8 @@ export const translations = {
     errorCode_OCR_FAILED: "আমরা স্ক্রিনশটটি পড়তে পারিনি। অনুগ্রহ করে বার্তার টেক্সট পেস্ট করে দেখুন।",
     errorCode_ANALYSIS_FAILED: "সেই স্ক্রিনশটে পড়ার মতো কোনো টেক্সট পাওয়া যায়নি। অনুগ্রহ করে বার্তার টেক্সট পেস্ট করে দেখুন।",
     errorCode_INTERNAL_ERROR: "আমাদের দিক থেকে কিছু ভুল হয়েছে। একটু পরে আবার চেষ্টা করুন।",
+    errorCode_NOT_FOUND: "এই পেজ বা কাজটি আর নেই। অনুগ্রহ করে ফিরে গিয়ে আবার চেষ্টা করুন।",
+    errorCode_UNKNOWN: "কিছু ভুল হয়েছে। একটু পরে আবার চেষ্টা করুন।",
     resultsHeading: "ফলাফল",
     riskHigh: "উচ্চ ঝুঁকি",
     riskMedium: "মাঝারি ঝুঁকি — কিছুটা সতর্কতা প্রয়োজন",
@@ -663,6 +703,12 @@ export const translations = {
   mr: {
     appTitle: "स्कॅम सहायक",
     appTagline: "कृती करण्यापूर्वी संशयास्पद संदेश तपासा.",
+    docTitle: "स्कॅम सहायक — कृतीपूर्वी संदेश तपासा",
+    scanUnknownProductLabel: "अज्ञात उत्पादन",
+    healthProfileErrorNetwork:
+      "आम्ही सर्व्हरपर्यंत पोहोचू शकलो नाही. तुमचे इंटरनेट कनेक्शन तपासून पुन्हा प्रयत्न करा.",
+    speechStatusReading: "निकाल मोठ्याने वाचला जात आहे.",
+    speechStatusStopped: "वाचणे थांबवले.",
     selectLanguageLabel: "भाषा निवडा",
     tabText: "संदेश पेस्ट करा",
     tabImage: "स्क्रीनशॉट अपलोड करा",
@@ -685,6 +731,8 @@ export const translations = {
     errorCode_OCR_FAILED: "आम्ही स्क्रीनशॉट वाचू शकलो नाही. कृपया संदेशाचा मजकूर पेस्ट करून पहा.",
     errorCode_ANALYSIS_FAILED: "त्या स्क्रीनशॉटमध्ये वाचनीय मजकूर सापडला नाही. कृपया संदेशाचा मजकूर पेस्ट करून पहा.",
     errorCode_INTERNAL_ERROR: "आमच्या बाजूने काहीतरी चूक झाली. कृपया थोड्या वेळाने पुन्हा प्रयत्न करा.",
+    errorCode_NOT_FOUND: "हा पेज किंवा कृती आता अस्तित्वात नाही. कृपया परत जाऊन पुन्हा प्रयत्न करा.",
+    errorCode_UNKNOWN: "काहीतरी चूक झाली. कृपया थोड्या वेळाने पुन्हा प्रयत्न करा.",
     resultsHeading: "निकाल",
     riskHigh: "उच्च जोखीम",
     riskMedium: "मध्यम जोखीम — थोडी काळजी आवश्यक",
@@ -794,4 +842,19 @@ export const translations = {
 export function t(language, key) {
   const dict = translations[language] || translations.en;
   return dict[key] ?? translations.en[key] ?? key;
+}
+
+// Map a backend error code to a user-facing message. Codes without a
+// dedicated translation fall back to the generic errorCode_UNKNOWN message
+// instead of leaking a raw errorCode_* key onto the screen.
+export function errorCodeMessage(language, code) {
+  if (!code) {
+    return null;
+  }
+  const dict = translations[language] || translations.en;
+  const key =
+    dict[`errorCode_${code}`] !== undefined
+      ? `errorCode_${code}`
+      : "errorCode_UNKNOWN";
+  return t(language, key);
 }

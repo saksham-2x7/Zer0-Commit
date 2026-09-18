@@ -285,3 +285,140 @@ describe("detectScamPatterns — pattern key integrity", () => {
     }
   });
 });
+
+describe("detectScamPatterns — context-aware otp_request (C1)", () => {
+  test("does NOT flag a transactional OTP confirmation with protective advice", () => {
+    const result = detectScamPatterns("Your OTP for login is 123456. Do not share it.");
+    expect(result.matchedPatterns).not.toContain("otp_request");
+    expect(result.riskLevel).toBe("low");
+  });
+
+  test("does NOT flag 'never share your PIN' protective advice", () => {
+    const result = detectScamPatterns("Never share your PIN. Bank will never ask.");
+    expect(result.matchedPatterns).not.toContain("otp_request");
+    expect(result.riskLevel).toBe("low");
+  });
+
+  test("does NOT flag a conversational PIN mention", () => {
+    const result = detectScamPatterns("WhatsApp PIN works on my phone");
+    expect(result.matchedPatterns).not.toContain("otp_request");
+    expect(result.riskLevel).toBe("low");
+  });
+
+  test("still flags an OTP being demanded with an action", () => {
+    const result = detectScamPatterns("Share your OTP to verify.");
+    expect(result.matchedPatterns).toContain("otp_request");
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("still flags OTP demands with regional action verbs", () => {
+    for (const text of [
+      "अपना ओटीपी शेयर करें",
+      "त्वरित तुमचा ओटीपी पाठवा",
+      "உடனடியாக உங்கள் ஓடிபி பகிரவும்",
+      "వెంటనే మీ ఓటిపి షేర్ చేయండి",
+      "অবিলম্বে আপনার ওটিপি শেয়ার করুন",
+    ]) {
+      expect(detectScamPatterns(text).matchedPatterns).toContain("otp_request");
+    }
+  });
+});
+
+describe("detectScamPatterns — context-aware suspicious_collect_request (C1)", () => {
+  test("does NOT flag a bare UPI collect notification", () => {
+    const result = detectScamPatterns("UPI collect request Rs 500 from Amazon. Approve only if you recognize.");
+    expect(result.matchedPatterns).not.toContain("suspicious_collect_request");
+    expect(result.riskLevel).toBe("low");
+  });
+
+  test("still flags a UPI collect request the message pushes you to approve", () => {
+    const result = detectScamPatterns("You have received a UPI collect request, please approve.");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(result.riskLevel).toBe("high");
+  });
+});
+
+describe("detectScamPatterns — Hindi & Marathi coverage (C2)", () => {
+  test("flags Hindi prize-won/pay-fee phrasing", () => {
+    const result = detectScamPatterns("आप जीत गए हैं! इनाम पाने के लिए शुल्क जमा करें");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Marathi prize-won/pay-fee phrasing", () => {
+    const result = detectScamPatterns("तुम्ही जिंकलात! शुल्क भरून बक्षीस मिळवा");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Hindi account-blocked + click-link phrasing", () => {
+    const result = detectScamPatterns("आपका खाता ब्लॉक कर दिया गया है। लिंक पर क्लिक करें");
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["urgency", "suspicious_link"]));
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Marathi account-blocked + click-link phrasing", () => {
+    const result = detectScamPatterns("तुमचे खाते ब्लॉक केले आहे. लिंक वर क्लिक करा");
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["urgency", "suspicious_link"]));
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Marathi account-reactivation link scam", () => {
+    const result = detectScamPatterns("लिंक वर क्लिक करून तुमचे खाते पुन्हा सुरू करा");
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["urgency", "suspicious_link"]));
+    expect(result.riskLevel).toBe("high");
+  });
+});
+
+describe("detectScamPatterns — regional won-prize flexibility (C2b)", () => {
+  test("flags Tamil prize-won with alternate verb form + prize/fee phrasing", () => {
+    const result = detectScamPatterns("நீங்கள் பரிசு வென்றுள்ளீர்கள்! பரிசு பெற கட்டணம் செலுத்துங்கள்");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Telugu prize-won with prize word between subject and verb", () => {
+    const result = detectScamPatterns("మీరు బహుమతి గెలుచుకున్నారు! బహుమతి పొందడానికి రుసుము చెల్లించండి");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Bengali prize-won with prize word between subject and verb", () => {
+    const result = detectScamPatterns("আপনি পুরস্কার জিতেছেন! পুরস্কার পেতে ফি জমা দিন");
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(result.riskLevel).toBe("high");
+  });
+});
+
+describe("detectScamPatterns — cross-language canonical messages (all high)", () => {
+  test("flags prize/link/OTP phrasings in every supported language as high risk", () => {
+    const messages = [
+      "URGENT: Your account will be blocked. Share your OTP via https://bit.ly/x",
+      "आप जीत गए हैं! इनाम पाने के लिए शुल्क जमा करें",
+      "तुम्ही जिंकलात! शुल्क भरून बक्षीस मिळवा",
+      "வங்கி அதிகாரி பேசுகிறேன், நீங்கள் வென்றீர்கள்!",
+      "మీరు గెలిచారు, డబ్బు పొందడానికి లింక్ క్లిక్ చేయండి",
+      "আপনি জিতেছেন, টাকা পেতে লিঙ্কে ক্লিক করুন",
+    ];
+    for (const text of messages) {
+      expect(detectScamPatterns(text).riskLevel).toBe("high");
+    }
+  });
+});
+
+describe("detectScamPatterns — URL extraction (M6)", () => {
+  test.each([
+    "Visit t.co/xyz123 now",
+    "Check this http://goo.gl/abc",
+    "verify at is.gd/verify",
+    "confirm on cutt.ly/promo",
+    "tinyurl.com/claim",
+  ])("flags short-link %p", (text) => {
+    expect(detectScamPatterns(text).matchedPatterns).toContain("suspicious_link");
+  });
+
+  test("flags dotted www link without scheme", () => {
+    const result = detectScamPatterns("Login to www.bank-update-portal.in now");
+    expect(result.matchedPatterns).toContain("suspicious_link");
+  });
+});

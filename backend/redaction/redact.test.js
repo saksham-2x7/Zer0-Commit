@@ -33,6 +33,50 @@ describe("redactText (backend)", () => {
     expect(result).not.toContain("123456789012");
   });
 
+  test("masks a 16-digit card number with first-2/last-2 visible (no Aadhaar leak)", () => {
+    const result = redactText("Card 4111 1111 1111 1111");
+    expect(result).toContain("41************11");
+    expect(result).not.toContain("4111 1111 1111 1111");
+    expect(result).not.toContain("41****1111");
+    expect(result).not.toContain("4111");
+  });
+
+  test("masks Devanagari-digit numbers after normalizing ०-९ to 0-9", () => {
+    const result = redactText("आधार १२३४ ५६७८ ९०१२");
+    expect(result).not.toContain("१२३४ ५६७८ ९०१२");
+    expect(result).not.toContain("123456789012");
+  });
+
+  test("masks numbers padded with zero-width characters", () => {
+    const result = redactText("Call 98\u200b7654\u200c3210 please");
+    expect(result).not.toContain("9876543210");
+  });
+
+  test("masks phone numbers written in non-Devanagari digit scripts (M1)", () => {
+    const phones = [
+      "৯৮৭৬৫৪৩২১০", // Bengali
+      "௯௮௭௬௫௪௩௨௧௦", // Tamil
+      "౯౮౭౬౫౪౩౨౧౦", // Telugu
+      "೯೮೭೬೫೪೩೨೧೦", // Kannada
+      "൯൮൭൬൫൪൩൨൧൦", // Malayalam
+      "๙๘๗๖๕๔๓๒๑๐", // Thai
+      "٩٨٧٦٥٤٣٢١٠", // Arabic-Indic
+      "۹۸۷۶۵۴۳۲۱۰", // Persian / Urdu
+      "９８７６５４３２１０", // Fullwidth
+    ];
+    for (const phone of phones) {
+      const result = redactText(`Call ${phone} now`);
+      expect(result).not.toContain(phone);
+    }
+  });
+
+  test("strips bidi-control characters so split numbers still mask (M1)", () => {
+    const raw = "9876\u200e5432\u200f10";
+    const result = redactText(`Call ${raw} now`);
+    expect(result).not.toContain(raw);
+    expect(result).toContain("98******10");
+  });
+
   test("masks a suspicious link's path/query but keeps the host visible", () => {
     const result = redactText("Click https://bit.ly/verify?token=abc123secret");
     expect(result).not.toContain("token=abc123secret");

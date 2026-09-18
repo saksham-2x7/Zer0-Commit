@@ -1,7 +1,7 @@
 # SUTRADHAR'S SKELETON, extended for a real Ship It deploy — Lambda + API
-# Gateway + DynamoDB + S3 (redacted evidence bundles). DRISHYA: add Amplify
-# Hosting / static frontend deploy resources in the marked section below;
-# don't redefine anything above it.
+# Gateway + DynamoDB + S3 (redacted evidence bundles) + S3 static frontend
+# hosting (see FrontendHostingBucket below). Deploy, then aws s3 sync
+# frontend/dist into the FrontendBucketName output.
 
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
@@ -9,7 +9,7 @@ Description: ScamSahayak - Ship It deploy (Lambda + API Gateway + DynamoDB + S3 
 
 Globals:
   Function:
-    Timeout: 25
+    Timeout: 60
     Runtime: nodejs20.x
     MemorySize: 512
     Environment:
@@ -36,15 +36,16 @@ Parameters:
       should leave this "false" so Bedrock is actually used.
   AllowedOrigin:
     Type: String
-    Default: "*"
+    Default: "https://YOUR_DOMAIN.example.com"
     Description: >
       CORS origin allowed to call the API (e.g. the deployed frontend's
-      URL). Restrict this to the real frontend origin in production; "*"
-      is only appropriate for local/demo use.
+      URL). REPLACE this placeholder with the real frontend URL before
+      deploying — a placeholder value blocks every real browser origin.
+      Do not use "*" in production: it lets any website call the API.
   MaxInputBytes:
     Type: Number
-    Default: 5242880
-    Description: Maximum accepted raw image size, in bytes (default 5 MB).
+    Default: 4194304
+    Description: Maximum accepted raw image size, in bytes (default 4 MB).
   EvidenceRetentionDays:
     Type: Number
     Default: 30
@@ -200,6 +201,37 @@ Resources:
             AllowedHeaders: ["*"]
             MaxAge: 300
 
+  # Static frontend hosting: serves the built React site (frontend/dist).
+  # Simplest SAM-valid setup — an S3 static-website bucket + public-read
+  # bucket policy. The site is not secret (same code the repo ships), it
+  # only serves static assets, and it holds no user data (the private
+  # EvidenceBucket above is fully blocked from public access). HTTPS is not
+  # provided by the s3-website endpoint — wrap with CloudFront for
+  # production/public use (see README "Frontend hosting").
+  FrontendHostingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  FrontendHostingBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendHostingBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendHostingBucket.Arn}/*"
+
 Outputs:
   ApiUrl:
     Description: "Invoke URL for POST /api/analyze"
@@ -210,8 +242,9 @@ Outputs:
   EvidenceBucketName:
     Description: "S3 bucket storing redacted evidence bundles"
     Value: !Ref EvidenceBucket
-
-# --- DRISHYA: add Amplify Hosting / S3+CloudFront static frontend deploy
-# resources below this line. Point the frontend's VITE_API_BASE_URL build
-# env at the ApiUrl output above (minus the /api/analyze suffix), and set
-# AllowedOrigin (redeploy the backend stack) to the frontend's real URL. ---
+  FrontendBucketName:
+    Description: "S3 bucket serving the built frontend — run: aws s3 sync frontend/dist s3://<this> --delete"
+    Value: !Ref FrontendHostingBucket
+  FrontendWebsiteUrl:
+    Description: "Static website URL of the deployed frontend (plain HTTP — use CloudFront for HTTPS)"
+    Value: !Sub "http://${FrontendHostingBucket.WebsiteURL}"

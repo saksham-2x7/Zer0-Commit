@@ -5,6 +5,10 @@
  * infra/template.yaml).
  *
  * Usage: MOCK_BEDROCK=true node backend/api/devServer.js
+ *
+ * Mirrors the Lambda error contract: unknown routes return a 404 body whose
+ * error code is NOT_FOUND (see errors.js + CONTRACT.md), and request bodies
+ * above the analyze-payload ceiling are rejected with 413 INPUT_TOO_LARGE.
  */
 
 const http = require("http");
@@ -13,6 +17,7 @@ const { ocr } = require("./ocrHandler");
 const { extractHealthTags } = require("./healthTagsHandler");
 const { generateFoodFeedback } = require("./foodFeedbackHandler");
 const { ApiError } = require("./errors");
+const { getMaxInputBytes } = require("./validation");
 
 const PORT = process.env.PORT || 3000;
 
@@ -27,57 +32,99 @@ function generateRequestId() {
   return "req_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
 }
 
-const server = http.createServer((req, res) => {
-  const headers = corsHeaders();
-  for (const [key, value] of Object.entries(headers)) {
-    res.setHeader(key, value);
-  }
+function maxRequestBodyBytes() {
+  // /api/analyze carries the largest payload: a base64 image capped at the
+  // Lambda's MaxInputBytes ceiling plus the JSON/field envelope.
+  return Math.ceil((getMaxInputBytes() * 4) / 3) + 32 * 1024;
+}
 
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
+function sendJson(res, statusCode, payload) {
+  res.writeHead(statusCode, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(payload));
+}
 
-  const routeFn = ROUTES[req.url];
-  if (req.method !== "POST" || !routeFn) {
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: { code: "INVALID_REQUEST", message: "Not found", requestId: generateRequestId() } }));
-    return;
-  }
+function createServer() {
+  return http.createServer((req, res) => {
+    const headers = corsHeaders();
+    for (const [key, value] of Object.entries(headers)) {
+      res.setHeader(key, value);
+    }
 
-  let body = "";
-  req.on("data", (chunk) => {
-    body += chunk;
-  });
-  req.on("end", async () => {
-    const requestId = generateRequestId();
-    let parsed;
-    try {
-      parsed = JSON.parse(body || "{}");
-    } catch (err) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: { code: "INVALID_REQUEST", message: "Request body must be valid JSON.", requestId } }));
+    if (req.method === "OPTIONS") {
+      res.writeHead(204);
+      res.end();
       return;
     }
 
-    try {
-      const result = await routeFn(parsed);
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(result));
-    } catch (err) {
-      if (err instanceof ApiError) {
-        res.writeHead(err.statusCode, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: { code: err.code, message: err.message, requestId } }));
+    const routeFn = ROUTES[req.url];
+    if (req.method !== "POST" || !routeFn) {
+      sendJson(res, 404, {
+        error: { code: "NOT_FOUND", message: "Endpoint not found", requestId: generateRequestId() },
+      });
+      return;
+    }
+
+    const bodyCap = maxRequestBodyBytes();
+    if (Number(req.headers["content-length"] || 0) > bodyCap) {
+      sendJson(res, 413, {
+        error: { code: "INPUT_TOO_LARGE", message: "Request body too large.", requestId: generateRequestId() },
+      });
+      return;
+    }
+
+    let body = "";
+    let tooLarge = false;
+    req.on("data", (chunk) => {
+      if (body.length + chunk.length > bodyCap) {
+        tooLarge = true;
         return;
       }
-      console.error("Unhandled error in dev server:", err.name || "UnknownError");
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: { code: "INTERNAL_ERROR", message: "Something went wrong. Please try again.", requestId } }));
-    }
-  });
-});
+      body += chunk;
+    });
+    req.on("end", async () => {
+      const requestId = generateRequestId();
 
-server.listen(PORT, () => {
-  console.log(`ScamSahayak dev API listening on http://localhost:${PORT}`);
-});
+      if (tooLarge) {
+        sendJson(res, 413, {
+          error: { code: "INPUT_TOO_LARGE", message: "Request body too large.", requestId },
+        });
+        return;
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(body || "{}");
+      } catch (err) {
+        sendJson(res, 400, {
+          error: { code: "INVALID_REQUEST", message: "Request body must be valid JSON.", requestId },
+        });
+        return;
+      }
+
+      try {
+        const result = await routeFn(parsed);
+        sendJson(res, 200, result);
+      } catch (err) {
+        if (err instanceof ApiError) {
+          sendJson(res, err.statusCode, {
+            error: { code: err.code, message: err.message, requestId },
+          });
+          return;
+        }
+        console.error("Unhandled error in dev server:", err.name || "UnknownError");
+        sendJson(res, 500, {
+          error: { code: "INTERNAL_ERROR", message: "Something went wrong. Please try again.", requestId },
+        });
+      }
+    });
+  });
+}
+
+if (require.main === module) {
+  const server = createServer();
+  server.listen(PORT, () => {
+    console.log(`ScamSahayak dev API listening on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = { createServer, maxRequestBodyBytes };

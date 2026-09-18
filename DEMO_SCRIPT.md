@@ -11,23 +11,31 @@ the purpose of the recording.
 ## Setup before recording
 
 - Deploy the stack (`sam deploy --guided`) with `MockBedrock=false` so the
-  demo shows real Bedrock output, not the fallback.
+  demo shows real Bedrock output, not the fallback, and with `AllowedOrigin`
+  set to the deployed frontend URL.
+- Build and publish the site: `cd frontend && npm run build`, then
+  `aws s3 sync frontend/dist s3://<FrontendBucketName> --delete` where
+  `FrontendBucketName` is the stack output. The deployed URL is the
+  `FrontendWebsiteUrl` output.
 - Have a synthetic example screenshot ready: a plain text message mocked up
   in a notes app or image editor, e.g. *"URGENT: Your KYC will expire
   today. Share your OTP immediately to verify, or your account will be
   blocked. Call 98XXXXXXXX."* — with the phone number itself already
   fake/blanked in the source image, since the point is to demo the app's
   own redaction, not to feed it something sensitive in the first place.
-- Confirm the deployed frontend URL loads and successfully calls the
-  deployed `ApiUrl`.
+  Keep the image under the **4 MB** limit (the default `MAX_INPUT_BYTES` —
+  the app rejects anything larger).
+- Confirm the deployed frontend URL (the `FrontendWebsiteUrl` output) loads
+  and successfully calls the deployed `ApiUrl`.
 
 ## Shot list
 
 1. **(0:00–0:15) The scenario.** An elder receives a suspicious KYC/bank
    message on their phone. One sentence of narration: "This is the kind of
    message that panics people into acting fast."
-2. **(0:15–0:30) Screenshot upload.** Open ScamSahayak, select "Upload
-   screenshot," choose the synthetic example image.
+2. **(0:15–0:30) Screenshot upload.** Open ScamSahayak (the deployed
+   `FrontendWebsiteUrl`), select "Upload screenshot," choose the synthetic
+   example image (must be under 4 MB).
 3. **(0:30–0:45) Visible redaction.** Point out the "What we'll send"
    notice before pressing "Check message" — personal details are masked
    before anything is sent.
@@ -51,9 +59,11 @@ the purpose of the recording.
     local JSON download (Build It mode), whichever the demo environment is
     actually running.
 11. **(2:40–2:50) Deployed AWS URL + architecture.** Briefly show the
-    browser address bar with the real deployed URL, then cut to the
-    architecture diagram in `README.md` to name the AWS services used
-    (Lambda, API Gateway, Textract, Bedrock, DynamoDB, S3).
+    browser address bar with the real deployed URL — the
+    `FrontendWebsiteUrl` stack output (e.g.
+    `http://<stack>-frontendhostingbucket-xxxxx.s3-website-<region>.amazonaws.com`)
+    — then cut to the architecture diagram in `README.md` to name the AWS
+    services used (Lambda, API Gateway, Textract, Bedrock, DynamoDB, S3).
 12. **(2:50–3:00) Limitation + disclaimer, closing line.** State one real
     limitation out loud (e.g. "this is a deterministic pattern check, not a
     trained classifier — it can miss new scam wording") and close on the

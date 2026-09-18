@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { t } from "./i18n/translations";
+import { t, errorCodeMessage } from "./i18n/translations";
 import LanguageSelector from "./components/LanguageSelector";
 import ThemeToggle from "./components/ThemeToggle";
 import TextSizeToggle from "./components/TextSizeToggle";
@@ -14,6 +14,7 @@ import { analyzeMessage } from "./services/api";
 import { redactText } from "./utils/redact";
 import { useTheme } from "./utils/useTheme";
 import { useTextSize } from "./utils/useTextSize";
+import { useLanguage } from "./utils/useLanguage";
 import { loadHistory, saveHistoryEntry, clearHistory } from "./utils/history";
 
 // The QR/barcode scanner pulls in @zxing (a large decoding library) — load
@@ -25,7 +26,7 @@ const HAS_SEEN_HELP_KEY = "scamsahayak-has-seen-help";
 export default function App() {
   const { theme, toggleTheme } = useTheme();
   const { textSize, cycleTextSize } = useTextSize();
-  const [language, setLanguage] = useState("en");
+  const { language, setLanguage } = useLanguage();
   const [view, setView] = useState("main"); // "main" | "history" | "health"
   const [activeTab, setActiveTab] = useState("text"); // "text" | "image" | "scan"
   const [rawText, setRawText] = useState("");
@@ -89,7 +90,7 @@ export default function App() {
       setResultRedactedText(liveRedactedText);
       setHistory(saveHistoryEntry({ language, redactedText: liveRedactedText, result: response }));
     } catch (err) {
-      const message = err.code ? t(language, `errorCode_${err.code}`) : null;
+      const message = errorCodeMessage(language, err?.code);
       setError(message || err.message || t(language, "errorGeneric"));
     } finally {
       setLoading(false);
@@ -221,10 +222,14 @@ export default function App() {
           )}
 
           {error && (
-            <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200">
+            <p role="alert" className="rounded-lg border-2 border-red-300 bg-red-50 p-3 font-semibold text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
               {error}
             </p>
           )}
+
+          <p role="status" className="sr-only" aria-live="polite">
+            {loading ? loadingLabel : ""}
+          </p>
 
           {activeTab !== "scan" && (
             <button type="submit" className="btn-primary w-full" disabled={loading}>

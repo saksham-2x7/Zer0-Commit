@@ -16,7 +16,12 @@ vi.mock("../utils/productLookup", () => ({
   lookupProductByBarcode: vi.fn(),
 }));
 
+vi.mock("../services/api", () => ({
+  getFoodFeedback: vi.fn(),
+}));
+
 import { lookupProductByBarcode } from "../utils/productLookup";
+import { getFoodFeedback } from "../services/api";
 
 function makeResult(text, format) {
   return { getText: () => text, getBarcodeFormat: () => format };
@@ -33,6 +38,8 @@ function makeFile() {
 beforeEach(() => {
   mockDecodeFromImageUrl = vi.fn();
   lookupProductByBarcode.mockReset();
+  getFoodFeedback.mockReset();
+  window.localStorage.clear();
 });
 
 describe("Scanner", () => {
@@ -82,6 +89,47 @@ describe("Scanner", () => {
     fireEvent.change(getFileInput(container), { target: { files: [makeFile()] } });
 
     await screen.findByText(/no product information was found/i);
+  });
+
+  test("a product with no name gets a safe, localized label before food feedback", async () => {
+    window.localStorage.setItem("scamsahayak-health-profile", JSON.stringify(["diabetes"]));
+    mockDecodeFromImageUrl.mockResolvedValue(makeResult("8901030895555", BarcodeFormat.EAN_13));
+    lookupProductByBarcode.mockResolvedValue({
+      name: null,
+      brand: null,
+      imageUrl: null,
+      nutriScore: null,
+    });
+    getFoodFeedback.mockResolvedValue({ feedback: "Contains added sugar." });
+
+    const { container } = render(<Scanner language="en" onQrDecoded={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /upload a photo instead/i }));
+    fireEvent.change(getFileInput(container), { target: { files: [makeFile()] } });
+
+    await screen.findByText("Unknown product");
+    expect(getFoodFeedback).toHaveBeenCalledWith(
+      expect.objectContaining({
+        language: "en",
+        healthTags: ["diabetes"],
+        product: expect.objectContaining({ name: "Unknown product" }),
+      })
+    );
+    await screen.findByText(/contains added sugar/i);
+  });
+
+  test("food-feedback API errors are surfaced gracefully instead of crashing", async () => {
+    window.localStorage.setItem("scamsahayak-health-profile", JSON.stringify(["diabetes"]));
+    mockDecodeFromImageUrl.mockResolvedValue(makeResult("8901030895555", BarcodeFormat.EAN_13));
+    lookupProductByBarcode.mockResolvedValue({ name: "Example Snacks", brand: "Example Co" });
+    getFoodFeedback.mockRejectedValue(
+      Object.assign(new Error("Request failed with status code 400"), { code: "INVALID_REQUEST" })
+    );
+
+    const { container } = render(<Scanner language="en" onQrDecoded={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: /upload a photo instead/i }));
+    fireEvent.change(getFileInput(container), { target: { files: [makeFile()] } });
+
+    await screen.findByText(/please paste a message or choose a screenshot first/i);
   });
 
   test("shows an error message when decoding fails", async () => {

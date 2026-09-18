@@ -1,6 +1,8 @@
 const { validateAnalyzeRequest, getMaxInputBytes } = require("./validation");
 
-const VALID_PNG_BASE64 = Buffer.from("fake-png-bytes").toString("base64");
+const PNG_MAGIC = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const JPEG_MAGIC = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+const VALID_PNG_BASE64 = Buffer.concat([PNG_MAGIC, Buffer.from("fake-png-body")]).toString("base64");
 
 describe("validateAnalyzeRequest", () => {
   test("normalizes a valid text request", () => {
@@ -74,9 +76,9 @@ describe("validateAnalyzeRequest", () => {
       process.env = ORIGINAL_ENV;
     });
 
-    test("defaults to 5 MB when MAX_INPUT_BYTES is unset", () => {
+    test("defaults to 4 MB when MAX_INPUT_BYTES is unset (matches infra/template.yaml + CONTRACT.md)", () => {
       delete process.env.MAX_INPUT_BYTES;
-      expect(getMaxInputBytes()).toBe(5 * 1024 * 1024);
+      expect(getMaxInputBytes()).toBe(4 * 1024 * 1024);
     });
 
     test("uses a configured MAX_INPUT_BYTES to reject an otherwise-valid image", () => {
@@ -95,6 +97,40 @@ describe("validateAnalyzeRequest", () => {
       process.env.MAX_INPUT_BYTES = "10";
       const result = validateAnalyzeRequest({ language: "en", inputType: "text", rawText: "hello there" });
       expect(result.rawText).toBe("hello there");
+    });
+  });
+
+  describe("image magic-byte validation (M2)", () => {
+    test("accepts a real PNG payload", () => {
+      const result = validateAnalyzeRequest({
+        language: "en",
+        inputType: "image",
+        imageBase64: VALID_PNG_BASE64,
+        imageMimeType: "image/png",
+      });
+      expect(result.imageMimeType).toBe("image/png");
+    });
+
+    test("rejects JPEG bytes declared as PNG (magic mismatch)", () => {
+      expect(() =>
+        validateAnalyzeRequest({
+          language: "en",
+          inputType: "image",
+          imageBase64: JPEG_MAGIC.toString("base64"),
+          imageMimeType: "image/png",
+        })
+      ).toThrow(expect.objectContaining({ code: "INVALID_IMAGE" }));
+    });
+
+    test("rejects malformed base64 even with a valid PNG prefix", () => {
+      expect(() =>
+        validateAnalyzeRequest({
+          language: "en",
+          inputType: "image",
+          imageBase64: `${PNG_MAGIC.toString("base64")}!!!`,
+          imageMimeType: "image/png",
+        })
+      ).toThrow(expect.objectContaining({ code: "INVALID_IMAGE" }));
     });
   });
 });

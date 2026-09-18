@@ -6,9 +6,9 @@ export default {
     extend: {
       colors: {
         risk: {
-          high: "#b91c1c",
-          medium: "#b45309",
-          low: "#15803d",
+          high: "#991b1b",
+          medium: "#92400e",
+          low: "#166534",
         },
       },
     },

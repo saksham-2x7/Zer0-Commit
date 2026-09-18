@@ -5,9 +5,15 @@ import { buildEvidenceBundle, downloadEvidenceBundle } from "../utils/evidenceBu
 import { isSpeechSynthesisSupported, speak, stopSpeaking } from "../utils/speech";
 
 const RISK_STYLES = {
-  high: "bg-risk-high text-white",
-  medium: "bg-risk-medium text-white",
-  low: "bg-risk-low text-white",
+  high: "risk-badge risk-badge-high",
+  medium: "risk-badge risk-badge-medium",
+  low: "risk-badge risk-badge-low",
+};
+
+const RISK_ICONS = {
+  high: "!",
+  medium: "!",
+  low: "✓",
 };
 
 const RISK_LABEL_KEYS = {
@@ -19,6 +25,7 @@ const RISK_LABEL_KEYS = {
 export default function ResultsView({ language, result, redactedText, onStartOver }) {
   const [preparingDownload, setPreparingDownload] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [hasSpoken, setHasSpoken] = useState(false);
   const patternNames = t(language, "patternNames");
   const evidenceByPattern = new Map((result.evidence || []).map((e) => [e.pattern, e.snippet]));
 
@@ -52,8 +59,10 @@ export default function ResultsView({ language, result, redactedText, onStartOve
     }
     const riskLabel = t(language, RISK_LABEL_KEYS[result.riskLevel] || "riskLow");
     const spokenText = [riskLabel, result.explanation, ...(result.checklist || [])].join(". ");
-    speak(spokenText, language);
+    // Reset the button state as soon as speech actually ends (or fails).
+    speak(spokenText, language, () => setSpeaking(false));
     setSpeaking(true);
+    setHasSpoken(true);
   }
 
   return (
@@ -62,8 +71,12 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-bold">{t(language, "resultsHeading")}</h2>
           <span
-            className={`rounded-full px-4 py-1 text-sm font-semibold ${RISK_STYLES[result.riskLevel] || RISK_STYLES.low}`}
+            role="status"
+            className={`inline-flex items-center gap-2 ${RISK_STYLES[result.riskLevel] || RISK_STYLES.low}`}
           >
+            <span aria-hidden="true" className="text-lg font-black leading-none">
+              {RISK_ICONS[result.riskLevel] || RISK_ICONS.low}
+            </span>
             {t(language, RISK_LABEL_KEYS[result.riskLevel] || "riskLow")}
           </span>
         </div>
@@ -72,9 +85,18 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         </p>
 
         {isSpeechSynthesisSupported() && (
-          <button type="button" className="btn-secondary mt-3" onClick={handleToggleReadAloud}>
-            {speaking ? t(language, "stopReadingButton") : t(language, "readAloudButton")}
-          </button>
+          <>
+            <button type="button" className="btn-secondary mt-3" onClick={handleToggleReadAloud}>
+              {speaking ? t(language, "stopReadingButton") : t(language, "readAloudButton")}
+            </button>
+            <p className="sr-only" aria-live="polite" data-testid="speech-status">
+              {speaking
+                ? t(language, "speechStatusReading")
+                : hasSpoken
+                  ? t(language, "speechStatusStopped")
+                  : ""}
+            </p>
+          </>
         )}
 
         <div className="mt-4">

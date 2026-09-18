@@ -88,6 +88,27 @@ describe("HealthProfile", () => {
     expect(window.localStorage.getItem("scamsahayak-health-profile")).toBeNull();
   });
 
+  test("shows the specific message for a backend error code", async () => {
+    ocrImage.mockRejectedValue(Object.assign(new Error("bad language"), { code: "UNSUPPORTED_LANGUAGE" }));
+
+    const { container } = render(<HealthProfile language="en" onBack={vi.fn()} />);
+    fireEvent.change(getFileInput(container), { target: { files: [makeFile()] } });
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/language/i);
+    expect(window.localStorage.getItem("scamsahayak-health-profile")).toBeNull();
+  });
+
+  test("shows a network message when the server cannot be reached", async () => {
+    ocrImage.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    const { container } = render(<HealthProfile language="en" onBack={vi.fn()} />);
+    fireEvent.change(getFileInput(container), { target: { files: [makeFile()] } });
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/internet|connection/i);
+  });
+
   test("removing a saved tag updates storage", () => {
     window.localStorage.setItem("scamsahayak-health-profile", JSON.stringify(["Diabetes", "Nut allergy"]));
     render(<HealthProfile language="en" onBack={vi.fn()} />);

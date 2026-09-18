@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { t } from "../i18n/translations";
+import { t, errorCodeMessage } from "../i18n/translations";
 import { ocrImage, extractHealthTags } from "../services/api";
 import { loadHealthProfile, saveHealthProfile, clearHealthProfile } from "../utils/healthProfile";
 
@@ -50,8 +50,18 @@ export default function HealthProfile({ language, onBack }) {
       }
       const { suggestedTags } = await extractHealthTags({ text, language });
       setPendingTags(suggestedTags.map((tag) => ({ tag, checked: true })));
-    } catch {
-      setError(t(language, "healthProfileErrorGeneric"));
+    } catch (err) {
+      // Surface the backend's error code (UNSUPPORTED_LANGUAGE 400,
+      // INPUT_TOO_LARGE 413, INVALID_IMAGE 400, OCR_FAILED 422) when the API
+      // supplies one; otherwise tell the user whether the network is at fault.
+      const codeMessage = errorCodeMessage(language, err?.code);
+      if (codeMessage) {
+        setError(codeMessage);
+      } else if (err && err.name === "TypeError") {
+        setError(t(language, "healthProfileErrorNetwork"));
+      } else {
+        setError(t(language, "healthProfileErrorGeneric"));
+      }
     } finally {
       setUploading(false);
     }
@@ -203,7 +213,7 @@ export default function HealthProfile({ language, onBack }) {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-800 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="rounded-lg border-2 border-red-300 bg-red-50 p-3 font-semibold text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
           {error}
         </p>
       )}

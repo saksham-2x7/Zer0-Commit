@@ -8,16 +8,13 @@
 
 const { extractText } = require("../ocr/textractClient");
 const { ApiError } = require("./errors");
-const { SUPPORTED_IMAGE_MIME_TYPES } = require("./validation");
+const { validateImageBytes } = require("./validation");
 const { corsHeaders } = require("./analyzeHandler");
 
 async function ocr({ imageBase64, imageMimeType }) {
-  if (typeof imageBase64 !== "string" || imageBase64.length === 0) {
-    throw new ApiError("INVALID_REQUEST", "Please provide an image.");
-  }
-  if (!SUPPORTED_IMAGE_MIME_TYPES.has(imageMimeType)) {
-    throw new ApiError("INVALID_IMAGE", "Image must be image/png or image/jpeg.");
-  }
+  // Shared with /api/analyze: size cap (MAX_INPUT_BYTES), base64 charset,
+  // encoded-length check before decoding, exact MIME match, and magic bytes.
+  validateImageBytes(imageBase64, imageMimeType);
 
   const { text } = await extractText({ imageBase64, imageMimeType });
   return { text };
