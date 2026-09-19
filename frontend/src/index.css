@@ -14,8 +14,8 @@
    ink text #1C1917, saffron primary #C2410C, scam accent indigo #4338CA.
    Dark (default): warm charcoal bg #161310, surface #1E1A17,
    elevated #27221E, cream ink #F3EFE9, saffron primary #F97316.
-   Feature tints: scam #818CF8, family #F472B6, food #2DD4BF, chat #A3E635
-   (dark) / #4338CA, #BE185D, #0F766E, #4D7C0F (light). */
+   Feature tints: scam #818CF8, family #F472B6, food #2DD4BF
+   (dark) / #4338CA, #BE185D, #0F766E (light). */
 :root {
   --color-bg: #faf6f0;
   --color-ink: #1c1917;
@@ -47,7 +47,6 @@
   --color-accent-scam: #4338ca;
   --color-accent-family: #be185d;
   --color-accent-food: #0f766e;
-  --color-accent-chat: #4d7c0f;
 
   --color-risk-high: var(--color-danger);
   --color-risk-medium: var(--color-warning);
@@ -69,7 +68,7 @@
 /* Dark: warm charcoal #161310, surface #1E1A17, elevated #27221E,
    cream #F3EFE9, borders #3C352C / #6A6253, danger #FF7070,
    saffron primary #F97316, accent scam #818CF8 family #F472B6
-   food #2DD4BF chat #A3E635, success #34D399 warning #FBBF24. */
+   food #2DD4BF, success #34D399 warning #FBBF24. */
 html.dark {
   --color-bg: #161310;
   --color-ink: #f3efe9;
@@ -101,7 +100,6 @@ html.dark {
   --color-accent-scam: #818cf8;
   --color-accent-family: #f472b6;
   --color-accent-food: #2dd4bf;
-  --color-accent-chat: #a3e635;
 
   --color-risk-high: var(--color-danger);
   --color-risk-medium: var(--color-warning);
@@ -579,4 +577,30 @@ html.dark .bg-green-600 {
     color: #000000;
     text-decoration: underline;
   }
+}
+/* --- Family live location map ---------------------------------------- */
+.location-map {
+  position: relative;
+  z-index: 0;
+  height: 320px;
+  width: 100%;
+  border: 1px solid var(--color-border-strong);
+}
+.location-map .leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: var(--color-soft);
+  font-family: inherit;
+}
+/* Keep Leaflet's own controls below the fixed mobile nav (z-40). */
+.location-map .leaflet-control {
+  z-index: 10;
+}
+/* Dark mode: invert the light OSM tiles so the map matches the theme. */
+html.dark .location-map .leaflet-tile {
+  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+}
+.location-map .leaflet-popup-content {
+  font-family: inherit;
+  font-weight: 700;
 }

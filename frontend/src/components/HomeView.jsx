@@ -10,13 +10,13 @@ const ACTIONS = [
 const ACCENT_CLASS = {
   family: "text-[var(--color-accent-family)]",
   food: "text-[var(--color-accent-food)]",
-  chat: "text-[var(--color-accent-chat)]",
+  locations: "text-[var(--color-accent-family)]",
 };
 
 const FAMILY_ACTIONS = [
   { key: "familyAction", icon: "family", target: "family", accent: "family" },
   { key: "foodAction", icon: "shoppingBag", target: "food", accent: "food" },
-  { key: "chatAction", icon: "chat", target: "chat", accent: "chat" },
+  { key: "locationsAction", icon: "map", target: "locations", accent: "locations" },
 ];
 
 const GUARANTEED_DATA = ["id", "phone", "otp"];

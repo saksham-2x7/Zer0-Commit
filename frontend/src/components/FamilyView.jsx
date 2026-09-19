@@ -7,7 +7,6 @@ import {
   addFamilyContact,
   addFamilyAlert,
   confirmFamilyAlert,
-  addFamilyBlocklist,
 } from "../services/api";
 
 const FAMILY_ID_KEY = "scamsahayak-family-id";
@@ -55,8 +54,6 @@ export default function FamilyView({ language, onNavigate }) {
   const [alertTitle, setAlertTitle] = useState("");
   const [alertDetail, setAlertDetail] = useState("");
   const [alertRisk, setAlertRisk] = useState("medium");
-  // blocklist form
-  const [blockPhone, setBlockPhone] = useState("");
 
   const loadFamily = useCallback(async () => {
     if (!familyId) return;
@@ -149,13 +146,6 @@ export default function FamilyView({ language, onNavigate }) {
     });
   }
 
-  function handleAddBlocklist(e) {
-    e.preventDefault();
-    return runAction(() =>
-      addFamilyBlocklist({ familyId, phone: blockPhone, addedBy: memberId })
-    ).then(() => setBlockPhone(""));
-  }
-
   function handleConfirmAlert(alertId) {
     return runAction(() => confirmFamilyAlert({ familyId, alertId, memberId }));
   }
@@ -233,6 +223,13 @@ export default function FamilyView({ language, onNavigate }) {
           onClick={() => onNavigate("food")}
         >
           {t(language, "family.goFood")}
+        </button>
+        <button
+          type="button"
+          className="btn-secondary touch-target inline-flex gap-2 px-6 text-sm"
+          onClick={() => onNavigate("locations")}
+        >
+          {t(language, "page.home.locationsAction.title")}
         </button>
       </div>
 
@@ -467,45 +464,6 @@ export default function FamilyView({ language, onNavigate }) {
                 className="btn-primary touch-target px-6 disabled:cursor-not-allowed md:col-span-3"
               >
                 {t(language, "family.addAlertButton")}
-              </button>
-            </form>
-          </section>
-
-          {/* Blocklist */}
-          <section aria-labelledby="family-blocklist-title">
-            <h3 id="family-blocklist-title" className="border-b border-[var(--color-accent-family)] pb-2 text-sm font-black uppercase tracking-[0.2em]">
-              {t(language, "family.blocklistTitle")}
-            </h3>
-            <ul className="mt-6 space-y-4">
-              {family.blocklist.map((b, i) => (
-                <li key={`${b.phone}-${i}`} className="flex flex-wrap items-center justify-between gap-2 border border-ink bg-soft p-4">
-                  <span className="font-mono text-lg font-black">{b.phone}</span>
-                  <span className="text-xs font-bold uppercase tracking-widest opacity-50">
-                    {t(language, "family.addedBy")} {b.addedBy}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            <form onSubmit={handleAddBlocklist} className="mt-6 flex flex-col gap-4 border border-ink bg-soft p-6 md:flex-row">
-              <div className="flex-1">
-                <label htmlFor="block-phone" className="block text-xs font-black uppercase tracking-widest">
-                  {t(language, "family.blockPhone")}
-                </label>
-                <input
-                  id="block-phone"
-                  value={blockPhone}
-                  onChange={(e) => setBlockPhone(e.target.value)}
-                  required
-                  maxLength={20}
-                  className="mt-2 field"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary touch-target px-6 disabled:cursor-not-allowed"
-              >
-                {t(language, "family.addBlocklistButton")}
               </button>
             </form>
           </section>

@@ -23,7 +23,7 @@ const { generateFoodFeedback } = require("./foodFeedbackHandler");
 const { report } = require("./reportHandler");
 const familyHandler = require("./familyHandler");
 const foodHandler = require("./foodHandler");
-const messagingHandler = require("./messagingHandler");
+const locationHandler = require("./locationHandler");
 const { corsHeaders } = require("./cors");
 const { ApiError } = require("./errors");
 const { getMaxInputBytes } = require("./validation");
@@ -54,21 +54,16 @@ const ROUTES = [
   { method: "POST", path: "/api/family/members", fn: familyHandler.addMemberHandler },
   { method: "POST", path: "/api/family/contacts", fn: familyHandler.addContactHandler },
   { method: "POST", path: "/api/family/alerts", fn: familyHandler.addAlertHandler },
-  { method: "POST", path: "/api/family/blocklist", fn: familyHandler.addBlocklistEntryHandler },
   { method: "POST", path: "/api/family/confirm-alert", fn: familyHandler.confirmAlertHandler },
   { method: "GET", path: /^\/api\/family\/([^/]+)$/, fn: (_body, m) => familyHandler.getFamilyHandler({ familyId: m[1] }) },
 
   // Food/product scan with family allergy flags.
   { method: "POST", path: "/api/food-lookup", fn: foodHandler.foodLookupHandler },
 
-  // E2E encrypted messaging ("crypto chan").
-  { method: "POST", path: "/api/messaging/keys", fn: messagingHandler.registerKeyHandler },
-  { method: "GET", path: /^\/api\/messaging\/keys\/([^/]+)$/, fn: (_body, m) => messagingHandler.getMemberKeyHandler({ memberId: m[1] }) },
-  { method: "POST", path: "/api/messaging/threads", fn: messagingHandler.createThreadHandler },
-  { method: "GET", path: "/api/messaging/threads", fn: messagingHandler.listThreadsHandler },
-  { method: "POST", path: /^\/api\/messaging\/threads\/([^/]+)\/keys$/, fn: (body, m) => messagingHandler.storeWrappedKeyHandler({ ...body, threadId: m[1] }) },
-  { method: "POST", path: /^\/api\/messaging\/threads\/([^/]+)\/messages$/, fn: (body, m) => messagingHandler.sendMessageHandler({ ...body, threadId: m[1] }) },
-  { method: "GET", path: /^\/api\/messaging\/threads\/([^/]+)\/messages$/, fn: (_body, m) => messagingHandler.listMessagesHandler({ threadId: m[1] }) },
+  // Family live location sharing.
+  { method: "POST", path: "/api/location/share", fn: locationHandler.shareLocationHandler },
+  { method: "POST", path: "/api/location/stop", fn: locationHandler.stopLocationHandler },
+  { method: "GET", path: /^\/api\/location\/family\/([^/]+)$/, fn: (_body, m) => locationHandler.getFamilyLocationsHandler({ familyId: m[1] }) },
 ];
 
 function generateRequestId() {

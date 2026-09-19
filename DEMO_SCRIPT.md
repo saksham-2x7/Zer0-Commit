@@ -1,4 +1,4 @@
-# Demo script (3 minutes)
+# Demo script (3 minutes) — Ship It track
 
 Not yet recorded. This is the planned shot list for the submission video.
 Every step below must be something the real app actually does — no staged
@@ -30,6 +30,9 @@ the purpose of the recording.
   the app rejects anything larger).
 - Confirm the deployed frontend URL (the `FrontendUrl` output) loads
   and successfully calls the deployed `ApiUrl`.
+- For the location beat: create a family circle on the deployed site
+  (Family → create), then open the Family Map on a second device/browser
+  tab signed in as the same family so the live map shows a real marker.
 
 ## Shot list
 
@@ -51,14 +54,22 @@ the purpose of the recording.
    analysis both happen here).
 5. **(1:00–1:20) High-risk result.** Show the risk badge and the
    `riskDisclaimer` text ("This is a risk signal, not an official fraud
-   determination").
+   determination"). If the message matches the digital-arrest pattern
+   (police/court/arrest threats), call out the HIGH-risk verdict and the
+   Hindi explanation — this is the newest scam pattern the app detects.
 6. **(1:20–1:40) Exact evidence snippets.** Scroll to "Why this was
    flagged" — show the human-readable warning labels *and* the exact
    (already-redacted) text snippet that triggered each one.
 7. **(1:40–1:55) Explanation.** Show the Bedrock-generated "In plain
    words" explanation, in Hindi if the presenter switches the language
    toggle here.
-8. **(1:55–2:10) Safe action checklist.** Show "What to do now."
+8. **(1:55–2:10) Family location sharing (the wow feature).** Switch to
+   the Family Map: show the live map with the family member's marker,
+   "Last seen X ago" per member, and the Share/Stop controls. One line of
+   narration: "If a scammer is impersonating a family member, the family
+   can see where everyone actually is — live, on a shared map." Mention
+   the 30-second position throttle and that sharing stops the moment you
+   leave the screen.
 9. **(2:10–2:25) Reporting guidance.** Show the "Report this" block: the
    `1930` helpline tel: link and the `cybercrime.gov.in` link.
 10. **(2:25–2:50) Evidence bundle download + deployed AWS URL/architecture.**
@@ -70,6 +81,8 @@ the purpose of the recording.
     `https://dXXXXXXXXXXXX.cloudfront.net`) — before cutting to the
     architecture diagram in `README.md` to name the AWS services used
     (Lambda, API Gateway, Textract, Bedrock, DynamoDB, S3, CloudFront).
+    The location feed is served from the same API Gateway + DynamoDB
+    stack (LocationsTable with TTL), so the map is fully server-backed.
 11. **(2:50–3:00) Limitation + disclaimer, closing line.** State one real
     limitation out loud (e.g. "this is a deterministic pattern check, not a
     trained classifier — it can miss new scam wording") and close on the
@@ -86,3 +99,5 @@ the purpose of the recording.
   synthetic example.
 - Don't skip the redaction/disclaimer beats to save time — they're part of
   what makes the product responsible, not just a feature to mention once.
+- Don't show a fake map marker — the location beat must show a real
+  position shared from a real device in the same family circle.

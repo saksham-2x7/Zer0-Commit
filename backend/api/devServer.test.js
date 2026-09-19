@@ -213,38 +213,44 @@ describe("devServer", () => {
     expect(body.error.code).toBe("NOT_FOUND");
   });
 
-  test("messaging: register key, create thread, send ciphertext, list messages", async () => {
-    const keyRes = await fetch(`${baseUrl}/api/messaging/keys`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        memberId: "mem_1",
-        publicKeyJwk: { kty: "EC", crv: "P-256", x: "abc", y: "def" },
-      }),
-    });
-    expect(keyRes.status).toBe(200);
-    const { fingerprint } = await keyRes.json();
-    expect(fingerprint).toMatch(/^[0-9a-f]{4}-/);
-
-    const threadRes = await fetch(`${baseUrl}/api/messaging/threads`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "Family", memberIds: ["mem_1", "mem_2"] }),
-    });
-    const { threadId } = await threadRes.json();
-
-    const sendRes = await fetch(`${baseUrl}/api/messaging/threads/${threadId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ senderId: "mem_1", iv: "base64iv", ciphertext: "base64cipher" }),
-    });
-    expect(sendRes.status).toBe(200);
-
-    const listRes = await fetch(`${baseUrl}/api/messaging/threads/${threadId}/messages`);
-    expect(listRes.status).toBe(200);
-    const { messages } = await listRes.json();
-    expect(messages).toHaveLength(1);
-    expect(messages[0].ciphertext).toBe("base64cipher");
-    expect(messages[0].plaintext).toBeUndefined();
+  test("location: share -> family list roundtrip contains the member, stop removes it", async () => {
+  const shareRes = await fetch(`${baseUrl}/api/location/share`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      familyId: "fam_loc_1",
+      memberId: "mem_1",
+      name: "Arjun",
+      lat: 12.9716,
+      lng: 77.5946,
+      accuracy: 20,
+    }),
   });
+  expect(shareRes.status).toBe(200);
+  expect(await shareRes.json()).toEqual({ ok: true });
+
+  const listRes = await fetch(`${baseUrl}/api/location/family/fam_loc_1`);
+  expect(listRes.status).toBe(200);
+  const { members } = await listRes.json();
+  expect(members).toHaveLength(1);
+  expect(members[0]).toMatchObject({
+    familyId: "fam_loc_1",
+    memberId: "mem_1",
+    name: "Arjun",
+    lat: 12.9716,
+    lng: 77.5946,
+    accuracy: 20,
+  });
+  expect(members[0].updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+
+  const stopRes = await fetch(`${baseUrl}/api/location/stop`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ familyId: "fam_loc_1", memberId: "mem_1" }),
+  });
+  expect(stopRes.status).toBe(200);
+
+  const listAfter = await fetch(`${baseUrl}/api/location/family/fam_loc_1`);
+  expect((await listAfter.json()).members).toEqual([]);
+});
 });

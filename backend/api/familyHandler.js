@@ -1,7 +1,7 @@
 /**
- * Family circle API — shared suspicious contacts, alerts, blocklist, and
- * member health/allergy tags. Every mutation validates input before it
- * reaches the store; unknown families are a NOT_FOUND contract error.
+ * Family circle API — shared suspicious contacts, alerts, and member
+ * health/allergy tags. Every mutation validates input before it reaches the
+ * store; unknown families are a NOT_FOUND contract error.
  *
  * Allergies are self-reported short tags (never a medical record) with the
  * same caps as food feedback (<= MAX_TAGS tags, <= 60 chars per tag).
@@ -15,7 +15,6 @@ const {
   addMember,
   addContact,
   addAlert,
-  addBlocklistEntry,
   confirmAlert,
 } = require("../family/familyStore");
 
@@ -126,15 +125,6 @@ async function addAlertHandler(body) {
   return { alert };
 }
 
-async function addBlocklistEntryHandler(body) {
-  const familyId = requireFamilyId(body);
-  await requireExistingFamily(familyId);
-  const phone = requireString(body.phone, "phone", MAX_PHONE_LENGTH);
-  const addedBy = requireString(body.addedBy, "addedBy", 64);
-  const entry = await addBlocklistEntry(familyId, { phone, addedBy });
-  return { entry };
-}
-
 async function confirmAlertHandler(body) {
   const familyId = requireFamilyId(body);
   const alertId = requireString(body.alertId, "alertId", 64);
@@ -158,7 +148,6 @@ exports.createFamily = wrapHandler(createFamilyHandler, "familyHandler");
 exports.addMember = wrapHandler(addMemberHandler, "familyHandler");
 exports.addContact = wrapHandler(addContactHandler, "familyHandler");
 exports.addAlert = wrapHandler(addAlertHandler, "familyHandler");
-exports.addBlocklistEntry = wrapHandler(addBlocklistEntryHandler, "familyHandler");
 exports.confirmAlert = wrapHandler(confirmAlertHandler, "familyHandler");
 exports.getFamily = wrapHandler(getFamilyHandler, "familyHandler");
 
@@ -166,6 +155,5 @@ exports.createFamilyHandler = createFamilyHandler;
 exports.addMemberHandler = addMemberHandler;
 exports.addContactHandler = addContactHandler;
 exports.addAlertHandler = addAlertHandler;
-exports.addBlocklistEntryHandler = addBlocklistEntryHandler;
 exports.confirmAlertHandler = confirmAlertHandler;
 exports.getFamilyHandler = getFamilyHandler;

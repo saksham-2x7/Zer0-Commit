@@ -6,7 +6,8 @@
  *
  * Pattern keys (fixed, see CONTRACT.md):
  *   "urgency", "otp_request", "screen_share_request",
- *   "suspicious_link", "impersonation", "suspicious_collect_request"
+ *   "suspicious_link", "impersonation", "suspicious_collect_request",
+ *   "digital_arrest"
  */
 
 // Each pattern is a list of regexes (case-insensitive, Hindi + English) that,
@@ -168,6 +169,53 @@ const PROTECTIVE_VERB_RES = [
   /అడుగ/,
   /শেয়ার/,
   /জিজ্ঞাসা/,
+];
+
+// "digital arrest" scam (P1): a caller impersonates police/regulators, claims a
+// case/warrant has been filed, and demands a fine or "verification" over a
+// video call (Skype etc.) — while ordering the victim NOT to tell family, so
+// elders stay isolated. STRONG terms alone are evidence ("pay the fine now",
+// "don't tell your family", the Hindi equivalents). Soft tools that legit
+// calls also use ("video call", "skype") only count when the SAME text already
+// carries an authority context (police/arrest/CBI/federal/digital arrest).
+const DIGITAL_ARREST_STRONG_RULES = [
+  /digital\s+arrest/i,
+  /arrest\s+warrant/i,
+  /\bCBI\b/i,
+  /police\s+case/i,
+  /federal\s+agent/i,
+  /pay\s+(the\s+)?(fine|penalty|a\s+fine)\b/i,
+  /\bfine\s+(now|today|immediately)\b/i,
+  /don'?t\s+tell\s+(your\s+)?family/i,
+  /do\s+not\s+tell\s+(your\s+)?family/i,
+  /keep\s+this\s+secret/i,
+  // Hindi — CBI, digital arrest, arrest warrant, police case, pay the fine,
+  // don't tell the family.
+  /सीबीआई/,
+  /डिजिटल\s*गिरफ्तारी/,
+  /गिरफ्तारी\s*वारंट/,
+  /पुलिस\s*केस/,
+  /जुर्माना\s*(भर|चुक)/,
+  /परिवार\s*को\s*(मत|नहीं)\s*बता/,
+];
+
+const DIGITAL_ARREST_WEAK_RULES = [
+  /video\s*call/i,
+  /\bskype\b/i,
+  /वीडियो\s*कॉल/,
+];
+
+const DIGITAL_ARREST_AUTHORITY_RULES = [
+  /\bpolice\b/i,
+  /\barrest/i,
+  /\bwarrant\b/i,
+  /\bCBI\b/i,
+  /\bfederal\b/i,
+  /digital\s+arrest/i,
+  /पुलिस/,
+  /गिरफ्तारी/,
+  /सीबीआई/,
+  /वारंट/,
 ];
 
 const PATTERN_RULES = {
@@ -343,13 +391,33 @@ function collectContextMatch(text) {
   return null;
 }
 
+function digitalArrestMatch(text) {
+  const strong = matchAnyRegex(text, DIGITAL_ARREST_STRONG_RULES);
+  if (strong) {
+    return strong;
+  }
+  const sentences = splitSentences(text);
+  const hasAuthority = DIGITAL_ARREST_AUTHORITY_RULES.some((re) => re.test(text));
+  if (!hasAuthority) {
+    return null;
+  }
+  for (const sentence of sentences) {
+    if (DIGITAL_ARREST_WEAK_RULES.some((re) => re.test(sentence))) {
+      return makeSnippet(sentence);
+    }
+  }
+  return null;
+}
+
 PATTERN_RULES.otp_request = otpContextMatch;
 PATTERN_RULES.suspicious_collect_request = collectContextMatch;
+PATTERN_RULES.digital_arrest = digitalArrestMatch;
 
 const HIGH_RISK_PATTERNS = new Set([
   "otp_request",
   "screen_share_request",
   "suspicious_collect_request",
+  "digital_arrest",
 ]);
 
 function findEvidence(text, pattern) {

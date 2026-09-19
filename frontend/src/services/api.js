@@ -96,11 +96,7 @@ export function addFamilyAlert({ familyId, title, detail, riskLevel }) {
 }
 
 export function confirmFamilyAlert({ familyId, alertId, memberId }) {
-  return post("/api/family/alerts/confirm", { familyId, alertId, memberId });
-}
-
-export function addFamilyBlocklist({ familyId, phone, addedBy }) {
-  return post("/api/family/blocklist", { familyId, phone, addedBy });
+  return post("/api/family/confirm-alert", { familyId, alertId, memberId });
 }
 
 // ---------------------------------------------------------------------------
@@ -112,33 +108,17 @@ export function foodLookup({ barcode, familyId }) {
 }
 
 // ---------------------------------------------------------------------------
-// Family chat (zero-knowledge E2E)
+// Family live location sharing
 // ---------------------------------------------------------------------------
 
-export function registerMessagingKey({ memberId, publicKeyJwk }) {
-  return post("/api/messaging/keys", { memberId, publicKeyJwk });
+export function shareLocation({ familyId, memberId, name, lat, lng, accuracy }) {
+  return post("/api/location/share", { familyId, memberId, name, lat, lng, accuracy });
 }
 
-export function getMessagingKey(memberId) {
-  return get(`/api/messaging/keys/${memberId}`);
+export function stopLocation({ familyId, memberId }) {
+  return post("/api/location/stop", { familyId, memberId });
 }
 
-export function createMessagingThread({ name, memberIds }) {
-  return post("/api/messaging/threads", { name, memberIds });
-}
-
-export function storeWrappedKey({ threadId, memberId, wrappedKey, iv, ownerPublicKeyId }) {
-  return post(`/api/messaging/threads/${threadId}/keys`, { memberId, wrappedKey, iv, ownerPublicKeyId });
-}
-
-export function sendMessage({ threadId, senderId, iv, ciphertext }) {
-  return post(`/api/messaging/threads/${threadId}/messages`, { senderId, iv, ciphertext });
-}
-
-export function listThreads() {
-  return get("/api/messaging/threads");
-}
-
-export function listMessages(threadId) {
-  return get(`/api/messaging/threads/${threadId}/messages`);
+export function getFamilyLocations(familyId) {
+  return get(`/api/location/family/${familyId}`);
 }

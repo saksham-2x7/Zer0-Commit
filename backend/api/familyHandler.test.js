@@ -4,7 +4,6 @@ const {
   addMemberHandler,
   addContactHandler,
   addAlertHandler,
-  addBlocklistEntryHandler,
   confirmAlertHandler,
   getFamilyHandler,
 } = require("./familyHandler");
@@ -86,17 +85,6 @@ describe("familyHandler", () => {
     await expect(addAlertHandler({ familyId, title: "T", riskLevel: "critical" })).rejects.toThrow(ApiError);
   });
 
-  test("addBlocklistEntryHandler appends a phone", async () => {
-    const { familyId, family } = await createFamilyHandler({ name: "F", adminName: "Admin" });
-    const { entry } = await addBlocklistEntryHandler({
-      familyId,
-      phone: "+91 90000 00000",
-      addedBy: family.members[0].memberId,
-    });
-
-    expect(entry.phone).toBe("+91 90000 00000");
-  });
-
   test("confirmAlertHandler records a confirmation", async () => {
     const { familyId, family } = await createFamilyHandler({ name: "F", adminName: "Admin" });
     const { alert } = await addAlertHandler({ familyId, title: "T", detail: "D", riskLevel: "medium" });
@@ -121,7 +109,6 @@ describe("familyHandler", () => {
     expect(family.members).toHaveLength(1);
     expect(family.contacts).toEqual([]);
     expect(family.alerts).toEqual([]);
-    expect(family.blocklist).toEqual([]);
   });
 
   test("getFamilyHandler rejects unknown families with NOT_FOUND", async () => {

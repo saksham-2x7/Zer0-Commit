@@ -266,6 +266,61 @@ describe("detectScamPatterns — additional Indian languages", () => {
   });
 });
 
+describe("detectScamPatterns — digital_arrest", () => {
+  test("flags the canonical English digital-arrest demand as high risk", () => {
+    const result = detectScamPatterns(
+      "Police case is filed against you. Pay the fine now, sir."
+    );
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["digital_arrest"]));
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags 'don't tell your family' coercion", () => {
+    const result = detectScamPatterns(
+      "You are under digital arrest. Do not tell your family, pay the fine immediately."
+    );
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["digital_arrest"]));
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Hindi digital-arrest phrasing", () => {
+    const result = detectScamPatterns(
+      "सीबीआई से केस दर्ज है, जुर्माना भरें और परिवार को मत बताना।"
+    );
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["digital_arrest"]));
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags video-call/Skype only inside an authority context", () => {
+    const result = detectScamPatterns(
+      "An officer from the federal bureau will call you on Skype for the hearing."
+    );
+    expect(result.matchedPatterns).toContain("digital_arrest");
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("flags Hindi video-call phrasing with police context", () => {
+    const result = detectScamPatterns("पुलिस आपसे वीडियो कॉल पर बात करेगी");
+    expect(result.matchedPatterns).toContain("digital_arrest");
+    expect(result.riskLevel).toBe("high");
+  });
+
+  test("does NOT flag a bare Skype mention without an authority context", () => {
+    const result = detectScamPatterns("Let's do the call on Skype tonight.");
+    expect(result.matchedPatterns).not.toContain("digital_arrest");
+    expect(result.riskLevel).toBe("low");
+  });
+
+  test("includes a text snippet as evidence", () => {
+    const result = detectScamPatterns(
+      "Pay the penalty now or the warrant will be served."
+    );
+    const item = result.evidence.find((e) => e.pattern === "digital_arrest");
+    expect(typeof item.snippet).toBe("string");
+    expect(item.snippet.length).toBeGreaterThan(0);
+  });
+});
+
 describe("detectScamPatterns — pattern key integrity", () => {
   const VALID_KEYS = [
     "urgency",
@@ -274,6 +329,7 @@ describe("detectScamPatterns — pattern key integrity", () => {
     "suspicious_link",
     "impersonation",
     "suspicious_collect_request",
+    "digital_arrest",
   ];
 
   test("never returns a pattern key outside the fixed contract list", () => {

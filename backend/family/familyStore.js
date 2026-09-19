@@ -9,8 +9,7 @@
  *   familyId, name, createdAt,
  *   members:   [{ memberId, name, role: admin|member|elder, allergies: string[], createdAt }],
  *   contacts:  [{ contactId, name, phone, note, flaggedBy, status, createdAt }],
- *   alerts:    [{ alertId, title, detail, riskLevel, createdAt, confirmedBy: string[] }],
- *   blocklist: [{ phone, addedBy, createdAt }]
+ *   alerts:    [{ alertId, title, detail, riskLevel, createdAt, confirmedBy: string[] }]
  * }
  *
  * Allergies are self-reported short tags (never a medical record) and are
@@ -79,7 +78,6 @@ async function createFamily({ name, adminName }) {
     ],
     contacts: [],
     alerts: [],
-    blocklist: [],
   };
   await saveFamily(family);
   return family;
@@ -139,17 +137,6 @@ async function addAlert(familyId, { title, detail, riskLevel }) {
   return alert;
 }
 
-async function addBlocklistEntry(familyId, { phone, addedBy }) {
-  const family = await getFamily(familyId);
-  if (!family) {
-    return null;
-  }
-  const entry = { phone, addedBy, createdAt: new Date().toISOString() };
-  family.blocklist.push(entry);
-  await saveFamily(family);
-  return entry;
-}
-
 async function confirmAlert(familyId, alertId, memberId) {
   const family = await getFamily(familyId);
   if (!family) {
@@ -172,7 +159,6 @@ module.exports = {
   addMember,
   addContact,
   addAlert,
-  addBlocklistEntry,
   confirmAlert,
   isDeployedMode,
 };

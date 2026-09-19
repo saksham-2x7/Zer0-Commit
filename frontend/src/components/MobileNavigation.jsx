@@ -1,7 +1,7 @@
 import { t } from "../i18n/translations";
 import Icon from "./icons";
 
-const NAV_ITEMS = ["home", "check", "history", "health", "settings"];
+const NAV_ITEMS = ["home", "check", "family", "history", "health", "settings"];
 
 // Fixed bottom bar for phones (hidden md+ where the Header nav takes over).
 export default function MobileNavigation({ language, activeView, onNavigate }) {

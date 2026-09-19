@@ -21,7 +21,7 @@ Globals:
         MOCK_BEDROCK: !Ref MockBedrock
         CASES_TABLE_NAME: !Ref CasesTable
         FAMILY_TABLE_NAME: !Ref FamilyTable
-        MESSAGES_TABLE_NAME: !Ref MessagingTable
+        LOCATIONS_TABLE_NAME: !Ref LocationsTable
         EVIDENCE_BUCKET_NAME: !Ref EvidenceBucket
         ALLOWED_ORIGIN: !Ref AllowedOrigin
         MAX_INPUT_BYTES: !Ref MaxInputBytes
@@ -207,8 +207,8 @@ Resources:
             Path: /api/food-feedback
             Method: options
 
-  # Family circle: shared suspicious contacts, scam alerts, blocklist, and
-  # member allergen profiles. All state lives in the FamilyTable.
+  # Family circle: shared suspicious contacts, scam alerts, and member
+  # allergen profiles. All state lives in the FamilyTable.
   FamilyFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -267,18 +267,6 @@ Resources:
             RestApiId: !Ref ApiGatewayApi
             Path: /api/family/alerts
             Method: options
-        FamilyBlocklistApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/family/blocklist
-            Method: post
-        FamilyBlocklistApiOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/family/blocklist
-            Method: options
         FamilyConfirmAlertApi:
           Type: Api
           Properties:
@@ -331,101 +319,53 @@ Resources:
             Path: /api/food-lookup
             Method: options
 
-  # Zero-knowledge family chat: stores only public keys, wrapped group keys,
-  # and AES-GCM ciphertext. Plaintext never touches the server.
-  MessagingFunction:
+  # Family live location sharing: one ephemeral row per member (24h TTL) in
+  # the LocationsTable, partitioned by prefixed `pk` ("loc#<familyId>#<memberId>").
+  LocationFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../
-      Handler: backend/api/messagingHandler.handler
+      Handler: backend/api/locationHandler.handler
       ReservedConcurrentExecutions: 10
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref MessagingTable
+            TableName: !Ref LocationsTable
       Events:
-        MessagingKeysApi:
+        LocationShareApi:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/keys
+            Path: /api/location/share
             Method: post
-        MessagingKeysApiOptions:
+        LocationShareApiOptions:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/keys
+            Path: /api/location/share
             Method: options
-        MessagingKeyGetApi:
+        LocationStopApi:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/keys/{memberId}
+            Path: /api/location/stop
+            Method: post
+        LocationStopApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/location/stop
+            Method: options
+        LocationFamilyApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/location/family/{familyId}
             Method: get
-        MessagingKeyGetApiOptions:
+        LocationFamilyApiOptions:
           Type: Api
           Properties:
             RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/keys/{memberId}
-            Method: options
-        MessagingThreadsApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads
-            Method: post
-        MessagingThreadsApiOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads
-            Method: options
-        MessagingThreadsListApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads
-            Method: get
-        MessagingThreadsListApiOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads
-            Method: options
-        MessagingThreadKeysApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads/{threadId}/keys
-            Method: post
-        MessagingThreadKeysApiOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads/{threadId}/keys
-            Method: options
-        MessagingMessagesApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads/{threadId}/messages
-            Method: post
-        MessagingMessagesApiOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads/{threadId}/messages
-            Method: options
-        MessagingMessagesListApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads/{threadId}/messages
-            Method: get
-        MessagingMessagesListApiOptions:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ApiGatewayApi
-            Path: /api/messaging/threads/{threadId}/messages
+            Path: /api/location/family/{familyId}
             Method: options
 
   CasesTable:
@@ -445,7 +385,7 @@ Resources:
         Enabled: true
 
   # Family circle state: one item per familyId holding members, contacts,
-  # alerts, and blocklist. Same single-key shape as CasesTable.
+  # and alerts. Same single-key shape as CasesTable.
   FamilyTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -459,10 +399,10 @@ Resources:
       SSESpecification:
         SSEEnabled: true
 
-  # Messaging state: one item per memberId (public key) and one per threadId
-  # (wrapped keys + ciphertext messages). Partition key is the prefixed `pk`
-  # ("key#<memberId>" / "thread#<threadId>") used by messageStore.
-  MessagingTable:
+  # Live location state: one item per family member ("loc#<familyId>#<memberId>"),
+  # auto-expiring 24h after the last share via the DynamoDB TTL attribute. The
+  # same prefixed `pk` scheme as CasesTable/FamilyTable, scanned per family.
+  LocationsTable:
     Type: AWS::DynamoDB::Table
     Properties:
       BillingMode: PAY_PER_REQUEST
@@ -474,6 +414,9 @@ Resources:
           KeyType: HASH
       SSESpecification:
         SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
 
   EvidenceBucket:
     Type: AWS::S3::Bucket
@@ -626,10 +569,10 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${FoodLookupFunction}"
       RetentionInDays: 30
 
-  MessagingFunctionLogGroup:
+  LocationFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub "/aws/lambda/${MessagingFunction}"
+      LogGroupName: !Sub "/aws/lambda/${LocationFunction}"
       RetentionInDays: 30
 
   # Simple guardrail: alert when the API Gateway stage returns any 5xx in a
@@ -663,9 +606,9 @@ Outputs:
   FamilyTableName:
     Description: "DynamoDB table storing family circle state"
     Value: !Ref FamilyTable
-  MessagingTableName:
-    Description: "DynamoDB table storing messaging keys, wrapped keys, and ciphertext"
-    Value: !Ref MessagingTable
+  LocationsTableName:
+    Description: "DynamoDB table storing 24h live locations per family member"
+    Value: !Ref LocationsTable
   EvidenceBucketName:
     Description: "S3 bucket storing redacted evidence bundles"
     Value: !Ref EvidenceBucket

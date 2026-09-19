@@ -99,3 +99,89 @@ describe("api client", () => {
     expect(data).toBeNull();
   });
 });
+
+describe("api client — family location sharing", () => {
+  // Dynamically import so the rest of the api tests keep running even before
+  // the location exports land in api.js (Agent 1 owns that file).
+  async function loadApi() {
+    return await import("./api");
+  }
+
+  test("getFamilyLocations GETs /api/location/family/{familyId}", async () => {
+    const api = await loadApi();
+    global.fetch = mockResponse({ body: { locations: [] } });
+
+    const data = await api.getFamilyLocations("fam_1");
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/location\/family\/fam_1$/),
+      expect.anything()
+    );
+    const [, init] = global.fetch.mock.calls[0];
+    expect(init?.method ?? "GET").toBe("GET");
+    expect(data).toEqual({ locations: [] });
+  });
+
+  test("shareLocation POSTs /api/location/share with the member's live position", async () => {
+    const api = await loadApi();
+    global.fetch = mockResponse({ body: { ok: true } });
+
+    await api.shareLocation({ familyId: "fam_1", memberId: "mem_1", name: "Anjali", lat: 28.61, lng: 77.2, accuracy: 12 });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/location\/share$/),
+      expect.objectContaining({ method: "POST", body: expect.any(String) })
+    );
+    const [, options] = global.fetch.mock.calls[0];
+    expect(JSON.parse(options.body)).toMatchObject({
+      familyId: "fam_1",
+      memberId: "mem_1",
+      name: "Anjali",
+      lat: 28.61,
+      lng: 77.2,
+      accuracy: 12,
+    });
+  });
+
+  test("stopLocation POSTs /api/location/stop with family and member ids", async () => {
+    const api = await loadApi();
+    global.fetch = mockResponse({ body: { ok: true } });
+
+    await api.stopLocation({ familyId: "fam_1", memberId: "mem_1" });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/location\/stop$/),
+      expect.objectContaining({ method: "POST" })
+    );
+    const [, options] = global.fetch.mock.calls[0];
+    expect(JSON.parse(options.body)).toEqual({ familyId: "fam_1", memberId: "mem_1" });
+  });
+
+  test("confirmFamilyAlert posts to the fixed /api/family/confirm-alert path", async () => {
+    const api = await loadApi();
+    global.fetch = mockResponse({ body: { alert: {} } });
+
+    await api.confirmFamilyAlert({ familyId: "fam_1", alertId: "alt_1", memberId: "mem_1" });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/api\/family\/confirm-alert$/),
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  test("drops the removed chat and blocklist client functions from api.js", async () => {
+    const api = await loadApi();
+    for (const removed of [
+      "addFamilyBlocklist",
+      "registerMessagingKey",
+      "getMessagingKey",
+      "createMessagingThread",
+      "storeWrappedKey",
+      "sendMessage",
+      "listThreads",
+      "listMessages",
+    ]) {
+      expect(api[removed], `${removed} should no longer be exported`).toBeUndefined();
+    }
+  });
+});

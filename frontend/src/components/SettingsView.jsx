@@ -86,20 +86,6 @@ export default function SettingsView({
         <p>{t(language, "page.settings.howWeProtectBody")}</p>
       </section>
 
-      <section className="card space-y-4">
-        <h2 className="text-xl font-black uppercase tracking-wide">
-          {t(language, "page.settings.quickActions")}
-        </h2>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <button type="button" className="btn-secondary flex-1">
-            {t(language, "page.settings.manageBlockList")}
-          </button>
-          <button type="button" className="btn-secondary flex-1">
-            {t(language, "page.settings.editFamily")}
-          </button>
-        </div>
-      </section>
-
       <section className="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"

@@ -97,6 +97,13 @@ const EXPLANATION_TEMPLATES = {
   },
 };
 
+// "Digital arrest" scam (P1): specific, actionable guidance. English + Hindi
+// (the two languages the ui surfaces today), falling back to English.
+const DIGITAL_ARREST_EXPLANATION = {
+  en: "This looks like a 'digital arrest' scam: a caller impersonates police or a regulator, claims a case or arrest warrant against you, then pressures you to pay a fine or 'verify' over a video call and orders you not to tell family. Real authorities never do this. Do not pay, never share an OTP or transfer money, verify through an official channel, and call the 1930 cyber helpline.",
+  hi: "यह 'डिजिटल गिरफ्तारी' घोटाला लगता है: कॉल करने वाला पुलिस या अधिकारी बनता है, आप पर केस या गिरफ्तारी वारंट होने का दावा करता है, फिर वीडियो कॉल पर जुर्माना भरने या 'पुष्टि' करने का दबाव डालता है और परिवार को न बताने के लिए कहता है। असली अधिकारी ऐसा कभी नहीं करते। भुगतान न करें, OTP कभी साझा न करें, आधिकारिक चैनल से पुष्टि करें, और 1930 साइबर हेल्पलाइन पर कॉल करें।",
+};
+
 function normalizeLanguage(language) {
   return LANGUAGE_NAMES[language] ? language : "en";
 }
@@ -105,9 +112,11 @@ function buildFallback(riskLevel, matchedPatterns, lang) {
   const patterns = (matchedPatterns || []).join(", ");
   const template = EXPLANATION_TEMPLATES[lang] || EXPLANATION_TEMPLATES.en;
   const explanation =
-    matchedPatterns && matchedPatterns.length > 0
-      ? template.withPatterns(riskLevel, patterns)
-      : template.noPatterns;
+    matchedPatterns && matchedPatterns.includes("digital_arrest")
+      ? DIGITAL_ARREST_EXPLANATION[lang] || DIGITAL_ARREST_EXPLANATION.en
+      : matchedPatterns && matchedPatterns.length > 0
+        ? template.withPatterns(riskLevel, patterns)
+        : template.noPatterns;
 
   return {
     explanation,

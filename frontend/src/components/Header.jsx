@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { id: "check", icon: "check" },
   { id: "family", icon: "family" },
   { id: "food", icon: "shoppingBag" },
-  { id: "chat", icon: "chat" },
   { id: "history", icon: "history" },
   { id: "health", icon: "health" },
   { id: "settings", icon: "settings" },

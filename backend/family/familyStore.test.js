@@ -6,7 +6,6 @@ const {
   addMember,
   addContact,
   addAlert,
-  addBlocklistEntry,
   confirmAlert,
   isDeployedMode,
 } = require("./familyStore");
@@ -38,7 +37,6 @@ describe("familyStore", () => {
     expect(family.members[0]).toMatchObject({ name: "Arjun", role: "admin", allergies: [] });
     expect(family.contacts).toEqual([]);
     expect(family.alerts).toEqual([]);
-    expect(family.blocklist).toEqual([]);
     expect(ddbMock.calls()).toHaveLength(0);
   });
 
@@ -124,21 +122,6 @@ describe("familyStore", () => {
     expect(await confirmAlert(family.familyId, "alt_missing", "mem_x")).toBeNull();
   });
 
-  test("local mode: addBlocklistEntry appends a phone", async () => {
-    delete process.env.FAMILY_TABLE_NAME;
-
-    const family = await createFamily({ name: "F", adminName: "Admin" });
-    const entry = await addBlocklistEntry(family.familyId, {
-      phone: "+91 90000 00000",
-      addedBy: family.members[0].memberId,
-    });
-
-    expect(entry).toMatchObject({ phone: "+91 90000 00000" });
-
-    const reloaded = await getFamily(family.familyId);
-    expect(reloaded.blocklist).toHaveLength(1);
-  });
-
   test("deployed mode: writes the family document to DynamoDB", async () => {
     process.env.FAMILY_TABLE_NAME = "scamsahayak-families";
     ddbMock.on(PutCommand).resolves({});
@@ -156,7 +139,7 @@ describe("familyStore", () => {
 
   test("deployed mode: getFamily reads from DynamoDB", async () => {
     process.env.FAMILY_TABLE_NAME = "scamsahayak-families";
-    const stored = { familyId: "fam_1", name: "F", members: [], contacts: [], alerts: [], blocklist: [] };
+    const stored = { familyId: "fam_1", name: "F", members: [], contacts: [], alerts: [] };
     ddbMock.on(GetCommand).resolves({ Item: stored });
 
     const family = await getFamily("fam_1");
