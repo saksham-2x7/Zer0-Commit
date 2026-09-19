@@ -26,37 +26,33 @@ afterEach(() => {
 });
 
 describe("useTheme", () => {
-  test("defaults to light and toggles to dark, persisting both", () => {
-    const { result } = renderHook(() => useTheme());
-    expect(result.current.theme).toBe("light");
-
-    act(() => result.current.toggleTheme());
-    expect(result.current.theme).toBe("dark");
-    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("dark");
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
-  });
-
-  test("reads a stored dark preference and toggles back to light", () => {
-    window.localStorage.setItem("scamsahayak-theme", "dark");
+  test("defaults to dark and toggles to light, persisting both", () => {
     const { result } = renderHook(() => useTheme());
     expect(result.current.theme).toBe("dark");
 
     act(() => result.current.toggleTheme());
     expect(result.current.theme).toBe("light");
     expect(window.localStorage.getItem("scamsahayak-theme")).toBe("light");
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 
-  test("falls back to the OS dark preference when nothing is stored, and ignores an invalid stored value", () => {
-    window.matchMedia = vi.fn().mockImplementation((query) => ({
-      matches: query.includes("prefers-color-scheme: dark"),
-    }));
+  test("reads a stored light preference and toggles back to dark", () => {
+    window.localStorage.setItem("scamsahayak-theme", "light");
+    const { result } = renderHook(() => useTheme());
+    expect(result.current.theme).toBe("light");
+
+    act(() => result.current.toggleTheme());
+    expect(result.current.theme).toBe("dark");
+    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("dark");
+  });
+
+  test("falls back to dark when nothing is stored, and ignores an invalid stored value", () => {
     const darkHook = renderHook(() => useTheme());
     expect(darkHook.result.current.theme).toBe("dark");
 
     window.localStorage.setItem("scamsahayak-theme", "hotdog");
-    window.matchMedia = vi.fn().mockImplementation(() => ({ matches: false }));
-    const lightHook = renderHook(() => useTheme());
-    expect(lightHook.result.current.theme).toBe("light");
+    const invalidHook = renderHook(() => useTheme());
+    expect(invalidHook.result.current.theme).toBe("dark");
   });
 
   test("survives localStorage being unavailable", () => {
@@ -65,9 +61,9 @@ describe("useTheme", () => {
     });
     try {
       const { result } = renderHook(() => useTheme());
-      expect(result.current.theme).toBe("light");
-      act(() => result.current.toggleTheme());
       expect(result.current.theme).toBe("dark");
+      act(() => result.current.toggleTheme());
+      expect(result.current.theme).toBe("light");
     } finally {
       spy.mockRestore();
     }

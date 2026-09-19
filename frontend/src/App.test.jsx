@@ -418,19 +418,21 @@ describe("App — theme", () => {
   test("the theme toggle switches the dark class and persists the choice", () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Toggle dark mode" }));
+    // Dark is the default; first click opts out to light.
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("dark");
-
     fireEvent.click(screen.getByRole("button", { name: "Toggle dark mode" }));
     expect(document.documentElement.classList.contains("dark")).toBe(false);
     expect(window.localStorage.getItem("scamsahayak-theme")).toBe("light");
+
+    fireEvent.click(screen.getByRole("button", { name: "Toggle dark mode" }));
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("dark");
   });
 
-  test("restores a saved dark theme", () => {
-    window.localStorage.setItem("scamsahayak-theme", "dark");
+  test("restores a saved light theme", () => {
+    window.localStorage.setItem("scamsahayak-theme", "light");
     render(<App />);
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 });
 

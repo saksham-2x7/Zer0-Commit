@@ -1,4 +1,4 @@
-/* Swiss "Helvetica Noir" design system for ScamSahayak.
+/* Helvetica Noir — Swiss "scam noir" design system for ScamSahayak.
    Inter carries the Latin UI; the Noto Sans families back the Indic scripts
    (Devanagari/Tamil/Telugu/Bengali) so glyphs fall through to a matching
    script font. Loaded at runtime, like the previous Archivo setup. */
@@ -10,7 +10,7 @@
 
 /* ─── Design tokens ────────────────────────────────────────────────
    Light: Ink #0A0A0A (text + primary), Paper #FFFFFF (background),
-   Ash #C8C8C8 (borders/muted), Signal Red #E60000 (scam alerts ONLY),
+   Ash #C8C8C8 (borders/muted), Signal #E60000 (scam alerts ONLY),
    Cobalt #1A4FD8 (brand/link/focus ONLY). */
 :root {
   --color-ink: #0a0a0a;
@@ -18,15 +18,29 @@
   --color-ash: #c8c8c8;
   --color-signal: #e60000;
   --color-cobalt: #1a4fd8;
+  --color-cobalt-hover: #3a66e0;
+
+  --color-ghost: #ececec;
 
   --color-border: #c8c8c8;
+  --color-border-soft: rgba(10, 10, 10, 0.08);
   --color-muted: #6b6b6b;
   --color-soft: #f4f4f4;
   --color-on-ink: #ffffff;
 
-  --color-risk-high: #991b1b;
-  --color-risk-medium: #92400e;
-  --color-risk-low: #166534;
+  --color-risk-high: #b91c1c;
+  --color-risk-medium: #b45309;
+  --color-risk-low: #15803d;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 2px rgba(10, 10, 10, 0.05),
+    0 8px 24px rgba(10, 10, 10, 0.08);
+  --shadow-float: 0 4px 12px rgba(10, 10, 10, 0.12),
+    0 16px 40px rgba(10, 10, 10, 0.16);
+  --shadow-soft: 0 1px 2px rgba(10, 10, 10, 0.04);
 }
 
 /* Dark: background #0A0A0A, text #F5F5F5, borders #2E2E2E,
@@ -37,15 +51,19 @@ html.dark {
   --color-ash: #2e2e2e;
   --color-signal: #ff5c5c;
   --color-cobalt: #6e8bff;
+  --color-cobalt-hover: #8aa3ff;
+
+  --color-ghost: #161616;
 
   --color-border: #2e2e2e;
+  --color-border-soft: rgba(255, 255, 255, 0.08);
   --color-muted: #9c9c9c;
   --color-soft: #161616;
   --color-on-ink: #0a0a0a;
 
-  --color-risk-high: #b91c1c;
-  --color-risk-medium: #b45309;
-  --color-risk-low: #15803d;
+  --color-risk-high: #ff5c5c;
+  --color-risk-medium: #fbbf24;
+  --color-risk-low: #34d399;
 }
 
 html {
@@ -53,7 +71,6 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  scroll-behavior: smooth;
 }
 
 body {
@@ -69,13 +86,12 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Square corners everywhere — part of the Helvetica Noir system. 1px
-   structural borders only (never 4px), no shadows, no gradients. */
-*,
-*::before,
-*::after {
-  border-radius: 0 !important;
-  box-shadow: none !important;
+/* Neutral raws get sensible default corners and shadows from the token
+   system; components opt into the pill/card shapes explicitly so the
+   design stays big, geometric, and deliberate. */
+::selection {
+  background-color: rgba(26, 79, 216, 0.22);
+  color: var(--color-ink);
 }
 
 h1,
@@ -85,14 +101,13 @@ h4,
 h5,
 h6 {
   font-family: inherit;
-  line-height: 1.1;
+  line-height: 1.05;
   font-weight: 800;
   letter-spacing: -0.02em;
-  text-wrap: balance;
 }
 
 .sr-only {
-  position: absolute !important;
+  position: absolute;
   width: 1px;
   height: 1px;
   padding: 0;
@@ -103,231 +118,278 @@ h6 {
   border: 0;
 }
 
-@layer utilities {
-  /* 1px rule colors — pair with `border`, `border-t`, `border-b`, … */
-  .border-ink {
-    border-color: var(--color-border);
-  }
-  .border-strong {
-    border-color: var(--color-ink);
-  }
-  .bg-ink {
-    background-color: var(--color-ink);
-  }
-  .bg-paper {
-    background-color: var(--color-paper);
-  }
-  .bg-soft {
-    background-color: var(--color-soft);
-  }
-  .text-ink {
-    color: var(--color-ink);
-  }
-  .text-muted {
-    color: var(--color-muted);
-  }
-  .text-signal {
-    color: var(--color-signal);
-  }
-  .text-cobalt {
-    color: var(--color-cobalt);
-  }
-  .text-on-ink {
-    color: var(--color-on-ink);
-  }
-  .bg-ash {
-    background-color: var(--color-ash);
-  }
+/* ─── Utility hooks (match Tailwind names so JSX stays unchanged) ─── */
+.bg-ink {
+  background-color: var(--color-ink);
+}
+.bg-paper {
+  background-color: var(--color-paper);
+}
+.bg-ash {
+  background-color: var(--color-ash);
+}
+.bg-soft {
+  background-color: var(--color-soft);
+}
+.bg-ghost {
+  background-color: var(--color-ghost);
+}
+.text-ink {
+  color: var(--color-ink);
+}
+.text-muted {
+  color: var(--color-muted);
+}
+.text-signal {
+  color: var(--color-signal);
+}
+.text-cobalt {
+  color: var(--color-cobalt);
+}
+.text-on-ink {
+  color: var(--color-on-ink);
+}
+.border-ink {
+  border-color: var(--color-ink);
+}
+.border-ash {
+  border-color: var(--color-ash);
+}
+.border-strong {
+  border-color: var(--color-ink);
 }
 
-@layer components {
-  /* Elder-optimized baseline: interactive controls are at least 56×56px.
-     Kept for backwards compatibility with touch-target-dependent logic. */
-  .touch-target {
-    @apply flex min-h-[56px] min-w-[56px] items-center justify-center;
-  }
-
-  /* Flat button base — 1px border, square, uppercase, ≥48px tall. */
-  .btn {
-    @apply inline-flex min-h-[48px] items-center justify-center gap-2 px-6 py-2 text-sm font-bold uppercase;
-    letter-spacing: 0.08em;
-    border: 1px solid var(--color-border);
-    color: var(--color-ink);
-    background-color: transparent;
-    transition: background-color 0.15s ease, color 0.15s ease,
-      border-color 0.15s ease;
-  }
-  .btn:not(:disabled) {
-    cursor: pointer;
-  }
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .btn-primary {
-    @apply btn;
-    background-color: var(--color-ink);
-    border-color: var(--color-ink);
-    color: var(--color-on-ink);
-  }
-  .btn-primary:not(:disabled):hover {
-    background-color: transparent;
-    color: var(--color-ink);
-  }
-
-  .btn-secondary {
-    @apply btn;
-  }
-  .btn-secondary:not(:disabled):hover {
-    background-color: var(--color-ink);
-    border-color: var(--color-ink);
-    color: var(--color-on-ink);
-  }
-
-  /* Button sitting on an inverse (ink) panel — paper fill, ink type. */
-  .btn-inverse {
-    @apply btn;
-    background-color: var(--color-paper);
-    border-color: var(--color-ink);
-    color: var(--color-ink);
-  }
-  .btn-inverse:not(:disabled):hover {
-    background-color: transparent;
-    color: var(--color-on-ink);
-  }
-
-  .card {
-    background-color: var(--color-soft);
-    border: 1px solid var(--color-border);
-    padding: 1.5rem;
-  }
-
-  /* Square chip/badge — never color-only: always carries a 1px border and
-     its own label text so colorblind users can distinguish it. */
-  .chip {
-    @apply inline-flex items-center px-3 py-1 text-xs font-bold uppercase;
-    letter-spacing: 0.06em;
-    border: 1px solid var(--color-border);
-    color: var(--color-ink);
-  }
-
-  /* Risk verdict badges — semantic fill kept, plus a 1px border and label
-     text so the verdict is unambiguous even without color. */
-  .risk-badge {
-    @apply inline-flex items-center gap-2 px-4 py-2 text-base font-bold uppercase;
-    letter-spacing: 0.05em;
-    border: 1px solid var(--color-ink);
-    color: #fff;
-  }
-  .risk-badge-high {
-    @apply bg-risk-high;
-    border-color: var(--color-risk-high);
-  }
-  .risk-badge-medium {
-    @apply bg-risk-medium;
-    border-color: var(--color-risk-medium);
-  }
-  .risk-badge-low {
-    @apply bg-risk-low;
-    border-color: var(--color-risk-low);
-  }
-
-  /* Small risk tag — compact, still 1px bordered and labeled. */
-  .risk-chip {
-    @apply inline-flex items-center px-3 py-1 text-xs font-black uppercase;
-    letter-spacing: 0.04em;
-    border: 1px solid var(--color-ink);
-    color: #fff;
-  }
-  .risk-chip-high {
-    @apply bg-risk-high;
-    border-color: var(--color-risk-high);
-  }
-  .risk-chip-medium {
-    @apply bg-risk-medium;
-    border-color: var(--color-risk-medium);
-  }
-  .risk-chip-low {
-    @apply bg-risk-low;
-    border-color: var(--color-risk-low);
-  }
-
-  /* Text fields — flat, 1px rule, transparent paper background. */
-  .field {
-    @apply w-full border border-ink bg-transparent px-4 py-3 text-lg font-semibold outline-none;
-    color: var(--color-ink);
-  }
-  .field::placeholder {
-    color: var(--color-muted);
-  }
-  .field:focus {
-    border-color: var(--color-cobalt);
-  }
-
-  /* Inverse panel (ink background) — swaps to paper-on-dark. */
-  .panel-inverse {
-    background-color: var(--color-ink);
-    border: 1px solid var(--color-ink);
-    color: var(--color-on-ink);
-  }
-
-  /* Small uppercase kicker label. */
-  .kicker {
-    @apply text-xs font-bold uppercase;
-    letter-spacing: 0.12em;
-    color: var(--color-muted);
-  }
-
-  /* Section heading with a thin 1px rule underneath. */
-  .section-rule {
-    @apply text-xl font-extrabold uppercase;
-    letter-spacing: 0.02em;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.5rem;
-  }
-
-  /* Scam-alert callout — signal red reserved strictly for danger contexts. */
-  .alert-red {
-    border: 1px solid var(--color-signal);
-    background-color: color-mix(in srgb, var(--color-signal) 8%, var(--color-paper));
-    color: var(--color-signal);
-  }
+/* ─── Components ────────────────────────────────────────────────────
+   Touch-first: interactive targets ≥ 56px. Buttons/fields/badges all
+   carry 1px structural borders; color is never the only differentiator. */
+.touch-target {
+  min-height: 56px;
+  min-width: 56px;
 }
 
-/* Focus ring in cobalt — brand accent only. */
+/* Buttons: rounded-control corners, 1px border, uppercase minuscule twack.
+   Primary = cobalt fill (reads as the brand action); secondary = ink
+   outline; inverse = paper fill on ink surfaces. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.5rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  background-color: transparent;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.btn:not(:disabled):hover {
+  background-color: var(--color-soft);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--color-cobalt);
+  border-color: var(--color-cobalt);
+  color: var(--color-on-paper);
+  color: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+html.dark .btn-primary {
+  color: #0a0a0a;
+}
+.btn-primary:not(:disabled):hover {
+  background-color: var(--color-cobalt-hover);
+  border-color: var(--color-cobalt-hover);
+  box-shadow: var(--shadow-float);
+}
+
+.btn-secondary {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+.btn-secondary:not(:disabled):hover {
+  background-color: var(--color-ink);
+  color: var(--color-on-ink);
+}
+
+.btn-inverse {
+  background-color: var(--color-paper);
+  border-color: var(--color-paper);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-soft);
+}
+.btn-inverse:not(:disabled):hover {
+  background-color: var(--color-soft);
+  border-color: var(--color-soft);
+}
+
+/* Cards: rounded-card corners, paper fill, 1px soft border, layered
+   shadow. Use for any primary content surface. */
+.card {
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+.html-dark .card {
+  border-color: var(--color-border);
+}
+
+/* Chips: pill corners, 1px border, never color-only. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+}
+.chip-active {
+  background-color: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-on-ink);
+}
+
+/* Risk chips/badges: pill borders with a colored fill — but each one
+   also carries a label and a border so risk reads without color. */
+.risk-chip,
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border: 1px solid;
+  border-radius: var(--radius-pill);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.risk-chip-high,
+.risk-badge-high {
+  background-color: rgba(185, 28, 28, 0.14);
+  border-color: var(--color-risk-high);
+  color: var(--color-risk-high);
+}
+.risk-chip-medium,
+.risk-badge-medium {
+  background-color: rgba(180, 83, 9, 0.14);
+  border-color: var(--color-risk-medium);
+  color: var(--color-risk-medium);
+}
+.risk-chip-low,
+.risk-badge-low {
+  background-color: rgba(21, 128, 61, 0.14);
+  border-color: var(--color-risk-low);
+  color: var(--color-risk-low);
+}
+
+/* Fields: rounded-control corners, 1px border, soft focus ring. */
+.field {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+.field::placeholder {
+  color: var(--color-muted);
+}
+.field:focus {
+  outline: none;
+  border-color: var(--color-cobalt);
+  box-shadow: 0 0 0 3px rgba(26, 79, 216, 0.18);
+}
+html.dark .field:focus {
+  box-shadow: 0 0 0 3px rgba(110, 139, 255, 0.2);
+}
+
+/* Alerts: 1px bordered box with a soft tinted fill; the label carries
+   the meaning, the tint carries the tone. */
+.alert-red {
+  border: 1px solid var(--color-risk-high);
+  border-radius: var(--radius-control);
+  background-color: rgba(185, 28, 28, 0.08);
+  color: var(--color-risk-high);
+  padding: 1rem;
+}
+
+/* Kicker: tiny uppercase track above an H2 (some views used text-xs). */
+.kicker {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-cobalt);
+}
+
+/* Section rule: 1px structural divider under section headers. */
+.section-rule {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 0;
+}
+
+/* Inverse panel (dark ink surface, e.g. the camera/scanner frame or
+   the header band): paper text on ink fill. */
+.panel-inverse {
+  background-color: var(--color-ink);
+  color: var(--color-on-ink);
+}
+.panel-inverse .kicker,
+.panel-inverse .text-cobalt {
+  color: var(--color-cobalt);
+}
+
+/* Mobile bottom nav: fixed, 1px top border, paper background. */
+.mobile-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-paper);
+}
+
+.no-print {
+  /* handled by @media print below */
+}
+
+/* ─── Focus visibility — cobalt 2px ring, offset 2px ─────────────── */
 :is(button, a, input, select, textarea, [role="tab"], [tabindex], summary):focus-visible {
   outline: 2px solid var(--color-cobalt);
   outline-offset: 2px;
 }
 
-/* Print: keep only the page content — hide the app chrome and give the
-   evidence view a crisp 1px border for scanners. */
-@media print {
-  .no-print {
-    display: none !important;
-  }
-  header,
-  nav {
-    display: none !important;
-  }
-  main {
-    padding: 0 !important;
-  }
-  body {
-    background-color: #fff;
-    color: #000;
-  }
-  .evidence-view {
-    border: 1px solid #000 !important;
-    page-break-inside: avoid;
-  }
-  .evidence-card {
-    border: 1px solid #000 !important;
-    page-break-inside: avoid;
-  }
-}
-
+/* ─── Accessibility ──────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -336,5 +398,31 @@ h6 {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Print ──────────────────────────────────────────────────────── */
+@media print {
+  .no-print,
+  .no-print *,
+  .no-print-bottom {
+    display: none !important;
+  }
+  nav,
+  .mobile-nav {
+    display: none !important;
+  }
+  body {
+    background: #ffffff;
+    color: #000000;
+  }
+  .card,
+  .evidence-card {
+    border: 1px solid #000000;
+    box-shadow: none;
+  }
+  a {
+    color: #000000;
+    text-decoration: underline;
   }
 }

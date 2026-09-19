@@ -7,12 +7,10 @@ function getInitialTheme() {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === "light" || stored === "dark") return stored;
   } catch {
-    // localStorage unavailable (private mode etc.) — fall through to system preference.
+    // localStorage unavailable (private mode etc.) — fall through to the dark default.
   }
-  if (typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-    return "dark";
-  }
-  return "light";
+  // Dark is the default experience; users who prefer light opt out via the toggle.
+  return "dark";
 }
 
 /** Manages the light/dark theme: persists choice, applies the `dark` class to <html>. */
