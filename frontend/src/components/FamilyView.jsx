@@ -7,6 +7,7 @@ import {
   addFamilyContact,
   addFamilyAlert,
   confirmFamilyAlert,
+  isDemoMode,
 } from "../services/api";
 
 const FAMILY_ID_KEY = "scamsahayak-family-id";
@@ -38,6 +39,7 @@ export default function FamilyView({ language, onNavigate }) {
   const [family, setFamily] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [apiFallback, setApiFallback] = useState(false);
 
   // create-family form
   const [familyName, setFamilyName] = useState("");
@@ -61,6 +63,7 @@ export default function FamilyView({ language, onNavigate }) {
     setError(null);
     try {
       const { family: data } = await getFamily(familyId);
+      setApiFallback(isDemoMode());
       setFamily(data);
     } catch (err) {
       setError(errorCodeMessage(language, err?.code) || t(language, "errorGeneric"));
@@ -79,6 +82,7 @@ export default function FamilyView({ language, onNavigate }) {
     setError(null);
     try {
       const { familyId: id, family: data } = await createFamily({ name: familyName, adminName });
+      setApiFallback(isDemoMode());
       writeStored(FAMILY_ID_KEY, id);
       writeStored(MEMBER_ID_KEY, data.members[0].memberId);
       writeStored(MEMBER_NAME_KEY, data.members[0].name);
@@ -97,6 +101,7 @@ export default function FamilyView({ language, onNavigate }) {
     setError(null);
     try {
       await action();
+      setApiFallback(isDemoMode());
       await loadFamily();
     } catch (err) {
       setError(errorCodeMessage(language, err?.code) || t(language, "errorGeneric"));
@@ -164,6 +169,11 @@ export default function FamilyView({ language, onNavigate }) {
           {t(language, "family.createTitle")}
         </h2>
         <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "family.createSubtitle")}</p>
+        {apiFallback && (
+          <p role="status" className="mt-6 alert-red p-3 font-semibold">
+            {t(language, "common.apiFallback")}
+          </p>
+        )}
         <form onSubmit={handleCreateFamily} className="mt-10 max-w-xl space-y-6">
           <div>
             <label htmlFor="family-name" className="block text-sm font-black uppercase tracking-widest">
@@ -236,6 +246,11 @@ export default function FamilyView({ language, onNavigate }) {
       {error && (
         <p role="alert" className="mt-6 alert-red p-3 font-semibold">
           {error}
+        </p>
+      )}
+      {apiFallback && (
+        <p role="status" className="mt-6 alert-red p-3 font-semibold">
+          {t(language, "common.apiFallback")}
         </p>
       )}
       {loading && <p className="mt-6 font-bold">{t(language, "family.loading")}</p>}

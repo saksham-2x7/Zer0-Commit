@@ -79,7 +79,7 @@ describe("App — text submission", () => {
     expect(screen.queryByText("otp_request")).not.toBeInTheDocument();
   });
 
-  test("shows an error state and does not crash when the request fails", async () => {
+  test("falls back to demo data with the banner when the request fails", async () => {
     mockFetchOnce(
       { error: { code: "ANALYSIS_FAILED", message: "No readable text found." } },
       false
@@ -91,11 +91,15 @@ describe("App — text submission", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/readable text/i);
+    // The API failure must not crash the app — it falls back to demo data
+    // and tells the user so.
+    expect(
+      await screen.findByText("API not working, falling back to demo data")
+    ).toBeInTheDocument();
+    expect(screen.getByText(/high risk/i)).toBeInTheDocument();
   });
 
-  test("falls back to the generic error message for an untranslated error code", async () => {
+  test("falls back to demo data instead of leaking internal error details", async () => {
     mockFetchOnce(
       { error: { code: "SOME_FUTURE_CODE", message: "opaque internal detail" } },
       false
@@ -107,10 +111,12 @@ describe("App — text submission", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/Something went wrong/i);
-    expect(alert).not.toHaveTextContent("errorCode_SOME_FUTURE_CODE");
-    expect(alert).not.toHaveTextContent("opaque internal detail");
+    expect(
+      await screen.findByText("API not working, falling back to demo data")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Something went wrong/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("errorCode_SOME_FUTURE_CODE")).not.toBeInTheDocument();
+    expect(screen.queryByText("opaque internal detail")).not.toBeInTheDocument();
   });
 
   test("blocks submission with a friendly message when there is no input", () => {
@@ -119,7 +125,7 @@ describe("App — text submission", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/please paste a message/i);
   });
 
-  test("shows a friendly localized network error when the fetch throws a TypeError", async () => {
+  test("falls back to demo data when the network is unreachable", async () => {
     global.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     render(<App />);
 
@@ -128,9 +134,11 @@ describe("App — text submission", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/couldn't reach the server/i);
-    expect(alert).not.toHaveTextContent("Failed to fetch");
+    expect(
+      await screen.findByText("API not working, falling back to demo data")
+    ).toBeInTheDocument();
+    expect(screen.getByText(/high risk/i)).toBeInTheDocument();
+    expect(screen.queryByText("Failed to fetch")).not.toBeInTheDocument();
   });
 
   test("cancel aborts the in-flight request, hides loading, and shows no error", async () => {

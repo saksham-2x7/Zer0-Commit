@@ -10,6 +10,8 @@ vi.mock("../services/api", () => ({
   addFamilyAlert: vi.fn(),
   confirmFamilyAlert: vi.fn(),
   addFamilyBlocklist: vi.fn(),
+  resetDemoMode: vi.fn(),
+  isDemoMode: vi.fn(() => false),
 }));
 
 import {
@@ -19,6 +21,7 @@ import {
   addFamilyContact,
   addFamilyAlert,
   confirmFamilyAlert,
+  isDemoMode,
 } from "../services/api";
 
 const FAMILY = {
@@ -65,6 +68,8 @@ beforeEach(() => {
   addFamilyContact.mockReset();
   addFamilyAlert.mockReset();
   confirmFamilyAlert.mockReset();
+  isDemoMode.mockReset();
+  isDemoMode.mockReturnValue(false);
   getFamily.mockResolvedValue({ family: FAMILY });
 });
 
@@ -235,6 +240,20 @@ describe("FamilyView", () => {
     render(<FamilyView language="en" onNavigate={vi.fn()} />);
 
     expect(await screen.findByRole("alert")).toBeInTheDocument();
+  });
+
+  test("shows the demo-fallback banner only after an API call fell back to demo data", async () => {
+    seedFamily();
+    isDemoMode.mockReturnValue(true);
+    render(<FamilyView language="en" onNavigate={vi.fn()} />);
+
+    expect(
+      screen.queryByText(/api not working, falling back to demo data/i)
+    ).not.toBeInTheDocument();
+    await screen.findByText("Sharma Family");
+    expect(
+      screen.getByText(/api not working, falling back to demo data/i)
+    ).toBeInTheDocument();
   });
 
   test("does not render the removed blocklist section", async () => {

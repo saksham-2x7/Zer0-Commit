@@ -16,7 +16,7 @@ import ReportFlow from "./components/ReportFlow";
 import FamilyView from "./components/FamilyView";
 import FoodScanView from "./components/FoodScanView";
 import LocationView from "./components/LocationView";
-import { analyzeMessage } from "./services/api";
+import { analyzeMessage, isDemoMode } from "./services/api";
 import { redactText } from "./utils/redact";
 import { useTextSize } from "./utils/useTextSize";
 import { useLanguage } from "./utils/useLanguage";
@@ -86,6 +86,7 @@ export default function App() {
   const [onlineLookup, setOnlineLookup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [apiFallback, setApiFallback] = useState(false);
   const [result, setResult] = useState(null);
   const [resultRedactedText, setResultRedactedText] = useState("");
   const [history, setHistory] = useState(loadHistory);
@@ -205,6 +206,7 @@ export default function App() {
       setResult(response);
       setResultRedactedText(liveRedactedText);
       setHistory(saveHistoryEntry({ language, redactedText: liveRedactedText, result: response }));
+      setApiFallback(isDemoMode());
       setView("results");
     } catch (err) {
       if (err?.name === "AbortError") return;
@@ -528,6 +530,11 @@ export default function App() {
       />
 
       <main id="main-content" ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 pb-32 pt-8 md:pb-16">
+        {apiFallback && (
+          <p role="status" className="alert-red mb-6 p-3 font-semibold">
+            {t(language, "common.apiFallback")}
+          </p>
+        )}
         {view === "home" && (
           <HomeView
             language={language}

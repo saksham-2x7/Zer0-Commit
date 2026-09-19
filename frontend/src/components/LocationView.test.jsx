@@ -37,6 +37,7 @@ vi.mock("../i18n/translations", () => ({
       "locations.noOneSharing": "No one is sharing their location",
       "locations.sharing": "You are sharing your location",
       "locations.permissionDenied": "Location access needed to share your live position",
+      "common.apiFallback": "API not working, falling back to demo data",
     })[key] ?? key,
   errorCodeMessage: () => null,
 }));
@@ -240,5 +241,51 @@ describe("LocationView", () => {
       String(url).includes("/api/location/share")
     );
     expect(shareCalls).toHaveLength(0);
+  });
+
+  test("falls back to demo members with the banner when the locations API fails", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error("network down"));
+    render(<LocationView {...PROPS} />);
+
+    expect(await screen.findByText("Aarav")).toBeInTheDocument();
+    expect(screen.getByText("Meera")).toBeInTheDocument();
+    expect(screen.getByText("Rohan")).toBeInTheDocument();
+    expect(
+      screen.getByText("API not working, falling back to demo data")
+    ).toBeInTheDocument();
+    expect(L.marker).toHaveBeenCalledTimes(3);
+  });
+
+  test("renders demo members with the banner when there is no family id", async () => {
+    render(<LocationView language="en" memberId="explorer" memberName="Ada" />);
+
+    expect(await screen.findByText("Aarav")).toBeInTheDocument();
+    expect(screen.getByText("Meera")).toBeInTheDocument();
+    expect(screen.getByText("Rohan")).toBeInTheDocument();
+    expect(
+      screen.getByText("API not working, falling back to demo data")
+    ).toBeInTheDocument();
+    expect(L.marker).toHaveBeenCalledTimes(3);
+  });
+
+  test("share and stop in demo mode never call the network", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new Error("network down"));
+    const geo = installGeolocation();
+    const clearIntervalSpy = vi.spyOn(window, "clearInterval");
+    render(<LocationView {...PROPS} />);
+    await screen.findByText("Aarav");
+
+    fireEvent.click(screen.getByRole("button", { name: /share my location/i }));
+    expect(screen.getByText("You are sharing your location")).toBeInTheDocument();
+    expect(geo.watchPosition).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: /stop sharing/i }));
+    expect(clearIntervalSpy).toHaveBeenCalled();
+    expect(screen.queryByText("You are sharing your location")).not.toBeInTheDocument();
+
+    const locationPosts = global.fetch.mock.calls.filter(([url]) =>
+      String(url).includes("/api/location/share") || String(url).includes("/api/location/stop")
+    );
+    expect(locationPosts).toHaveLength(0);
   });
 });

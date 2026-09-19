@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { t, errorCodeMessage } from "../i18n/translations";
-import { shareLocation, stopLocation, getFamilyLocations } from "../services/api";
+import { t } from "../i18n/translations";
+import { shareLocation, stopLocation, getFamilyLocations, isDemoMode } from "../services/api";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -22,6 +22,21 @@ const MEMBER_NAME_KEY = "scamsahayak-member-name";
 const SHARE_THROTTLE_MS = 30000; // at most one position POST per 30s
 const POLL_MS = 25000; // refresh the family feed every 25s while sharing
 
+// Demo family members (around Delhi) shown when the location API is
+// unreachable or no family has been set up yet — the map still works.
+function demoMembers() {
+  const now = new Date().toISOString();
+  return [
+    { memberId: "demo-1", name: "Aarav", lat: 28.6139, lng: 77.209, updatedAt: now },
+    { memberId: "demo-2", name: "Meera", lat: 28.63, lng: 77.22, updatedAt: now },
+    { memberId: "demo-3", name: "Rohan", lat: 28.6, lng: 77.19, updatedAt: now },
+  ];
+}
+
+function round6(value) {
+  return Math.round(value * 1e6) / 1e6;
+}
+
 function readStored(key) {
   try {
     return window.localStorage.getItem(key) || "";
@@ -42,33 +57,51 @@ export default function LocationView({ language, familyId, memberId, memberName 
   const memId = memberId || readStored(MEMBER_ID_KEY);
   const memName = memberName || readStored(MEMBER_NAME_KEY);
 
-  const [members, setMembers] = useState([]);
+  // Without a family, or when the API is unreachable, we render the map with
+  // demo members instead of blocking — the feature stays visible offline.
+  const [demoMode, setDemoMode] = useState(() => !famId);
+  const [members, setMembers] = useState(() => (famId ? [] : demoMembers()));
   const [sharing, setSharing] = useState(false);
   const [permissionDenied, setPermissionDenied] = useState(false);
-  const [error, setError] = useState(null);
 
   const mapElRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef(null);
   const watchIdRef = useRef(null);
   const pollRef = useRef(null);
+  const demoIntervalRef = useRef(null);
   const lastPostRef = useRef(0);
   const sharingRef = useRef(false);
+  const demoRef = useRef(demoMode);
+
+  useEffect(() => {
+    demoRef.current = demoMode;
+  }, [demoMode]);
+
+  const enterDemo = useCallback(() => {
+    setDemoMode(true);
+    setMembers(demoMembers());
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!famId) return;
     try {
       const data = await getFamilyLocations(famId);
+      // api.js already fell back to demo data (and flipped its own flag) —
+      // use OUR demo members + banner instead of the api-level demo feed.
+      if (isDemoMode()) {
+        enterDemo();
+        return;
+      }
       setMembers(Array.isArray(data?.members) ? data.members : []);
-      setError(null);
-    } catch (err) {
-      setError(errorCodeMessage(language, err?.code) || t(language, "errorGeneric"));
+      setDemoMode(false);
+    } catch {
+      enterDemo();
     }
-  }, [famId, language]);
+  }, [famId, enterDemo]);
 
-  // Create the map once, then load the family feed.
+  // Create the map once, then load the family feed (or demo members).
   useEffect(() => {
-    if (!famId) return;
     if (mapElRef.current && !mapRef.current) {
       const map = L.map(mapElRef.current);
       map.setView([20.5937, 78.9629], 5);
@@ -81,16 +114,24 @@ export default function LocationView({ language, familyId, memberId, memberName 
       markersRef.current = layer;
       mapRef.current = map;
     }
-    refresh();
+    if (famId) refresh();
     return () => {
-      // Leaving the screen while sharing must stop the live feed.
+      // Leaving the screen while sharing must stop the live feed (in demo
+      // mode that means the local simulation — never a network call).
       if (sharingRef.current) {
         sharingRef.current = false;
-        if (watchIdRef.current !== null && navigator.geolocation) {
-          navigator.geolocation.clearWatch(watchIdRef.current);
+        if (demoRef.current) {
+          if (demoIntervalRef.current !== null) {
+            window.clearInterval(demoIntervalRef.current);
+            demoIntervalRef.current = null;
+          }
+        } else {
+          if (watchIdRef.current !== null && navigator.geolocation) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+          }
+          if (pollRef.current !== null) window.clearInterval(pollRef.current);
+          if (memId) stopLocation({ familyId: famId, memberId: memId }).catch(() => {});
         }
-        if (pollRef.current !== null) window.clearInterval(pollRef.current);
-        if (memId) stopLocation({ familyId: famId, memberId: memId }).catch(() => {});
       }
       mapRef.current?.remove();
       mapRef.current = null;
@@ -131,6 +172,25 @@ export default function LocationView({ language, familyId, memberId, memberName 
   }
 
   function handleShare() {
+    if (demoRef.current) {
+      // Demo mode: simulate a live feed locally — no geolocation, no network.
+      setPermissionDenied(false);
+      sharingRef.current = true;
+      setSharing(true);
+      demoIntervalRef.current = window.setInterval(() => {
+        setMembers((current) => {
+          if (current.length === 0) return current;
+          const now = new Date().toISOString();
+          return current.map((m) => ({
+            ...m,
+            lat: round6(m.lat + (Math.random() - 0.5) * 0.01),
+            lng: round6(m.lng + (Math.random() - 0.5) * 0.01),
+            updatedAt: now,
+          }));
+        });
+      }, POLL_MS);
+      return;
+    }
     if (!navigator.geolocation) {
       setPermissionDenied(true);
       return;
@@ -155,6 +215,13 @@ export default function LocationView({ language, familyId, memberId, memberName 
   function handleStop() {
     sharingRef.current = false;
     setSharing(false);
+    if (demoRef.current) {
+      if (demoIntervalRef.current !== null) {
+        window.clearInterval(demoIntervalRef.current);
+        demoIntervalRef.current = null;
+      }
+      return;
+    }
     if (watchIdRef.current !== null && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
@@ -166,26 +233,6 @@ export default function LocationView({ language, familyId, memberId, memberName 
     if (memId) stopLocation({ familyId: famId, memberId: memId }).catch(() => {});
   }
 
-  if (!famId) {
-    return (
-      <section aria-labelledby="locations-no-family">
-        <button
-          type="button"
-          className="btn-secondary touch-target mb-8 inline-flex gap-2 px-6 text-sm"
-          onClick={() => window.history.back()}
-        >
-          {t(language, "common.back")}
-        </button>
-        <h2 id="locations-no-family" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
-          {t(language, "food.noFamilyTitle")}
-        </h2>
-        <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">
-          {t(language, "food.noFamilyBody")}
-        </p>
-      </section>
-    );
-  }
-
   return (
     <section aria-labelledby="locations-title">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -193,7 +240,9 @@ export default function LocationView({ language, familyId, memberId, memberName 
           <h2 id="locations-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
             {t(language, "locations.title")}
           </h2>
-          <p className="mt-4 text-lg font-bold opacity-70">{t(language, "family.familyIdLabel")} {famId}</p>
+          {famId && (
+            <p className="mt-4 text-lg font-bold opacity-70">{t(language, "family.familyIdLabel")} {famId}</p>
+          )}
         </div>
         {sharing ? (
           <button
@@ -214,9 +263,9 @@ export default function LocationView({ language, familyId, memberId, memberName 
         )}
       </div>
 
-      {error && (
+      {demoMode && (
         <p role="alert" className="mt-6 alert-red p-3 font-semibold">
-          {error}
+          {t(language, "common.apiFallback")}
         </p>
       )}
       {permissionDenied && (
