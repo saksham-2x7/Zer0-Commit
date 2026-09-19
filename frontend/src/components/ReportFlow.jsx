@@ -142,10 +142,10 @@ export default function ReportFlow({ language, onBack }) {
             <button
               key={option}
               type="button"
-              className={`touch-target flex-1 border-2 px-4 py-2 font-black uppercase tracking-widest ${
+              className={`touch-target flex-1 border px-4 py-2 font-black uppercase tracking-widest ${
                 value === option
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                  : "border-black hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+                  ? "border-strong bg-ink text-on-ink"
+                  : "border-ink hover:bg-ink hover:text-on-ink"
               }`}
               onClick={() => setAnswer(question.id, option)}
             >
@@ -163,10 +163,10 @@ export default function ReportFlow({ language, onBack }) {
             <button
               key={option}
               type="button"
-              className={`touch-target border-2 px-4 py-2 font-bold ${
+              className={`touch-target border px-4 py-2 font-bold ${
                 value === option
-                  ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                  : "border-black hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+                  ? "border-strong bg-ink text-on-ink"
+                  : "border-ink hover:bg-ink hover:text-on-ink"
               }`}
               onClick={() => setAnswer(question.id, option)}
             >
@@ -181,7 +181,7 @@ export default function ReportFlow({ language, onBack }) {
         type="text"
         value={value}
         onChange={(e) => setAnswer(question.id, e.target.value)}
-        className="w-full border-2 border-black bg-transparent px-4 py-3 font-bold outline-none focus:border-blue-600 dark:border-white"
+        className="field"
         placeholder={t(language, "report.q.placeholder")}
       />
     );
@@ -189,8 +189,8 @@ export default function ReportFlow({ language, onBack }) {
 
   return (
     <div className="space-y-10">
-      <section className="border-2 border-black bg-black p-8 text-white dark:border-white dark:bg-white dark:text-black">
-        <p className="text-sm font-black uppercase tracking-widest">{t(language, "report.title")}</p>
+      <section className="panel-inverse p-8">
+        <p className="text-sm font-black uppercase tracking-widest opacity-70">{t(language, "report.title")}</p>
         <h1 className="mt-2 text-4xl font-black uppercase leading-tight tracking-tight md:text-5xl">
           {t(language, "report.title")}
         </h1>
@@ -199,10 +199,10 @@ export default function ReportFlow({ language, onBack }) {
           {STEPS.map((key, index) => (
             <li
               key={key}
-              className={`touch-target gap-2 border-2 px-4 py-2 text-sm font-black uppercase tracking-widest ${
+              className={`touch-target gap-2 border px-4 py-2 text-sm font-black uppercase tracking-widest ${
                 index === stepIndex
-                  ? "border-white bg-white text-black dark:border-black dark:bg-black dark:text-white"
-                  : "border-white/40 text-white/70 dark:border-black/40 dark:text-black/70"
+                  ? "border-strong bg-ink text-on-ink"
+                  : "border-ink opacity-70"
               }`}
             >
               {index + 1}. {t(language, `report.${key}`)}
@@ -212,7 +212,7 @@ export default function ReportFlow({ language, onBack }) {
       </section>
 
       {error && (
-        <p role="alert" className="border-2 border-red-600 bg-red-50 p-4 font-bold text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="alert-red p-4 font-bold">
           {error}
         </p>
       )}
@@ -228,7 +228,7 @@ export default function ReportFlow({ language, onBack }) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t(language, "report.describePlaceholder")}
-              className="h-40 w-full border-2 border-black bg-transparent px-4 py-3 font-bold outline-none focus:border-blue-600 dark:border-white"
+              className="field h-40"
             />
           </div>
 
@@ -241,17 +241,17 @@ export default function ReportFlow({ language, onBack }) {
               value={messages}
               onChange={(e) => setMessages(e.target.value)}
               placeholder={t(language, "report.messagesPlaceholder")}
-              className="h-32 w-full border-2 border-black bg-transparent px-4 py-3 font-bold outline-none focus:border-blue-600 dark:border-white"
+              className="field h-32"
             />
           </div>
 
           <div className="space-y-3">
             <p className="text-lg font-black uppercase tracking-wide">{t(language, "report.screenshotsLabel")}</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t(language, "report.screenshotsHint")}</p>
+            <p className="text-sm text-muted">{t(language, "report.screenshotsHint")}</p>
             {screenshots.length > 0 && (
               <ul className="grid gap-3 sm:grid-cols-3">
                 {screenshots.map((shot, index) => (
-                  <li key={shot.name + index} className="space-y-2 border-2 border-black p-2 dark:border-white">
+                  <li key={shot.name + index} className="space-y-2 border border-ink bg-soft p-2">
                     <img
                       src={shot.previewUrl}
                       alt={`${t(language, "report.screenshotsLabel")} ${index + 1}`}
@@ -259,7 +259,7 @@ export default function ReportFlow({ language, onBack }) {
                     />
                     <button
                       type="button"
-                      className="touch-target w-full border-2 border-black px-3 py-1 text-xs font-black uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+                      className="btn-secondary touch-target w-full text-xs"
                       onClick={() => removeScreenshot(index)}
                     >
                       {t(language, "report.removeScreenshot")}
@@ -288,7 +288,7 @@ export default function ReportFlow({ language, onBack }) {
             />
           </div>
 
-          <p className="flex items-start gap-2 text-sm text-slate-500 dark:text-slate-400">
+          <p className="flex items-start gap-2 text-sm text-muted">
             <Icon icon="shieldCheck" className="mt-0.5 h-5 w-5 flex-none" />
             {t(language, "report.privacyNote")}
           </p>
@@ -296,7 +296,7 @@ export default function ReportFlow({ language, onBack }) {
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              className="touch-target gap-2 bg-black px-6 text-lg font-black uppercase tracking-widest text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-black"
+              className="btn-primary touch-target gap-2 px-6 text-lg disabled:opacity-50"
               onClick={handleAnalyze}
               disabled={loading}
             >
@@ -305,7 +305,7 @@ export default function ReportFlow({ language, onBack }) {
             </button>
             <button
               type="button"
-              className="touch-target gap-2 border-2 border-black px-6 text-lg font-black uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+              className="btn-secondary touch-target gap-2 px-6 text-lg"
               onClick={onBack}
             >
               <Icon icon="arrowLeft" className="h-6 w-6" />
@@ -321,21 +321,21 @@ export default function ReportFlow({ language, onBack }) {
             <h2 className="text-2xl font-black uppercase tracking-wide">{t(language, "report.analysisTitle")}</h2>
             <p className="text-lg font-bold">{t(language, report.analysis.summaryKey)}</p>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <span className="text-sm font-black uppercase tracking-widest text-muted">
                 {t(language, "report.riskLevel")}
               </span>
-              <span className={`rounded-full px-3 py-1 text-xs font-black text-white ${riskTone(report.riskLevel)}`}>
+              <span className={`risk-chip ${riskTone(report.riskLevel)}`}>
                 {riskLabel(language, report.riskLevel)}
               </span>
             </div>
             {report.analysis.indicators.length > 0 && (
               <div>
-                <p className="text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                <p className="text-sm font-black uppercase tracking-widest text-muted">
                   {t(language, "report.indicators")}
                 </p>
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {report.analysis.indicators.map((key) => (
-                    <li key={key} className="border-2 border-black px-3 py-1 text-sm font-bold dark:border-white">
+                    <li key={key} className="chip text-sm">
                       {t(language, key)}
                     </li>
                   ))}
@@ -348,12 +348,12 @@ export default function ReportFlow({ language, onBack }) {
             <h2 className="text-2xl font-black uppercase tracking-wide">{t(language, "report.questionsTitle")}</h2>
             <p>{t(language, "report.questionsHint")}</p>
             {report.followUpQuestions.map((question) => (
-              <div key={question.id} className="space-y-3 border-t-2 border-black pt-5 dark:border-white">
+              <div key={question.id} className="space-y-3 border-t border-strong pt-5">
                 <p className="font-black uppercase tracking-wide">{t(language, `report.q.${question.id}`)}</p>
                 {renderQuestion(question)}
                 <button
                   type="button"
-                  className="touch-target text-sm font-black uppercase tracking-widest text-slate-500 underline underline-offset-4 hover:text-black dark:text-slate-400 dark:hover:text-white"
+                  className="touch-target text-sm font-black uppercase tracking-widest text-muted underline underline-offset-4 hover:text-ink"
                   onClick={() => setAnswer(question.id, "")}
                 >
                   {t(language, "report.skip")}
@@ -363,7 +363,7 @@ export default function ReportFlow({ language, onBack }) {
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                className="touch-target gap-2 bg-black px-6 text-lg font-black uppercase tracking-widest text-white hover:bg-slate-800 disabled:opacity-50 dark:bg-white dark:text-black"
+                className="btn-primary touch-target gap-2 px-6 text-lg disabled:opacity-50"
                 onClick={handleContinue}
                 disabled={loading}
               >
@@ -372,7 +372,7 @@ export default function ReportFlow({ language, onBack }) {
               </button>
               <button
                 type="button"
-                className="touch-target gap-2 border-2 border-black px-6 text-lg font-black uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+                className="btn-secondary touch-target gap-2 px-6 text-lg"
                 onClick={() => setStep("describe")}
               >
                 <Icon icon="arrowLeft" className="h-6 w-6" />
@@ -394,17 +394,17 @@ export default function ReportFlow({ language, onBack }) {
                 const detail = t(language, `${stepItem.key}.detail`);
                 const content = (
                   <>
-                    <span className="flex h-8 w-8 flex-none items-center justify-center bg-black font-black text-white dark:bg-white dark:text-black">
+                    <span className="bg-ink text-on-ink flex h-8 w-8 flex-none items-center justify-center font-black">
                       {index + 1}
                     </span>
                     <span className="space-y-1">
                       <span className="block font-black uppercase tracking-wide">{title}</span>
-                      <span className="block text-sm text-slate-500 dark:text-slate-400">{detail}</span>
+                      <span className="block text-sm text-muted">{detail}</span>
                     </span>
                   </>
                 );
                 return (
-                  <li key={stepItem.key} className="flex items-start gap-3 border-2 border-black p-4 dark:border-white">
+                  <li key={stepItem.key} className="flex items-start gap-3 border border-ink bg-soft p-4">
                     {stepItem.link ? (
                       <a
                         href={stepItem.link}
@@ -438,7 +438,7 @@ export default function ReportFlow({ language, onBack }) {
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              className="touch-target gap-2 bg-black px-6 text-lg font-black uppercase tracking-widest text-white hover:bg-slate-800 dark:bg-white dark:text-black"
+              className="btn-primary touch-target gap-2 px-6 text-lg"
               onClick={reset}
             >
               <Icon icon="fileText" className="h-6 w-6" />
@@ -446,7 +446,7 @@ export default function ReportFlow({ language, onBack }) {
             </button>
             <button
               type="button"
-              className="touch-target gap-2 border-2 border-black px-6 text-lg font-black uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+              className="btn-secondary touch-target gap-2 px-6 text-lg"
               onClick={onBack}
             >
               <Icon icon="home" className="h-6 w-6" />

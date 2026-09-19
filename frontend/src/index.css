@@ -1,23 +1,81 @@
+/* Swiss "Helvetica Noir" design system for ScamSahayak.
+   Inter carries the Latin UI; the Noto Sans families back the Indic scripts
+   (Devanagari/Tamil/Telugu/Bengali) so glyphs fall through to a matching
+   script font. Loaded at runtime, like the previous Archivo setup. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Noto+Sans:wght@400;500;700;900&family=Noto+Sans+Devanagari:wght@400;700;900&family=Noto+Sans+Tamil:wght@400;700;900&family=Noto+Sans+Telugu:wght@400;700;900&family=Noto+Sans+Bengali:wght@400;700;900&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Design tokens ────────────────────────────────────────────────
+   Light: Ink #0A0A0A (text + primary), Paper #FFFFFF (background),
+   Ash #C8C8C8 (borders/muted), Signal Red #E60000 (scam alerts ONLY),
+   Cobalt #1A4FD8 (brand/link/focus ONLY). */
+:root {
+  --color-ink: #0a0a0a;
+  --color-paper: #ffffff;
+  --color-ash: #c8c8c8;
+  --color-signal: #e60000;
+  --color-cobalt: #1a4fd8;
+
+  --color-border: #c8c8c8;
+  --color-muted: #6b6b6b;
+  --color-soft: #f4f4f4;
+  --color-on-ink: #ffffff;
+
+  --color-risk-high: #991b1b;
+  --color-risk-medium: #92400e;
+  --color-risk-low: #166534;
+}
+
+/* Dark: background #0A0A0A, text #F5F5F5, borders #2E2E2E,
+   red #FF5C5C, cobalt #6E8BFF. */
+html.dark {
+  --color-ink: #f5f5f5;
+  --color-paper: #0a0a0a;
+  --color-ash: #2e2e2e;
+  --color-signal: #ff5c5c;
+  --color-cobalt: #6e8bff;
+
+  --color-border: #2e2e2e;
+  --color-muted: #9c9c9c;
+  --color-soft: #161616;
+  --color-on-ink: #0a0a0a;
+
+  --color-risk-high: #b91c1c;
+  --color-risk-medium: #b45309;
+  --color-risk-low: #15803d;
+}
 
 html {
   font-size: 18px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
 }
 
 body {
   font-family:
-    "Archivo", "Noto Sans", "Noto Sans Devanagari", "Noto Sans Tamil",
+    "Inter", "Noto Sans", "Noto Sans Devanagari", "Noto Sans Tamil",
     "Noto Sans Telugu", "Noto Sans Bengali", system-ui, -apple-system, Roboto,
     "Helvetica Neue", Arial, sans-serif;
-  font-feature-settings: "ss01";
-  letter-spacing: -0.01em;
+  font-feature-settings: "calt", "kern";
+  letter-spacing: -0.011em;
   line-height: 1.6;
-  @apply bg-white text-black transition-colors dark:bg-black dark:text-white;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Square corners everywhere — part of the Helvetica Noir system. 1px
+   structural borders only (never 4px), no shadows, no gradients. */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 h1,
@@ -26,7 +84,10 @@ h3,
 h4,
 h5,
 h6 {
-  line-height: 1.2;
+  font-family: inherit;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 
@@ -42,61 +103,206 @@ h6 {
   border: 0;
 }
 
-/* Elder-optimized baseline: interactive controls are at least 56×56px in
-   both themes (design-spec sizing for touch targets). */
-.touch-target {
-  @apply flex min-h-[56px] min-w-[56px] items-center justify-center;
+@layer utilities {
+  /* 1px rule colors — pair with `border`, `border-t`, `border-b`, … */
+  .border-ink {
+    border-color: var(--color-border);
+  }
+  .border-strong {
+    border-color: var(--color-ink);
+  }
+  .bg-ink {
+    background-color: var(--color-ink);
+  }
+  .bg-paper {
+    background-color: var(--color-paper);
+  }
+  .bg-soft {
+    background-color: var(--color-soft);
+  }
+  .text-ink {
+    color: var(--color-ink);
+  }
+  .text-muted {
+    color: var(--color-muted);
+  }
+  .text-signal {
+    color: var(--color-signal);
+  }
+  .text-cobalt {
+    color: var(--color-cobalt);
+  }
+  .text-on-ink {
+    color: var(--color-on-ink);
+  }
+  .bg-ash {
+    background-color: var(--color-ash);
+  }
 }
 
-.btn-primary {
-  @apply touch-target rounded-lg bg-black px-6 py-3 text-lg font-bold text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-slate-200;
+@layer components {
+  /* Elder-optimized baseline: interactive controls are at least 56×56px.
+     Kept for backwards compatibility with touch-target-dependent logic. */
+  .touch-target {
+    @apply flex min-h-[56px] min-w-[56px] items-center justify-center;
+  }
+
+  /* Flat button base — 1px border, square, uppercase, ≥48px tall. */
+  .btn {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 px-6 py-2 text-sm font-bold uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--color-border);
+    color: var(--color-ink);
+    background-color: transparent;
+    transition: background-color 0.15s ease, color 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .btn:not(:disabled) {
+    cursor: pointer;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn;
+    background-color: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-on-ink);
+  }
+  .btn-primary:not(:disabled):hover {
+    background-color: transparent;
+    color: var(--color-ink);
+  }
+
+  .btn-secondary {
+    @apply btn;
+  }
+  .btn-secondary:not(:disabled):hover {
+    background-color: var(--color-ink);
+    border-color: var(--color-ink);
+    color: var(--color-on-ink);
+  }
+
+  /* Button sitting on an inverse (ink) panel — paper fill, ink type. */
+  .btn-inverse {
+    @apply btn;
+    background-color: var(--color-paper);
+    border-color: var(--color-ink);
+    color: var(--color-ink);
+  }
+  .btn-inverse:not(:disabled):hover {
+    background-color: transparent;
+    color: var(--color-on-ink);
+  }
+
+  .card {
+    background-color: var(--color-soft);
+    border: 1px solid var(--color-border);
+    padding: 1.5rem;
+  }
+
+  /* Square chip/badge — never color-only: always carries a 1px border and
+     its own label text so colorblind users can distinguish it. */
+  .chip {
+    @apply inline-flex items-center px-3 py-1 text-xs font-bold uppercase;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--color-border);
+    color: var(--color-ink);
+  }
+
+  /* Risk verdict badges — semantic fill kept, plus a 1px border and label
+     text so the verdict is unambiguous even without color. */
+  .risk-badge {
+    @apply inline-flex items-center gap-2 px-4 py-2 text-base font-bold uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid var(--color-ink);
+    color: #fff;
+  }
+  .risk-badge-high {
+    @apply bg-risk-high;
+    border-color: var(--color-risk-high);
+  }
+  .risk-badge-medium {
+    @apply bg-risk-medium;
+    border-color: var(--color-risk-medium);
+  }
+  .risk-badge-low {
+    @apply bg-risk-low;
+    border-color: var(--color-risk-low);
+  }
+
+  /* Small risk tag — compact, still 1px bordered and labeled. */
+  .risk-chip {
+    @apply inline-flex items-center px-3 py-1 text-xs font-black uppercase;
+    letter-spacing: 0.04em;
+    border: 1px solid var(--color-ink);
+    color: #fff;
+  }
+  .risk-chip-high {
+    @apply bg-risk-high;
+    border-color: var(--color-risk-high);
+  }
+  .risk-chip-medium {
+    @apply bg-risk-medium;
+    border-color: var(--color-risk-medium);
+  }
+  .risk-chip-low {
+    @apply bg-risk-low;
+    border-color: var(--color-risk-low);
+  }
+
+  /* Text fields — flat, 1px rule, transparent paper background. */
+  .field {
+    @apply w-full border border-ink bg-transparent px-4 py-3 text-lg font-semibold outline-none;
+    color: var(--color-ink);
+  }
+  .field::placeholder {
+    color: var(--color-muted);
+  }
+  .field:focus {
+    border-color: var(--color-cobalt);
+  }
+
+  /* Inverse panel (ink background) — swaps to paper-on-dark. */
+  .panel-inverse {
+    background-color: var(--color-ink);
+    border: 1px solid var(--color-ink);
+    color: var(--color-on-ink);
+  }
+
+  /* Small uppercase kicker label. */
+  .kicker {
+    @apply text-xs font-bold uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-muted);
+  }
+
+  /* Section heading with a thin 1px rule underneath. */
+  .section-rule {
+    @apply text-xl font-extrabold uppercase;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.5rem;
+  }
+
+  /* Scam-alert callout — signal red reserved strictly for danger contexts. */
+  .alert-red {
+    border: 1px solid var(--color-signal);
+    background-color: color-mix(in srgb, var(--color-signal) 8%, var(--color-paper));
+    color: var(--color-signal);
+  }
 }
 
-.btn-primary:not(:disabled) {
-  @apply active:scale-[0.98];
-}
-
-.btn-secondary {
-  @apply touch-target rounded-lg border-2 border-black bg-white px-6 py-3 text-lg font-semibold text-black transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-50 dark:border-white dark:bg-transparent dark:text-white dark:hover:bg-white dark:hover:text-black;
-}
-
-.card {
-  @apply rounded-lg border-2 border-black bg-white p-6 dark:border-white dark:bg-black;
-}
-
-textarea:focus-visible,
-input:focus-visible,
-select:focus-visible,
-:is(button, a, [role="tab"], [tabindex]):focus-visible {
-  outline: 3px solid #000;
+/* Focus ring in cobalt — brand accent only. */
+:is(button, a, input, select, textarea, [role="tab"], [tabindex], summary):focus-visible {
+  outline: 2px solid var(--color-cobalt);
   outline-offset: 2px;
 }
 
-html.dark :is(button, a, [role="tab"], [tabindex], textarea, input, select):focus-visible {
-  outline-color: #fff;
-}
-
-/* Risk verdict badges — solid, high-contrast fills so the verdict is
-   unambiguous at a glance (SAFE vs. SUSPICIOUS) and still passes contrast
-   with white text in both themes. */
-.risk-badge {
-  @apply inline-flex items-center gap-2 rounded-full px-4 py-2 text-base font-bold text-white;
-}
-
-.risk-badge-high {
-  @apply bg-risk-high;
-}
-
-.risk-badge-medium {
-  @apply bg-risk-medium;
-}
-
-.risk-badge-low {
-  @apply bg-risk-low;
-}
-
-/* Print: keep only the page content — hide the app chrome (design-spec Print
-   CSS) and give the evidence view a crisp black border for scanners. */
+/* Print: keep only the page content — hide the app chrome and give the
+   evidence view a crisp 1px border for scanners. */
 @media print {
   .no-print {
     display: none !important;
@@ -108,12 +314,16 @@ html.dark :is(button, a, [role="tab"], [tabindex], textarea, input, select):focu
   main {
     padding: 0 !important;
   }
+  body {
+    background-color: #fff;
+    color: #000;
+  }
   .evidence-view {
-    border: 2px solid #000 !important;
+    border: 1px solid #000 !important;
     page-break-inside: avoid;
   }
   .evidence-card {
-    border: 2px solid #000 !important;
+    border: 1px solid #000 !important;
     page-break-inside: avoid;
   }
 }

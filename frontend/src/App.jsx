@@ -275,7 +275,7 @@ export default function App() {
       <div className="mb-16">
         <button
           type="button"
-          className="inline-flex min-h-[56px] items-center justify-center gap-2 bg-black px-6 text-sm font-black uppercase tracking-[0.2em] text-white transition-colors hover:bg-slate-800 dark:bg-white dark:text-black dark:hover:bg-slate-200"
+          className="btn-primary"
           onClick={() => setView("home")}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
@@ -293,7 +293,7 @@ export default function App() {
       </div>
 
       <div
-        className="grid grid-cols-1 gap-0 border-4 border-black dark:border-white md:grid-cols-3"
+        className="grid grid-cols-1 gap-0 border border-ink md:grid-cols-3"
         role="tablist"
         aria-label={t(language, "inputTabsLabel")}
         onKeyDown={handleTablistKey}
@@ -306,10 +306,10 @@ export default function App() {
           tabIndex={activeTab === "text" ? 0 : -1}
           aria-selected={activeTab === "text"}
           aria-controls="panel-text"
-          className={`w-full min-h-[140px] p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b-4 md:border-b-0 md:border-r-4 ${
+          className={`w-full min-h-[140px] border-strong p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b md:border-b-0 md:border-r ${
             activeTab === "text"
-              ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
-              : "bg-white text-black border-black hover:bg-black hover:text-white hover:border-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white"
+              ? "bg-ink text-on-ink"
+              : "hover:bg-ink hover:text-on-ink"
           }`}
           onClick={() => {
             setActiveTab("text");
@@ -330,10 +330,10 @@ export default function App() {
           tabIndex={activeTab === "image" ? 0 : -1}
           aria-selected={activeTab === "image"}
           aria-controls="panel-image"
-          className={`w-full min-h-[140px] p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b-4 md:border-b-0 md:border-r-4 ${
+          className={`w-full min-h-[140px] border-strong p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b md:border-b-0 md:border-r ${
             activeTab === "image"
-              ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
-              : "bg-white text-black border-black hover:bg-black hover:text-white hover:border-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white"
+              ? "bg-ink text-on-ink"
+              : "hover:bg-ink hover:text-on-ink"
           }`}
           onClick={() => setActiveTab("image")}
         >
@@ -351,10 +351,10 @@ export default function App() {
           tabIndex={activeTab === "scan" ? 0 : -1}
           aria-selected={activeTab === "scan"}
           aria-controls="panel-scan"
-          className={`w-full min-h-[140px] p-8 text-left transition-colors md:min-h-[180px] md:p-12 ${
+          className={`w-full min-h-[140px] border-strong p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b md:border-b-0 ${
             activeTab === "scan"
-              ? "bg-black text-white border-black dark:bg-white dark:text-black dark:border-white"
-              : "bg-white text-black border-black hover:bg-black hover:text-white hover:border-black dark:bg-black dark:text-white dark:border-white dark:hover:bg-white dark:hover:text-black dark:hover:border-white"
+              ? "bg-ink text-on-ink"
+              : "hover:bg-ink hover:text-on-ink"
           }`}
           onClick={() => setActiveTab("scan")}
         >
@@ -372,14 +372,14 @@ export default function App() {
         aria-labelledby="tab-text"
         hidden={activeTab !== "text"}
         tabIndex={activeTab === "text" ? 0 : undefined}
-        className="border-4 border-black bg-white p-6 dark:border-white dark:bg-black md:p-12"
+        className="border border-ink bg-paper p-6 md:p-12"
       >
         {activeTab === "text" && (
           <>
             <TextInput language={language} value={rawText} onChange={setRawText} />
             <RedactionPreview language={language} text={liveRedactedText} />
             {phonesInText.length > 0 && (
-              <label className="mt-8 flex cursor-pointer items-start gap-4 border-2 border-slate-300 p-6 dark:border-slate-600">
+              <label className="mt-8 flex cursor-pointer items-start gap-4 border border-ink bg-soft p-6">
                 <input
                   type="checkbox"
                   checked={onlineLookup}
@@ -388,14 +388,14 @@ export default function App() {
                 />
                 <span>
                   <span className="block font-bold">{t(language, "check.onlineLookupLabel")}</span>
-                  <span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">
+                  <span className="mt-1 block text-sm text-muted">
                     {t(language, "check.onlineLookupHint")}
                   </span>
                 </span>
               </label>
             )}
-            <div className="mt-8 flex items-start gap-6 border-4 border-green-600 bg-green-50 p-6 dark:bg-green-950">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 shrink-0 text-green-600 dark:text-green-400" aria-hidden="true">
+            <div className="mt-8 flex items-start gap-6 border border-green-600 bg-green-50 p-6 dark:bg-green-950">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 shrink-0 text-green-600" aria-hidden="true">
                 <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
                 <path d="m9 12 2 2 4-4" />
               </svg>
@@ -414,7 +414,7 @@ export default function App() {
         aria-labelledby="tab-image"
         hidden={activeTab !== "image"}
         tabIndex={activeTab === "image" ? 0 : undefined}
-        className="mt-16 border-4 border-black bg-white p-6 dark:border-white dark:bg-black md:p-12"
+        className="mt-16 border border-ink bg-paper p-6 md:p-12"
       >
         {activeTab === "image" && (
           <ImageUpload language={language} onImageSelected={handleImageSelected} onError={setError} />
@@ -426,10 +426,10 @@ export default function App() {
         aria-labelledby="tab-scan"
         hidden={activeTab !== "scan"}
         tabIndex={activeTab === "scan" ? 0 : undefined}
-        className="mt-16 border-4 border-black bg-white p-6 dark:border-white dark:bg-black md:p-12"
+        className="mt-16 border border-ink bg-paper p-6 md:p-12"
       >
         {activeTab === "scan" && (
-          <Suspense fallback={<p className="text-slate-500 dark:text-slate-400">{t(language, "loadingScanner")}</p>}>
+          <Suspense fallback={<p className="text-muted">{t(language, "loadingScanner")}</p>}>
             <Scanner
               language={language}
               onQrDecoded={handleQrDecoded}
@@ -440,7 +440,7 @@ export default function App() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg border-2 border-red-600 bg-red-50 p-3 font-semibold text-red-700 dark:border-red-400 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="alert-red p-3 font-semibold">
           {error}
         </p>
       )}
@@ -455,14 +455,14 @@ export default function App() {
             <>
               <button
                 type="button"
-                className="h-20 border-4 border-black px-12 text-sm font-black uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed dark:border-white dark:hover:bg-white dark:hover:text-black"
+                className="btn-secondary h-20 px-12"
                 onClick={handleCancel}
               >
                 {t(language, "cancelButton")}
               </button>
               <button
                 type="submit"
-                className="h-20 bg-black px-16 text-sm font-black uppercase tracking-widest text-white transition-colors disabled:cursor-not-allowed dark:bg-white dark:text-black"
+                className="btn-primary h-20 px-16"
                 disabled
               >
                 {loadingLabel}
@@ -472,7 +472,7 @@ export default function App() {
             <>
               <button
                 type="button"
-                className="h-20 border-4 border-black px-12 text-sm font-black uppercase tracking-widest transition-colors hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+                className="btn-secondary h-20 px-12"
                 onClick={() => {
                   setRawText("");
                   setImageBase64(null);
@@ -485,7 +485,7 @@ export default function App() {
               </button>
               <button
                 type="submit"
-                className="h-20 bg-black px-16 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white"
+                className="btn-primary h-20 px-16"
               >
                 {t(language, "page.check.analyzeButton")}
               </button>
@@ -494,7 +494,7 @@ export default function App() {
         </div>
       )}
 
-      <div className="mt-24 grid grid-cols-1 gap-16 border-t-4 border-black pt-16 md:grid-cols-2 md:gap-24">
+      <div className="mt-24 grid grid-cols-1 gap-16 border-t border-strong pt-16 md:grid-cols-2 md:gap-24">
         <div>
           <h3 className="text-sm font-black uppercase tracking-[0.2em]">{t(language, "page.check.privacyTitle1")}</h3>
           <p className="mt-6 text-xl font-semibold leading-relaxed">{t(language, "page.check.privacyBody1")}</p>
@@ -516,7 +516,7 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:border-4 focus:border-black focus:bg-white focus:px-4 focus:py-2 focus:font-black focus:text-black dark:focus:border-white dark:focus:bg-black dark:focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:border focus:border-strong focus:bg-paper focus:px-4 focus:py-2 focus:font-black focus:text-ink"
       >
         {t(language, "common.skip")}
       </a>

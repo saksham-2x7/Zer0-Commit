@@ -8,7 +8,7 @@ export default function MobileNavigation({ language, activeView, onNavigate }) {
   return (
     <nav
       aria-label={t(language, "navmobile.navLabel")}
-      className="mobile-nav no-print fixed inset-x-0 bottom-0 z-40 border-t-4 border-black bg-white text-black dark:border-white dark:bg-black dark:text-white md:hidden"
+      className="mobile-nav no-print fixed inset-x-0 bottom-0 z-40 border-t border-ink bg-paper text-ink md:hidden"
     >
       <ul className="flex items-stretch justify-around">
         {NAV_ITEMS.map((id) => {
@@ -19,7 +19,7 @@ export default function MobileNavigation({ language, activeView, onNavigate }) {
                 type="button"
                 aria-current={active ? "page" : undefined}
                 className={`touch-target flex-1 flex-col gap-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                  active ? "bg-black text-white dark:bg-white dark:text-black" : ""
+                  active ? "bg-ink text-on-ink" : ""
                 }`}
                 onClick={() => onNavigate(id)}
               >

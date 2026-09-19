@@ -14,7 +14,7 @@ export default function HistoryPanel({ language, history, onSelect, onClear, onB
       </div>
 
       {history.length === 0 ? (
-        <p className="text-slate-600 dark:text-slate-300">{t(language, "historyEmpty")}</p>
+        <p className="text-muted">{t(language, "historyEmpty")}</p>
       ) : (
         <ul className="space-y-2">
           {history.map((entry) => (
@@ -22,22 +22,22 @@ export default function HistoryPanel({ language, history, onSelect, onClear, onB
               <button
                 type="button"
                 aria-label={t(language, "historyItemAria")}
-                className="w-full rounded-lg border border-slate-200 p-3 text-left transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-700"
+                className="w-full border border-ink p-3 text-left transition hover:bg-soft"
                 onClick={() => onSelect(entry)}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 font-medium">
                     <span
-                      className={`inline-block h-2.5 w-2.5 rounded-full ${RISK_DOT[entry.result.riskLevel] || RISK_DOT.low}`}
+                      className={`inline-block h-3 w-3 ${RISK_DOT[entry.result.riskLevel] || RISK_DOT.low}`}
                       aria-hidden="true"
                     />
                     {t(language, RISK_LABEL_KEYS[entry.result.riskLevel] || "riskLow")}
                   </span>
-                  <span className="text-sm tabular-nums text-slate-500 dark:text-slate-400">
+                  <span className="text-sm tabular-nums text-muted">
                     {new Date(entry.savedAt).toLocaleString()}
                   </span>
                 </div>
-                <p className="mt-1 truncate text-sm text-slate-600 dark:text-slate-300">
+                <p className="mt-1 truncate text-sm text-muted">
                   {entry.redactedText || "—"}
                 </p>
               </button>

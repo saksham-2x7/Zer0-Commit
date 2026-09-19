@@ -113,7 +113,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
       </button>
 
       {/* ─── Certificate header ──────────────────────────── */}
-      <header className="border-b-8 border-black pb-16 mb-20">
+      <header className="border-b border-strong pb-8 mb-16">
         <h1
           ref={headingRef}
           tabIndex={-1}
@@ -121,7 +121,9 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
         >
           {t(language, "page.evidence.title")}
         </h1>
-        <span className="mt-6 inline-flex items-center gap-2 rounded-full bg-risk-high px-4 py-2 text-base font-black text-white">
+        <span className={`risk-badge mt-6 ${
+            riskLevel === "high" ? "risk-badge-high" : riskLevel === "medium" ? "risk-badge-medium" : "risk-badge-low"
+          }`}>
           {t(language, RISK_BADGE_KEY[riskLevel] || "page.evidence.badge")}
         </span>
         <p className="mt-4 text-xl font-bold">{threatLabel}</p>
@@ -162,13 +164,13 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
                   {rawText}
                 </p>
               ) : (
-                <p className="text-lg italic text-slate-500 dark:text-slate-400">
+                <p className="text-lg italic text-muted">
                   {t(language, "page.evidence.originalOnDevice")}
                 </p>
               )}
             </div>
-            <div className="bg-black p-8 text-white md:col-start-2">
-              <p className="text-sm font-semibold uppercase tracking-wide mb-4 text-slate-300">
+            <div className="panel-inverse p-8 md:col-start-2">
+              <p className="text-sm font-semibold uppercase tracking-wide mb-4 opacity-70">
                 {t(language, "page.evidence.whatAISaw")}
               </p>
               <p className="whitespace-pre-wrap break-words font-mono text-lg leading-relaxed">
@@ -179,19 +181,19 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
 
           <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
             <div className="flex items-start gap-6">
-              <Icon icon="lock" className="h-6 w-6 flex-none text-green-600 dark:text-green-400" />
+              <Icon icon="lock" className="h-6 w-6 flex-none text-green-600" />
               <div>
                 <p className="font-black">{t(language, "page.evidence.proof1")}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-muted">
                   {t(language, "page.evidence.legend.hidden")}
                 </p>
               </div>
             </div>
             <div className="flex items-start gap-6">
-              <Icon icon="shieldCheck" className="h-6 w-6 flex-none text-green-600 dark:text-green-400" />
+              <Icon icon="shieldCheck" className="h-6 w-6 flex-none text-green-600" />
               <div>
                 <p className="font-black">{t(language, "page.evidence.proof2")}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-muted">
                   {t(language, "page.evidence.legend.phone")}
                 </p>
               </div>
@@ -210,17 +212,17 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
             {matchedPatterns.map((pattern) => (
               <div
                 key={pattern}
-                className={`evidence-card border-l-8 ${RISK_CARD_BORDER[riskLevel] || RISK_CARD_BORDER.low} bg-slate-50 dark:bg-zinc-900 p-10 space-y-6`}
+                className={`evidence-card border-l ${RISK_CARD_BORDER[riskLevel] || RISK_CARD_BORDER.low} bg-soft p-8 space-y-6`}
               >
                 <div className="flex flex-wrap items-center gap-4">
                   <h3 className="text-lg font-bold">{patternNames[pattern] || pattern}</h3>
                   {riskLevel === "high" && (
-                    <span className="rounded-full bg-risk-high px-3 py-1 text-sm font-black text-white">
+                    <span className="risk-chip risk-chip-high">
                       {t(language, "page.evidence.veryDangerous")}
                     </span>
                   )}
                 </div>
-                <p className="text-slate-700 dark:text-slate-300">
+                <p>
                   {t(language, PATTERN_REASON_KEY[pattern]) || t(language, "noPatternsFound")}
                 </p>
                 <div>
@@ -228,9 +230,9 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
                     <span>{t(language, "page.evidence.dangerLevel")}</span>
                     <span>{dangerPercent}</span>
                   </div>
-                  <div className="h-4 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-zinc-800">
+                  <div className="h-4 w-full bg-ash">
                     <div
-                      className={`h-full rounded-full ${RISK_METER_FILL[riskLevel] || RISK_METER_FILL.low}`}
+                      className={`h-full ${RISK_METER_FILL[riskLevel] || RISK_METER_FILL.low}`}
                       style={{ width: dangerPercent }}
                     />
                   </div>
@@ -239,7 +241,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
             ))}
           </div>
         ) : (
-          <p className="text-slate-600 dark:text-slate-300">{t(language, "noPatternsFound")}</p>
+          <p className="text-muted">{t(language, "noPatternsFound")}</p>
         )}
       </section>
 
@@ -249,7 +251,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
           {t(language, "page.evidence.nextSteps")}
         </h2>
         <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
-          <div className="flex flex-col justify-between gap-6 bg-slate-50 dark:bg-zinc-900 p-8">
+          <div className="flex flex-col justify-between gap-6 bg-soft p-6">
             <p className="font-bold">
               {t(language, "page.evidence.step1")} — 1930
             </p>
@@ -262,10 +264,10 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
               {t(language, "page.evidence.step1link")}
             </a>
           </div>
-          <div className="bg-slate-50 dark:bg-zinc-900 p-8">
+          <div className="bg-soft p-6">
             <p className="font-bold">{t(language, "page.evidence.step2")}</p>
           </div>
-          <div className="bg-slate-50 dark:bg-zinc-900 p-8">
+          <div className="bg-soft p-6">
             <p className="font-bold">{t(language, "page.evidence.step3")}</p>
           </div>
         </div>
@@ -277,11 +279,11 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
           </span>
         </button>
 
-        <div className="mt-16 border-t-2 border-black pt-10 dark:border-white">
+        <div className="mt-16 border-t border-strong pt-8">
           <h3 className="text-sm font-black uppercase tracking-wide mb-4">
             {t(language, "page.evidence.legend")}
           </h3>
-          <ul className="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+          <ul className="space-y-3 text-sm text-muted">
             <li>
               <span className="font-mono font-bold text-[#d32f2f]">████</span> —{" "}
               {t(language, "page.evidence.legend.hidden")}

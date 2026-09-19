@@ -75,7 +75,7 @@ export default function TextInput({ language, value, onChange }) {
         </h3>
         <button
           type="button"
-          className="inline-flex h-14 min-h-[56px] items-center justify-center border-2 border-black px-8 text-sm font-black uppercase tracking-widest transition-colors hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+          className="btn-secondary h-14"
           onClick={handlePaste}
         >
           {t(language, "page.check.pasteButton")}
@@ -83,7 +83,7 @@ export default function TextInput({ language, value, onChange }) {
       </div>
       <textarea
         ref={textareaRef}
-        className="h-80 w-full resize-none border-4 border-black bg-white p-8 text-xl font-bold focus:bg-slate-50 dark:border-white dark:bg-black dark:focus:bg-slate-900 md:text-2xl"
+        className="field h-80 resize-none p-6 text-xl md:text-2xl"
         placeholder={t(language, "page.check.placeholder")}
         value={value}
         maxLength={MAX_TEXT_CHARS}
@@ -92,25 +92,25 @@ export default function TextInput({ language, value, onChange }) {
       />
       <div className="mt-4 flex items-center justify-between gap-2">
         {isSpeechRecognitionSupported() ? (
-          <button type="button" className="inline-flex h-12 min-h-[56px] items-center justify-center border-2 border-black px-6 text-sm font-black uppercase tracking-widest transition-colors hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black" onClick={handleVoiceInput}>
+          <button type="button" className="btn-secondary h-12 min-h-[56px]" onClick={handleVoiceInput}>
             {listening ? t(language, "voiceInputListening") : t(language, "voiceInputButton")}
           </button>
         ) : (
           <span />
         )}
         {nearLimit && (
-          <p className={`text-right text-sm tabular-nums ${remaining <= 0 ? "text-red-600" : "text-slate-500 dark:text-slate-400"}`}>
+          <p className={`text-right text-sm tabular-nums ${remaining <= 0 ? "text-red-600" : "text-muted"}`}>
             {remaining} / {MAX_TEXT_CHARS}
           </p>
         )}
       </div>
       {voiceError && (
-        <p role="alert" className="mt-2 text-sm font-semibold text-red-700 dark:text-red-300">
+        <p role="alert" className="alert-red mt-2 p-3 text-sm font-semibold">
           {voiceError}
         </p>
       )}
       {pasteError && (
-        <p role="alert" className="mt-2 text-sm font-semibold text-red-700 dark:text-red-300">
+        <p role="alert" className="alert-red mt-2 p-3 text-sm font-semibold">
           {pasteError}
         </p>
       )}

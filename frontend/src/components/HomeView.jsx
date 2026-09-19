@@ -18,7 +18,7 @@ const GUARANTEED_DATA = ["id", "phone", "otp"];
 export default function HomeView({ language, onNavigate, history = [], onSelectHistory }) {
   return (
     <div className="space-y-10">
-      <section className="border-2 border-black bg-black p-8 text-white dark:border-white dark:bg-white dark:text-black">
+      <section className="panel-inverse p-8">
         <p className="text-sm font-black uppercase tracking-widest">
           {t(language, "page.home.systemHealth")}
         </p>
@@ -29,7 +29,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
         <p className="mt-3 text-sm opacity-80">{t(language, "page.home.systemHealthBody")}</p>
         <button
           type="button"
-          className="touch-target mt-6 inline-flex gap-2 bg-white px-6 text-lg font-black uppercase tracking-widest text-black hover:bg-slate-200 dark:bg-black dark:text-white dark:hover:bg-slate-800"
+          className="btn-inverse touch-target mt-6"
           onClick={() => onNavigate("check")}
         >
           <Icon icon="check" className="h-6 w-6" />
@@ -49,9 +49,9 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
             {GUARANTEED_DATA.map((item) => (
               <li
                 key={item}
-                className="touch-target gap-2 border-2 border-black px-4 py-2 font-bold dark:border-white"
+                className="touch-target gap-2 border border-ink px-4 py-2 font-bold"
               >
-                <span className="font-mono font-black uppercase text-red-600">
+                <span className="font-mono font-black uppercase text-cobalt">
                   {t(language, "common.hidden")}
                 </span>
                 <span>{t(language, `page.home.data.${item}`)}</span>
@@ -67,7 +67,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
           <button
             type="button"
             key={key}
-            className="card touch-target flex-col items-start gap-3 text-left hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+            className="card touch-target flex-col items-start gap-3 text-left hover:bg-ink hover:text-on-ink"
             onClick={() => onNavigate("check")}
           >
             <Icon icon={icon} className="h-7 w-7" />
@@ -88,7 +88,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
             <button
               type="button"
               key={key}
-              className="card touch-target flex-col items-start gap-3 text-left hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+              className="card touch-target flex-col items-start gap-3 text-left hover:bg-ink hover:text-on-ink"
               onClick={() => onNavigate(target)}
             >
               <Icon icon={icon} className="h-7 w-7" />
@@ -147,16 +147,16 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
             <li key={index} className="card flex items-center justify-between gap-3">
               <div>
                 <p className="font-bold">{entry.text}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{entry.ago}</p>
+                <p className="text-sm text-muted">{entry.ago}</p>
               </div>
               <div className="flex flex-none items-center gap-3">
-                <span className={`rounded-full px-3 py-1 text-xs font-black text-white ${entry.tone}`}>
+                <span className={`risk-chip ${entry.tone}`}>
                   {entry.badge}
                 </span>
                 {entry.entry && onSelectHistory && (
                   <button
                     type="button"
-                    className="touch-target gap-2 border-2 border-black px-4 text-xs font-black uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+                    className="touch-target gap-2 border border-ink px-4 text-xs font-black uppercase tracking-widest hover:bg-ink hover:text-on-ink"
                     onClick={() => onSelectHistory(entry.entry)}
                   >
                     {t(language, "common.saveEvidence")}
@@ -168,7 +168,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
         </ul>
       </section>
 
-      <section className="border-2 border-black p-8 dark:border-white">
+      <section className="border border-ink p-8">
         <h2 className="text-2xl font-black uppercase tracking-wide">
           {t(language, "page.home.report")}
         </h2>
@@ -177,14 +177,14 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
           <button
             type="button"
             onClick={() => onNavigate("report")}
-            className="touch-target gap-2 bg-black px-6 text-lg font-black uppercase tracking-widest text-white hover:bg-slate-800 dark:bg-white dark:text-black"
+            className="btn-primary touch-target"
           >
             <Icon icon="shieldCheck" className="h-6 w-6" />
             {t(language, "page.home.startReport")}
           </button>
           <a
             href="tel:1930"
-            className="touch-target gap-2 border-2 border-black px-6 text-lg font-black uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+            className="btn-secondary touch-target"
           >
             <Icon icon="phone" className="h-6 w-6" />
             {t(language, "page.home.call1930")}
@@ -193,7 +193,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
             href="https://cybercrime.gov.in/"
             target="_blank"
             rel="noopener noreferrer"
-            className="touch-target gap-2 border-2 border-black px-6 text-lg font-black uppercase tracking-widest hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+            className="btn-secondary touch-target"
           >
             <Icon icon="share" className="h-6 w-6" />
             {t(language, "page.home.govtPortal")}

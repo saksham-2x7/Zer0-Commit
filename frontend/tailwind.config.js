@@ -12,11 +12,11 @@ export default {
         },
       },
       fontFamily: {
-        // Archivo for the Latin UI; the Noto Sans family backs the Indic
+        // Inter for the Latin UI; the Noto Sans family backs the Indic
         // scripts (Devanagari/Tamil/Telugu/Bengali) so glyphs fall through
         // to a matching script font.
         sans: [
-          "Archivo",
+          "Inter",
           "Noto Sans",
           "Noto Sans Devanagari",
           "Noto Sans Tamil",

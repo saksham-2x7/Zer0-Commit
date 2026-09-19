@@ -52,7 +52,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
       body: (
         <>
           <p className="text-base font-bold leading-relaxed">{t(language, "page.help.faq1.a")}</p>
-          <div className="mt-6 flex aspect-video items-center justify-center border-2 border-black bg-black text-white dark:border-white dark:bg-white dark:text-black">
+          <div className="panel-inverse mt-6 flex aspect-video items-center justify-center">
             <Icon icon="playCircle" className="text-6xl" />
             <span className="ml-4 font-black uppercase">{t(language, "page.help.watchVideo")}</span>
           </div>
@@ -68,13 +68,13 @@ export default function HelpModal({ language, onClose, asView = false }) {
       body: (
         <div className="space-y-6">
           <div className="flex flex-col gap-6 md:flex-row md:items-start">
-            <span className="border-2 border-red-600 px-4 py-2 font-black uppercase text-red-600">
+            <span className="border border-signal px-4 py-2 font-black uppercase text-signal">
               {t(language, "page.help.faq2.badgeHigh")}
             </span>
             <p className="text-base font-bold leading-relaxed">{t(language, "page.help.faq2.high")}</p>
           </div>
           <div className="flex flex-col gap-6 md:flex-row md:items-start">
-            <span className="border-2 border-green-600 px-4 py-2 font-black uppercase text-green-600">
+            <span className="border border-green-600 px-4 py-2 font-black uppercase text-green-600">
               {t(language, "page.help.faq2.badgeSafe")}
             </span>
             <p className="text-base font-bold leading-relaxed">{t(language, "page.help.faq2.safe")}</p>
@@ -125,11 +125,11 @@ export default function HelpModal({ language, onClose, asView = false }) {
 
   const content = (
     <div className={asView ? "w-full space-y-12" : "card w-full max-w-2xl space-y-12 py-10"}>
-      <div className="border-b-8 border-black pb-10 dark:border-white">
+      <div className="border-b border-strong pb-10">
         <h2 id="help-modal-heading" className="mb-8 text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-[56px]">
           {t(language, "page.help.title")}
         </h2>
-        <div className="flex w-full flex-col gap-0 border-4 border-black md:flex-row dark:border-white">
+        <div className="flex w-full flex-col gap-0 border border-ink md:flex-row">
           <label htmlFor="help-search-input" className="sr-only">
             {t(language, "page.help.searchPlaceholder")}
           </label>
@@ -139,11 +139,11 @@ export default function HelpModal({ language, onClose, asView = false }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t(language, "page.help.searchPlaceholder")}
-            className="w-full flex-1 border-b-4 border-black bg-transparent px-8 py-5 text-xl font-bold outline-none md:border-r-4 md:border-b-0 dark:border-white dark:text-slate-100"
+            className="w-full flex-1 border-b border-ink bg-transparent px-6 py-4 text-xl font-bold outline-none md:border-r md:border-b-0"
           />
           <button
             type="button"
-            className="touch-target w-full bg-black px-12 text-sm font-black uppercase tracking-widest text-white transition-all hover:invert md:w-auto dark:bg-white dark:text-black"
+            className="btn-primary touch-target md:w-auto"
             onClick={() => setQuery(query)}
           >
             {t(language, "page.help.search")}
@@ -161,7 +161,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
               key={topic.label}
               type="button"
               onClick={() => setQuery(topic.target)}
-              className="touch-target flex flex-col items-center gap-6 border-2 border-black p-10 transition-all hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+              className="touch-target flex flex-col items-center gap-6 border border-ink p-10 transition hover:bg-ink hover:text-on-ink"
             >
               <Icon icon={topic.icon} className="text-4xl" />
               <span className="text-center text-xl font-black uppercase">{topic.label}</span>
@@ -172,20 +172,20 @@ export default function HelpModal({ language, onClose, asView = false }) {
 
       <div className="grid grid-cols-1 gap-24 lg:grid-cols-12">
         <section aria-labelledby="help-faq-heading" className="lg:col-span-8">
-          <h3 id="help-faq-heading" className="mb-12 border-b-4 border-black pb-4 text-[40px] font-black uppercase tracking-tighter dark:border-white">
+          <h3 id="help-faq-heading" className="mb-12 border-b border-strong pb-4 text-[40px] font-black uppercase tracking-tighter">
             {t(language, "page.help.faq")}
           </h3>
           {visibleFaqs.length === 0 ? (
             <p className="text-base font-bold">{t(language, "page.help.noResults")}</p>
           ) : (
-            <div className="divide-y-4 divide-black border-y-4 border-black dark:divide-white dark:border-white">
+            <div className="divide-y divide-ink border-y border-ink">
               {visibleFaqs.map((faq) => (
                 <details key={faq.q} className="group">
-                  <summary className="flex cursor-pointer touch-target list-none items-center justify-between gap-4 p-8 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/5">
+                  <summary className="flex cursor-pointer touch-target list-none items-center justify-between gap-4 p-6 text-left transition-colors hover:bg-soft">
                     <h4 className="text-2xl font-black uppercase">{faq.q}</h4>
                     <Icon icon="chevronDown" className="shrink-0 text-3xl transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="border-t-2 border-black p-8 dark:border-white">{faq.body}</div>
+                  <div className="border-t border-ink p-6">{faq.body}</div>
                 </details>
               ))}
             </div>
@@ -193,13 +193,13 @@ export default function HelpModal({ language, onClose, asView = false }) {
         </section>
 
         <section aria-labelledby="help-contact-heading" className="lg:col-span-4">
-          <div className="border-4 border-black p-10 lg:sticky lg:top-32 dark:border-white">
+          <div className="border border-ink p-6 lg:sticky lg:top-32">
             <h3 id="help-contact-heading" className="mb-6 text-2xl font-black uppercase tracking-tighter">
               {t(language, "page.help.contact")}
             </h3>
             <div className="mb-12 space-y-8">
               <div className="flex items-center gap-6">
-                <span className="flex h-14 w-14 items-center justify-center border-2 border-black bg-black text-2xl text-white dark:border-white dark:bg-white dark:text-black">
+                <span className="flex h-14 w-14 items-center justify-center border border-strong bg-ink text-2xl text-on-ink">
                   <Icon icon="phone" />
                 </span>
                 <div>
@@ -210,7 +210,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
                 </div>
               </div>
               <div className="flex items-center gap-6">
-                <span className="flex h-14 w-14 items-center justify-center border-2 border-black text-2xl dark:border-white">
+                <span className="flex h-14 w-14 items-center justify-center border border-ink text-2xl">
                   <Icon icon="mail" />
                 </span>
                 <div>
@@ -225,7 +225,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
                 {t(language, "page.help.formSubmitted")}
               </p>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6 border-t-4 border-black pt-12 dark:border-white">
+              <form onSubmit={handleSubmit} className="space-y-6 border-t border-ink pt-8">
                 <p className="text-sm font-black uppercase">{t(language, "page.help.sendMessage")}</p>
                 <label className="block">
                   <span className="mb-2 block text-[10px] font-black uppercase tracking-widest">
@@ -234,7 +234,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
                   <input
                     type="text"
                     name="name"
-                    className="w-full border-2 border-black px-4 py-3 text-lg font-bold outline-none dark:border-white dark:bg-slate-900 dark:text-slate-100"
+                    className="field"
                   />
                 </label>
                 <label className="block">
@@ -244,12 +244,12 @@ export default function HelpModal({ language, onClose, asView = false }) {
                   <textarea
                     name="message"
                     rows={4}
-                    className="h-32 w-full resize-none border-2 border-black px-4 py-4 text-lg font-bold outline-none dark:border-white dark:bg-slate-900 dark:text-slate-100"
+                    className="field h-32 resize-none"
                   />
                 </label>
                 <button
                   type="submit"
-                  className="touch-target w-full bg-black px-8 py-5 text-sm font-black uppercase tracking-widest text-white transition-all hover:invert dark:bg-white dark:text-black"
+                  className="btn-primary touch-target w-full"
                 >
                   {t(language, "page.help.submit")}
                 </button>

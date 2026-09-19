@@ -56,8 +56,8 @@ export default function SettingsView({
             type="button"
             id="btn-light-mode"
             aria-pressed={theme === "light"}
-            className={`touch-target border-2 border-black px-6 text-lg font-bold dark:border-white ${
-              theme === "light" ? "bg-black text-white dark:bg-white dark:text-black" : "hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+            className={`touch-target border border-ink px-6 text-lg font-bold ${
+              theme === "light" ? "bg-ink text-on-ink" : "hover:bg-ink hover:text-on-ink"
             }`}
             onClick={requestLight}
           >
@@ -67,8 +67,8 @@ export default function SettingsView({
             type="button"
             id="btn-dark-mode"
             aria-pressed={theme === "dark"}
-            className={`touch-target border-2 border-black px-6 text-lg font-bold dark:border-white ${
-              theme === "dark" ? "bg-black text-white dark:bg-white dark:text-black" : "hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+            className={`touch-target border border-ink px-6 text-lg font-bold ${
+              theme === "dark" ? "bg-ink text-on-ink" : "hover:bg-ink hover:text-on-ink"
             }`}
             onClick={requestDark}
           >

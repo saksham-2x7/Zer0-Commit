@@ -240,14 +240,14 @@ export default function FamilyChat({ language }) {
       <p className="mt-6 max-w-2xl text-xl font-semibold leading-relaxed">{t(language, "chat.subtitle")}</p>
 
       {fingerprint && (
-        <p className="mt-6 inline-block border-4 border-black px-4 py-3 font-mono text-lg font-black tracking-widest dark:border-white">
+        <p className="mt-6 inline-block border border-ink bg-soft px-4 py-3 font-mono text-lg font-black tracking-widest">
           {t(language, "chat.fingerprint")} {fingerprint}
         </p>
       )}
       <p className="mt-2 text-sm font-bold opacity-60">{t(language, "chat.memberId")} {memberId}</p>
 
       {error && (
-        <p role="alert" className="mt-6 border-2 border-red-600 bg-red-50 p-3 font-semibold text-red-700 dark:border-red-400 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="mt-6 alert-red p-3 font-semibold">
           {error}
         </p>
       )}
@@ -255,7 +255,7 @@ export default function FamilyChat({ language }) {
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
         {/* Thread list + create */}
         <div className="lg:col-span-1">
-          <h3 className="border-b-4 border-black pb-2 text-sm font-black uppercase tracking-[0.2em] dark:border-white">
+          <h3 className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
             {t(language, "chat.threadsTitle")}
           </h3>
           <ul className="mt-4 space-y-3">
@@ -264,10 +264,10 @@ export default function FamilyChat({ language }) {
                 <button
                   type="button"
                   onClick={() => setSelectedThreadId(th.threadId)}
-                  className={`w-full border-2 border-black p-4 text-left transition-colors dark:border-white ${
+                  className={`w-full border border-ink p-4 text-left transition-colors ${
                     selectedThreadId === th.threadId
-                      ? "bg-black text-white dark:bg-white dark:text-black"
-                      : "hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+                      ? "bg-ink text-on-ink border-strong"
+                      : "bg-soft hover:bg-paper"
                   }`}
                 >
                   <span className="block text-lg font-black">{th.name}</span>
@@ -280,7 +280,7 @@ export default function FamilyChat({ language }) {
             ))}
           </ul>
 
-          <form onSubmit={handleCreateThread} className="mt-6 space-y-4 border-4 border-black p-6 dark:border-white">
+          <form onSubmit={handleCreateThread} className="mt-6 space-y-4 border border-ink bg-soft p-6">
             <h4 className="text-xs font-black uppercase tracking-widest">{t(language, "chat.newThread")}</h4>
             <div>
               <label htmlFor="thread-name" className="block text-xs font-black uppercase tracking-widest">
@@ -292,7 +292,7 @@ export default function FamilyChat({ language }) {
                 onChange={(e) => setThreadName(e.target.value)}
                 required
                 maxLength={60}
-                className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                className="mt-2 field"
               />
             </div>
             <div>
@@ -304,13 +304,13 @@ export default function FamilyChat({ language }) {
                 value={threadMembers}
                 onChange={(e) => setThreadMembers(e.target.value)}
                 placeholder={t(language, "chat.membersPlaceholder")}
-                className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                className="mt-2 field"
               />
             </div>
             <button
               type="submit"
               disabled={loading || !ready}
-              className="h-14 w-full bg-black px-6 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white"
+              className="btn-primary disabled:cursor-not-allowed h-14 w-full px-6"
             >
               {t(language, "chat.createThreadButton")}
             </button>
@@ -319,19 +319,19 @@ export default function FamilyChat({ language }) {
 
         {/* Messages */}
         <div className="lg:col-span-2">
-          <h3 className="border-b-4 border-black pb-2 text-sm font-black uppercase tracking-[0.2em] dark:border-white">
+          <h3 className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
             {selectedThread ? selectedThread.name : t(language, "chat.messagesTitle")}
           </h3>
 
           {selectedThread && !selectedThread.groupKey && (
-            <p className="mt-6 border-2 border-black p-4 font-bold dark:border-white">
+            <p className="mt-6 border border-ink bg-soft p-4 font-bold">
               {t(language, "chat.noKeyBody")}
             </p>
           )}
 
           <ul className="mt-6 space-y-4" aria-live="polite">
             {messages.map((m) => (
-              <li key={m.messageId} className="border-2 border-black p-4 dark:border-white">
+              <li key={m.messageId} className="border border-ink bg-soft p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-black uppercase tracking-widest opacity-60">{m.senderId}</span>
                   <span className="text-xs font-bold opacity-40">{new Date(m.createdAt).toLocaleString()}</span>
@@ -356,12 +356,12 @@ export default function FamilyChat({ language }) {
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 maxLength={2000}
-                className="flex-1 border-4 border-black bg-white p-4 text-lg font-bold dark:border-white dark:bg-black dark:text-white"
+                className="field flex-1 text-lg"
               />
               <button
                 type="submit"
                 disabled={loading || !draft.trim()}
-                className="h-16 bg-black px-10 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white"
+                className="btn-primary disabled:cursor-not-allowed h-16 px-10"
               >
                 {t(language, "chat.sendButton")}
               </button>

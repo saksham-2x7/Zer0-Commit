@@ -121,7 +121,7 @@ export default function ImageUpload({ language, onImageSelected, onError }) {
           <img
             src={previewUrl}
             alt={t(language, "imagePreviewAlt")}
-            className="max-h-64 w-full rounded-lg border border-slate-200 object-contain dark:border-slate-700"
+            className="max-h-64 w-full border border-ink object-contain bg-soft"
           />
           <button
             type="button"
@@ -132,7 +132,7 @@ export default function ImageUpload({ language, onImageSelected, onError }) {
           </button>
         </div>
       )}
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t(language, "imageUploadHint")}</p>
+      <p className="mt-2 text-sm text-muted">{t(language, "imageUploadHint")}</p>
       <input
         ref={inputRef}
         type="file"

@@ -165,7 +165,7 @@ export default function FamilyView({ language, onNavigate }) {
       <section aria-labelledby="family-create-title">
         <button
           type="button"
-          className="mb-8 inline-flex min-h-[56px] items-center justify-center gap-2 border-4 border-black px-6 text-sm font-black uppercase tracking-[0.2em] transition-colors hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+          className="btn-secondary touch-target mb-8 inline-flex gap-2 px-6 text-sm"
           onClick={() => onNavigate("home")}
         >
           {t(language, "common.back")}
@@ -185,7 +185,7 @@ export default function FamilyView({ language, onNavigate }) {
               onChange={(e) => setFamilyName(e.target.value)}
               required
               maxLength={60}
-              className="mt-2 w-full border-4 border-black bg-white p-4 text-lg font-bold dark:border-white dark:bg-black dark:text-white"
+              className="mt-2 field text-lg"
             />
           </div>
           <div>
@@ -198,18 +198,18 @@ export default function FamilyView({ language, onNavigate }) {
               onChange={(e) => setAdminName(e.target.value)}
               required
               maxLength={60}
-              className="mt-2 w-full border-4 border-black bg-white p-4 text-lg font-bold dark:border-white dark:bg-black dark:text-white"
+              className="mt-2 field text-lg"
             />
           </div>
           {error && (
-            <p role="alert" className="border-2 border-red-600 bg-red-50 p-3 font-semibold text-red-700 dark:border-red-400 dark:bg-red-950 dark:text-red-200">
+            <p role="alert" className="alert-red p-3 font-semibold">
               {error}
             </p>
           )}
           <button
             type="submit"
             disabled={loading}
-            className="h-16 w-full bg-black px-8 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white"
+            className="btn-primary disabled:cursor-not-allowed h-16 w-full px-8"
           >
             {loading ? t(language, "family.creating") : t(language, "family.createButton")}
           </button>
@@ -229,7 +229,7 @@ export default function FamilyView({ language, onNavigate }) {
         </div>
         <button
           type="button"
-          className="inline-flex min-h-[56px] items-center justify-center gap-2 border-4 border-black px-6 text-sm font-black uppercase tracking-[0.2em] transition-colors hover:bg-black hover:text-white dark:border-white dark:hover:bg-white dark:hover:text-black"
+          className="btn-secondary touch-target inline-flex gap-2 px-6 text-sm"
           onClick={() => onNavigate("food")}
         >
           {t(language, "family.goFood")}
@@ -237,7 +237,7 @@ export default function FamilyView({ language, onNavigate }) {
       </div>
 
       {error && (
-        <p role="alert" className="mt-6 border-2 border-red-600 bg-red-50 p-3 font-semibold text-red-700 dark:border-red-400 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="mt-6 alert-red p-3 font-semibold">
           {error}
         </p>
       )}
@@ -247,12 +247,12 @@ export default function FamilyView({ language, onNavigate }) {
         <div className="mt-12 space-y-16">
           {/* Members */}
           <section aria-labelledby="family-members-title">
-            <h3 id="family-members-title" className="border-b-4 border-black pb-2 text-sm font-black uppercase tracking-[0.2em] dark:border-white">
+            <h3 id="family-members-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.membersTitle")}
             </h3>
             <ul className="mt-6 space-y-4">
               {family.members.map((m) => (
-                <li key={m.memberId} className="border-2 border-black p-4 dark:border-white">
+                <li key={m.memberId} className="border border-ink bg-soft p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xl font-black">{m.name}</span>
                     <span className="text-xs font-black uppercase tracking-widest opacity-60">{m.role}</span>
@@ -260,7 +260,7 @@ export default function FamilyView({ language, onNavigate }) {
                   {m.allergies.length > 0 && (
                     <ul className="mt-3 flex flex-wrap gap-2">
                       {m.allergies.map((a) => (
-                        <li key={a} className="border-2 border-black px-2 py-1 text-xs font-bold uppercase tracking-wider dark:border-white">
+                        <li key={a} className="chip">
                           {a}
                         </li>
                       ))}
@@ -269,7 +269,7 @@ export default function FamilyView({ language, onNavigate }) {
                 </li>
               ))}
             </ul>
-            <form onSubmit={handleAddMember} className="mt-6 grid grid-cols-1 gap-4 border-4 border-black p-6 dark:border-white md:grid-cols-3">
+            <form onSubmit={handleAddMember} className="mt-6 grid grid-cols-1 gap-4 border border-ink bg-soft p-6 md:grid-cols-3">
               <div>
                 <label htmlFor="member-name" className="block text-xs font-black uppercase tracking-widest">
                   {t(language, "family.memberName")}
@@ -280,7 +280,7 @@ export default function FamilyView({ language, onNavigate }) {
                   onChange={(e) => setMemberName(e.target.value)}
                   required
                   maxLength={60}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <div>
@@ -291,7 +291,7 @@ export default function FamilyView({ language, onNavigate }) {
                   id="member-role"
                   value={memberRole}
                   onChange={(e) => setMemberRole(e.target.value)}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 >
                   {ROLES.map((r) => (
                     <option key={r} value={r}>{r}</option>
@@ -308,13 +308,13 @@ export default function FamilyView({ language, onNavigate }) {
                   onChange={(e) => setMemberAllergies(e.target.value)}
                   placeholder={t(language, "family.allergiesPlaceholder")}
                   maxLength={900}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="h-14 bg-black px-6 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white md:col-span-3"
+                className="btn-primary disabled:cursor-not-allowed h-14 px-6 md:col-span-3"
               >
                 {t(language, "family.addMemberButton")}
               </button>
@@ -323,12 +323,12 @@ export default function FamilyView({ language, onNavigate }) {
 
           {/* Contacts */}
           <section aria-labelledby="family-contacts-title">
-            <h3 id="family-contacts-title" className="border-b-4 border-black pb-2 text-sm font-black uppercase tracking-[0.2em] dark:border-white">
+            <h3 id="family-contacts-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.contactsTitle")}
             </h3>
             <ul className="mt-6 space-y-4">
               {family.contacts.map((c) => (
-                <li key={c.contactId} className="border-2 border-black p-4 dark:border-white">
+                <li key={c.contactId} className="border border-ink bg-soft p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xl font-black">{c.name}</span>
                     <span className="font-mono text-sm font-bold">{c.phone}</span>
@@ -340,7 +340,7 @@ export default function FamilyView({ language, onNavigate }) {
                 </li>
               ))}
             </ul>
-            <form onSubmit={handleAddContact} className="mt-6 grid grid-cols-1 gap-4 border-4 border-black p-6 dark:border-white md:grid-cols-3">
+            <form onSubmit={handleAddContact} className="mt-6 grid grid-cols-1 gap-4 border border-ink bg-soft p-6 md:grid-cols-3">
               <div>
                 <label htmlFor="contact-name" className="block text-xs font-black uppercase tracking-widest">
                   {t(language, "family.contactName")}
@@ -351,7 +351,7 @@ export default function FamilyView({ language, onNavigate }) {
                   onChange={(e) => setContactName(e.target.value)}
                   required
                   maxLength={60}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <div>
@@ -364,7 +364,7 @@ export default function FamilyView({ language, onNavigate }) {
                   onChange={(e) => setContactPhone(e.target.value)}
                   required
                   maxLength={20}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <div>
@@ -376,13 +376,13 @@ export default function FamilyView({ language, onNavigate }) {
                   value={contactNote}
                   onChange={(e) => setContactNote(e.target.value)}
                   maxLength={200}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="h-14 bg-black px-6 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white md:col-span-3"
+                className="btn-primary disabled:cursor-not-allowed h-14 px-6 md:col-span-3"
               >
                 {t(language, "family.addContactButton")}
               </button>
@@ -391,12 +391,12 @@ export default function FamilyView({ language, onNavigate }) {
 
           {/* Alerts */}
           <section aria-labelledby="family-alerts-title">
-            <h3 id="family-alerts-title" className="border-b-4 border-black pb-2 text-sm font-black uppercase tracking-[0.2em] dark:border-white">
+            <h3 id="family-alerts-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.alertsTitle")}
             </h3>
             <ul className="mt-6 space-y-4">
               {family.alerts.map((a) => (
-                <li key={a.alertId} className="border-2 border-black p-4 dark:border-white">
+                <li key={a.alertId} className="border border-ink bg-soft p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-xl font-black">{a.title}</span>
                     <span className="text-xs font-black uppercase tracking-widest opacity-60">{a.riskLevel}</span>
@@ -411,7 +411,7 @@ export default function FamilyView({ language, onNavigate }) {
                         type="button"
                         onClick={() => handleConfirmAlert(a.alertId)}
                         disabled={loading}
-                        className="h-10 border-2 border-black px-4 text-xs font-black uppercase tracking-widest transition-colors hover:bg-black hover:text-white disabled:cursor-not-allowed dark:border-white dark:hover:bg-white dark:hover:text-black"
+                        className="btn-secondary h-10 px-4 text-xs disabled:cursor-not-allowed"
                       >
                         {t(language, "family.confirmAlert")}
                       </button>
@@ -420,7 +420,7 @@ export default function FamilyView({ language, onNavigate }) {
                 </li>
               ))}
             </ul>
-            <form onSubmit={handleAddAlert} className="mt-6 grid grid-cols-1 gap-4 border-4 border-black p-6 dark:border-white md:grid-cols-3">
+            <form onSubmit={handleAddAlert} className="mt-6 grid grid-cols-1 gap-4 border border-ink bg-soft p-6 md:grid-cols-3">
               <div>
                 <label htmlFor="alert-title" className="block text-xs font-black uppercase tracking-widest">
                   {t(language, "family.alertTitle")}
@@ -431,7 +431,7 @@ export default function FamilyView({ language, onNavigate }) {
                   onChange={(e) => setAlertTitle(e.target.value)}
                   required
                   maxLength={80}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <div>
@@ -443,7 +443,7 @@ export default function FamilyView({ language, onNavigate }) {
                   value={alertDetail}
                   onChange={(e) => setAlertDetail(e.target.value)}
                   maxLength={300}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <div>
@@ -454,7 +454,7 @@ export default function FamilyView({ language, onNavigate }) {
                   id="alert-risk"
                   value={alertRisk}
                   onChange={(e) => setAlertRisk(e.target.value)}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 >
                   {RISK_LEVELS.map((r) => (
                     <option key={r} value={r}>{r}</option>
@@ -464,7 +464,7 @@ export default function FamilyView({ language, onNavigate }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="h-14 bg-black px-6 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white md:col-span-3"
+                className="btn-primary disabled:cursor-not-allowed h-14 px-6 md:col-span-3"
               >
                 {t(language, "family.addAlertButton")}
               </button>
@@ -473,12 +473,12 @@ export default function FamilyView({ language, onNavigate }) {
 
           {/* Blocklist */}
           <section aria-labelledby="family-blocklist-title">
-            <h3 id="family-blocklist-title" className="border-b-4 border-black pb-2 text-sm font-black uppercase tracking-[0.2em] dark:border-white">
+            <h3 id="family-blocklist-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.blocklistTitle")}
             </h3>
             <ul className="mt-6 space-y-4">
               {family.blocklist.map((b, i) => (
-                <li key={`${b.phone}-${i}`} className="flex flex-wrap items-center justify-between gap-2 border-2 border-black p-4 dark:border-white">
+                <li key={`${b.phone}-${i}`} className="flex flex-wrap items-center justify-between gap-2 border border-ink bg-soft p-4">
                   <span className="font-mono text-lg font-black">{b.phone}</span>
                   <span className="text-xs font-bold uppercase tracking-widest opacity-50">
                     {t(language, "family.addedBy")} {b.addedBy}
@@ -486,7 +486,7 @@ export default function FamilyView({ language, onNavigate }) {
                 </li>
               ))}
             </ul>
-            <form onSubmit={handleAddBlocklist} className="mt-6 flex flex-col gap-4 border-4 border-black p-6 dark:border-white md:flex-row">
+            <form onSubmit={handleAddBlocklist} className="mt-6 flex flex-col gap-4 border border-ink bg-soft p-6 md:flex-row">
               <div className="flex-1">
                 <label htmlFor="block-phone" className="block text-xs font-black uppercase tracking-widest">
                   {t(language, "family.blockPhone")}
@@ -497,13 +497,13 @@ export default function FamilyView({ language, onNavigate }) {
                   onChange={(e) => setBlockPhone(e.target.value)}
                   required
                   maxLength={20}
-                  className="mt-2 w-full border-2 border-black bg-white p-3 font-bold dark:border-white dark:bg-black dark:text-white"
+                  className="mt-2 field"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="h-14 bg-black px-6 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white"
+                className="btn-primary disabled:cursor-not-allowed h-14 px-6"
               >
                 {t(language, "family.addBlocklistButton")}
               </button>

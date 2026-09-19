@@ -122,7 +122,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
 
   return (
     <div className="space-y-4">
-      <p className="text-slate-600 dark:text-slate-300">{t(language, "scanIntro")}</p>
+      <p className="text-muted">{t(language, "scanIntro")}</p>
 
       {!decoded && (
         <div className="space-y-2">
@@ -131,11 +131,11 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
               {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
               <video
                 ref={videoRef}
-                className="w-full rounded-lg border border-slate-200 dark:border-slate-700"
+                className="w-full border border-ink"
                 muted
                 playsInline
               />
-              <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-center text-sm text-muted">
                 {t(language, "scanScanningHint")}
               </p>
             </>
@@ -167,7 +167,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
       )}
 
       {error && (
-        <p role="alert" className="rounded-lg border-2 border-red-300 bg-red-50 p-3 font-semibold text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="alert-red p-3 font-semibold">
           {error}
         </p>
       )}
@@ -175,8 +175,8 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
       {decoded && decoded.isQr && (
         <div className="card space-y-3" aria-live="polite">
           <h3 className="text-lg font-semibold">{t(language, "scanQrFoundHeading")}</h3>
-          <p className="text-sm text-slate-600 dark:text-slate-300">{t(language, "scanQrFoundHint")}</p>
-          <p className="whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 font-mono text-sm dark:bg-slate-900">
+          <p className="text-sm text-muted">{t(language, "scanQrFoundHint")}</p>
+          <p className="whitespace-pre-wrap break-words border border-ink bg-soft p-3 font-mono text-sm">
             {decoded.text}
           </p>
           <button type="button" className="btn-primary w-full" onClick={() => onQrDecoded(decoded.text)}>
@@ -191,9 +191,9 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
       {decoded && !decoded.isQr && (
         <div className="card space-y-3" aria-live="polite">
           <h3 className="text-lg font-semibold">{t(language, "scanBarcodeFoundHeading")}</h3>
-          <p className="font-mono text-sm text-slate-600 dark:text-slate-300">{decoded.text}</p>
+          <p className="font-mono text-sm text-muted">{decoded.text}</p>
           {productLoading ? (
-            <p className="text-slate-500 dark:text-slate-400" role="status">
+            <p className="text-muted" role="status">
               {t(language, "scanProductLookingUp")}
             </p>
           ) : product ? (
@@ -208,28 +208,28 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
               )}
               <p>{product.name || "—"}</p>
               {product.brand && (
-                <p className="text-sm text-slate-500 dark:text-slate-400">{product.brand}</p>
+                <p className="text-sm text-muted">{product.brand}</p>
               )}
               {product.nutriScore && (
                 <p className="text-sm">
                   {t(language, "scanNutriScoreLabel")} {product.nutriScore}
                 </p>
               )}
-              <p className="text-sm text-slate-600 dark:text-slate-300">{t(language, "scanProductSource")}</p>
+              <p className="text-sm text-muted">{t(language, "scanProductSource")}</p>
 
-              <div className="mt-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                <h5 className="font-semibold text-slate-700 dark:text-slate-200">
+              <div className="mt-3 border border-ink bg-soft p-3">
+                <h5 className="font-semibold">
                   {t(language, "foodFeedbackHeading")}
                 </h5>
                 {foodFeedbackLoading ? (
-                  <p className="mt-1 text-slate-500 dark:text-slate-400">
+                  <p className="mt-1 text-muted">
                     {t(language, "foodFeedbackLoading")}
                   </p>
                 ) : foodFeedback ? (
-                  <p className="mt-1 text-slate-700 dark:text-slate-300">{foodFeedback}</p>
+                  <p className="mt-1">{foodFeedback}</p>
                 ) : (
                   <div className="mt-1">
-                    <p className="text-slate-600 dark:text-slate-300">{t(language, "foodFeedbackNoProfile")}</p>
+                    <p className="text-muted">{t(language, "foodFeedbackNoProfile")}</p>
                     {onSetupHealthProfile && (
                       <button
                         type="button"
@@ -244,7 +244,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
               </div>
             </div>
           ) : (
-            <p className="text-slate-600 dark:text-slate-300">{t(language, "scanProductNotFound")}</p>
+            <p className="text-muted">{t(language, "scanProductNotFound")}</p>
           )}
           <button type="button" className="btn-secondary w-full" onClick={reset}>
             {t(language, "scanAgainButton")}

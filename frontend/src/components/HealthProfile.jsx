@@ -197,7 +197,7 @@ export default function HealthProfile({ language, onBack }) {
     { icon: "zap", name: t(language, "page.health.merchant.tatapower") },
   ];
   const sectionHeading =
-    "text-[40px] font-black tracking-tighter uppercase mb-12 border-b-4 border-black dark:border-white pb-4";
+    "text-[40px] font-black tracking-tighter uppercase mb-10 border-b border-strong pb-4";
 
   return (
     <div className="w-full space-y-16 py-10 md:space-y-24">
@@ -209,7 +209,7 @@ export default function HealthProfile({ language, onBack }) {
         {t(language, "healthProfileBackButton")}
       </button>
 
-      <div className="mb-20 flex flex-col items-start justify-between gap-8 border-b-8 border-black pb-16 md:flex-row md:items-end dark:border-white">
+      <div className="mb-16 flex flex-col items-start justify-between gap-8 border-b border-strong pb-12 md:flex-row md:items-end">
         <div className="max-w-2xl">
           <h1 className="mb-8 text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-7xl">
             {title.prefix && (
@@ -223,7 +223,7 @@ export default function HealthProfile({ language, onBack }) {
           <p className="text-xl font-bold leading-relaxed">{t(language, "page.health.sub")}</p>
           <a
             href="#settings"
-            className="touch-target mt-8 inline-flex w-full bg-black px-12 text-sm font-bold uppercase tracking-widest text-white transition-all md:w-auto dark:bg-white dark:text-black"
+            className="btn-primary touch-target mt-8 inline-flex w-full md:w-auto"
           >
             {t(language, "page.health.editProfile")}
           </a>
@@ -243,7 +243,7 @@ export default function HealthProfile({ language, onBack }) {
                 { field: "age", label: t(language, "page.health.age") },
                 { field: "household", label: t(language, "page.health.household") },
               ].map(({ field, label }) => (
-                <div key={field} className="space-y-2 border-2 border-black p-6 dark:border-white">
+                <div key={field} className="space-y-2 border border-ink bg-soft p-6">
                   <label htmlFor={`detail-${field}`} className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em]">
                     {label}
                   </label>
@@ -252,14 +252,14 @@ export default function HealthProfile({ language, onBack }) {
                     type="text"
                     value={details[field]}
                     onChange={(e) => updateDetail(field, e.target.value)}
-                    className="text-xl w-full bg-transparent outline-none border-b-2 border-black pb-1 dark:border-white"
+                    className="w-full bg-transparent text-xl outline-none border-b border-ink pb-1"
                   />
                 </div>
               ))}
             </div>
 
             {detailsError && (
-              <p role="alert" className="mt-4 text-sm font-black uppercase tracking-widest text-red-600">
+              <p role="alert" className="mt-4 text-sm font-black uppercase tracking-widest text-signal">
                 {detailsError}
               </p>
             )}
@@ -272,7 +272,7 @@ export default function HealthProfile({ language, onBack }) {
             <button
               type="button"
               onClick={handleSaveDetails}
-              className="touch-target mt-8 w-full border-2 border-black px-12 text-sm font-black uppercase tracking-widest transition-all hover:bg-black hover:text-white md:w-auto dark:border-white dark:hover:bg-white dark:hover:text-black"
+              className="btn-secondary touch-target mt-8 w-full md:w-auto"
             >
               {t(language, "page.health.saveDetails")}
             </button>
@@ -286,10 +286,10 @@ export default function HealthProfile({ language, onBack }) {
               {familyContacts.map((contact) => (
                 <li
                   key={contact.phone}
-                  className="flex flex-col items-center justify-between gap-6 border-2 border-black p-8 md:flex-row dark:border-white"
+                  className="flex flex-col items-center justify-between gap-6 border border-ink bg-soft p-6 md:flex-row"
                 >
                   <div className="flex w-full items-center gap-6">
-                    <span className="flex h-16 w-16 items-center justify-center bg-black text-2xl font-black text-white dark:bg-white dark:text-black">
+                    <span className="bg-ink text-on-ink flex h-16 w-16 items-center justify-center text-2xl font-black">
                       {initials(contact.name)}
                     </span>
                     <div>
@@ -299,7 +299,7 @@ export default function HealthProfile({ language, onBack }) {
                   </div>
                   <a
                     href={contact.tel}
-                    className="touch-target w-full border-2 border-black px-8 text-sm font-black uppercase tracking-widest transition-all hover:bg-black hover:text-white md:w-auto dark:border-white dark:hover:bg-white dark:hover:text-black"
+                    className="btn-secondary touch-target w-full md:w-auto"
                   >
                     {t(language, "common.callNow")}
                   </a>
@@ -310,7 +310,7 @@ export default function HealthProfile({ language, onBack }) {
             {showContactForm && (
               <form
                 onSubmit={handleAddContact}
-                className="mt-8 space-y-6 border-2 border-dashed border-black p-6 dark:border-white"
+                className="mt-8 space-y-6 border border-dashed border-ink bg-soft p-6"
               >
                 <label className="block">
                   <span className="mb-2 block text-[10px] font-black uppercase tracking-widest">
@@ -320,7 +320,7 @@ export default function HealthProfile({ language, onBack }) {
                     type="text"
                     value={newContact.name}
                     onChange={(e) => setNewContact((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full border-2 border-black px-4 py-3 text-lg font-bold outline-none dark:border-white dark:bg-slate-900 dark:text-slate-100"
+                    className="field"
                   />
                 </label>
                 <label className="block">
@@ -331,12 +331,12 @@ export default function HealthProfile({ language, onBack }) {
                     type="tel"
                     value={newContact.phone}
                     onChange={(e) => setNewContact((prev) => ({ ...prev, phone: e.target.value }))}
-                    className="w-full border-2 border-black px-4 py-3 text-lg font-bold outline-none dark:border-white dark:bg-slate-900 dark:text-slate-100"
+                    className="field"
                   />
                 </label>
                 <button
                   type="submit"
-                  className="touch-target w-full bg-black px-8 text-sm font-black uppercase tracking-widest text-white dark:bg-white dark:text-black"
+                  className="btn-primary touch-target w-full"
                 >
                   {t(language, "page.health.newContactConfirm")}
                 </button>
@@ -346,7 +346,7 @@ export default function HealthProfile({ language, onBack }) {
             <button
               type="button"
               onClick={() => setShowContactForm((open) => !open)}
-              className="touch-target mt-8 w-full border-2 border-dashed border-black text-sm font-black uppercase tracking-widest dark:border-white"
+              className="btn-secondary touch-target mt-8 w-full border-dashed"
             >
               {t(language, "page.health.addContact")}
             </button>
@@ -356,29 +356,29 @@ export default function HealthProfile({ language, onBack }) {
             <h2 id="heading-tags" className={sectionHeading}>
               {t(language, "healthProfileHeading")}
             </h2>
-            <p className="text-base font-bold leading-relaxed text-slate-600 dark:text-slate-300">
+            <p className="text-base font-bold leading-relaxed">
               {t(language, "healthProfileIntro")}
             </p>
-            <p className="mt-2 text-sm italic text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-sm italic text-muted">
               {t(language, "healthProfileNotMedicalAdvice")}
             </p>
 
             {savedTags.length > 0 && (
               <div className="mt-6">
-                <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 dark:text-slate-200">
+                <h3 className="text-sm font-black uppercase tracking-widest">
                   {t(language, "healthProfileSavedTagsHeading")}
                 </h3>
                 <ul className="mt-2 flex flex-wrap gap-2">
                   {savedTags.map((tag) => (
                     <li
                       key={tag}
-                      className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-sm dark:bg-slate-700 dark:text-slate-100"
+                      className="chip"
                     >
                       {tag}
                       <button
                         type="button"
                         aria-label={`${t(language, "healthProfileRemoveTagAria")} ${tag}`}
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-slate-600 hover:text-red-600 dark:text-slate-300"
+                        className="flex min-h-[44px] min-w-[44px] items-center justify-center text-muted hover:text-signal"
                         onClick={() => handleRemoveTag(tag)}
                       >
                         ×
@@ -389,19 +389,19 @@ export default function HealthProfile({ language, onBack }) {
               </div>
             )}
             {savedTags.length === 0 && !pendingTags && (
-              <p className="mt-6 text-slate-500 dark:text-slate-400">{t(language, "healthProfileEmpty")}</p>
+              <p className="mt-6 text-muted">{t(language, "healthProfileEmpty")}</p>
             )}
 
             {pendingTags && (
-              <div className="mt-6 rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-                <h3 className="font-semibold text-slate-700 dark:text-slate-200">
+              <div className="mt-6 border border-ink bg-soft p-4">
+                <h3 className="font-semibold">
                   {t(language, "healthProfileSuggestedTagsHeading")}
                 </h3>
-                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                <p className="mt-1 text-sm text-muted">
                   {t(language, "healthProfileSuggestedTagsHint")}
                 </p>
                 {pendingTags.length === 0 ? (
-                  <p className="mt-2 text-slate-600 dark:text-slate-300">{t(language, "healthProfileEmpty")}</p>
+                  <p className="mt-2 text-muted">{t(language, "healthProfileEmpty")}</p>
                 ) : (
                   <ul className="mt-2 space-y-2">
                     {pendingTags.map((item, index) => (
@@ -427,7 +427,7 @@ export default function HealthProfile({ language, onBack }) {
             <div className="mt-6 space-y-2">
               <label
                 htmlFor="health-profile-manual-input"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                className="block text-sm font-medium"
               >
                 {t(language, "healthProfileAddManualLabel")}
               </label>
@@ -435,7 +435,7 @@ export default function HealthProfile({ language, onBack }) {
                 <input
                   id="health-profile-manual-input"
                   type="text"
-                  className="flex-1 rounded-lg border border-slate-300 p-2 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+                  className="field flex-1"
                   placeholder={t(language, "healthProfileAddManualPlaceholder")}
                   value={manualInput}
                   onChange={(e) => setManualInput(e.target.value)}
@@ -457,7 +457,7 @@ export default function HealthProfile({ language, onBack }) {
                   ? t(language, "healthProfileReadingDocument")
                   : t(language, "healthProfileUploadButton")}
               </button>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-sm text-muted">
                 {t(language, "healthProfileUploadHint")}
               </p>
               <input
@@ -472,7 +472,7 @@ export default function HealthProfile({ language, onBack }) {
             {error && (
               <p
                 role="alert"
-                className="mt-4 rounded-lg border-2 border-red-300 bg-red-50 p-3 font-semibold text-red-900 dark:border-red-900 dark:bg-red-950 dark:text-red-200"
+                className="mt-4 alert-red p-3 font-semibold"
               >
                 {error}
               </p>
@@ -489,14 +489,14 @@ export default function HealthProfile({ language, onBack }) {
             <h2 id="heading-blocked" className={sectionHeading}>
               {t(language, "page.health.blocked")}
             </h2>
-            <div className="border-2 border-black divide-y-2 divide-black dark:border-white dark:divide-white">
+            <div className="border border-ink divide-y divide-ink">
               {blockedItems.map((item) => {
                 const isUnblocked = Boolean(unblocked[item.id]);
                 return (
                   <div key={item.id} className="flex items-center justify-between gap-4 p-6">
                     <div>
                       <p className="text-lg font-black">{item.number}</p>
-                      <p className="text-sm font-bold uppercase tracking-widest text-red-600">{item.label}</p>
+                      <p className="text-sm font-bold uppercase tracking-widest text-signal">{item.label}</p>
                     </div>
                     <button
                       type="button"
@@ -525,7 +525,7 @@ export default function HealthProfile({ language, onBack }) {
               {merchants.map((merchant) => (
                 <li
                   key={merchant.name}
-                  className="flex items-center gap-4 border-2 border-black p-6 dark:border-white"
+                  className="flex items-center gap-4 border border-ink bg-soft p-6"
                 >
                   <Icon icon={merchant.icon} className="text-2xl" />
                   <span className="text-xl font-black">{merchant.name}</span>
@@ -534,7 +534,7 @@ export default function HealthProfile({ language, onBack }) {
             </ul>
             <a
               href="#settings"
-              className="touch-target mt-8 flex w-full items-center justify-center border-2 border-black text-sm font-black uppercase tracking-widest dark:border-white"
+              className="btn-secondary touch-target mt-8 flex w-full items-center justify-center"
             >
               {t(language, "page.health.manageMerchants")}
             </a>
@@ -545,7 +545,7 @@ export default function HealthProfile({ language, onBack }) {
               {t(language, "page.health.payments")}
             </h2>
             <div className="space-y-4">
-              <div className="border-2 border-black p-6 dark:border-white">
+              <div className="border border-ink bg-soft p-6">
                 <div className="mb-4 flex items-start justify-between">
                   <span className="bg-green-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
                     {t(language, "page.health.payStatus.success")}
@@ -557,22 +557,22 @@ export default function HealthProfile({ language, onBack }) {
                   {t(language, "page.health.pay.1.to")}
                 </p>
               </div>
-              <div className="border-2 border-black p-6 dark:border-white">
+              <div className="border border-ink bg-soft p-6">
                 <div className="mb-4 flex items-start justify-between">
-                  <span className="bg-red-600 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                  <span className="bg-signal px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
                     {t(language, "page.health.payStatus.blocked")}
                   </span>
                   <span className="text-sm font-bold">{t(language, "page.health.pay.2.time")}</span>
                 </div>
                 <p className="text-xl font-black">{t(language, "page.health.pay.2.amount")}</p>
-                <p className="text-sm font-bold uppercase tracking-widest text-red-600">
+                <p className="text-sm font-bold uppercase tracking-widest text-signal">
                   {t(language, "page.health.pay.2.note")}
                 </p>
               </div>
             </div>
             <a
               href="#history"
-              className="touch-target mt-8 flex w-full items-center justify-center border-2 border-black text-sm font-black uppercase tracking-widest dark:border-white"
+              className="btn-secondary touch-target mt-8 flex w-full items-center justify-center"
             >
               {t(language, "page.health.viewHistory")}
             </a>
@@ -580,12 +580,12 @@ export default function HealthProfile({ language, onBack }) {
         </div>
 
         <div className="space-y-16 lg:col-span-5 md:space-y-24">
-          <section className="bg-black p-8 text-white dark:bg-white dark:text-black">
+          <section className="panel-inverse p-8">
             <h3 className="mb-6 text-xl font-black uppercase tracking-tighter">{t(language, "page.health.privacyMode")}</h3>
             <p className="mb-8 text-sm font-bold uppercase leading-relaxed">{t(language, "page.health.privacyBody")}</p>
             <div className="flex items-center gap-4">
-              <div className="relative h-6 w-10 rounded-full bg-green-500" aria-hidden="true">
-                <div className="absolute right-1 top-1 h-4 w-4 rounded-full bg-white"></div>
+              <div className="relative h-6 w-10 border border-ink bg-green-500" aria-hidden="true">
+                <div className="absolute right-1 top-1 h-4 w-4 bg-white"></div>
               </div>
               <span className="text-sm font-black uppercase">{t(language, "page.health.alwaysProtected")}</span>
             </div>

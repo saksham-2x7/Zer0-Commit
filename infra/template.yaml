@@ -20,6 +20,8 @@ Globals:
         BEDROCK_MODEL_ID: !Ref BedrockModelId
         MOCK_BEDROCK: !Ref MockBedrock
         CASES_TABLE_NAME: !Ref CasesTable
+        FAMILY_TABLE_NAME: !Ref FamilyTable
+        MESSAGES_TABLE_NAME: !Ref MessagingTable
         EVIDENCE_BUCKET_NAME: !Ref EvidenceBucket
         ALLOWED_ORIGIN: !Ref AllowedOrigin
         MAX_INPUT_BYTES: !Ref MaxInputBytes
@@ -205,6 +207,227 @@ Resources:
             Path: /api/food-feedback
             Method: options
 
+  # Family circle: shared suspicious contacts, scam alerts, blocklist, and
+  # member allergen profiles. All state lives in the FamilyTable.
+  FamilyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: backend/api/familyHandler.handler
+      ReservedConcurrentExecutions: 10
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FamilyTable
+      Events:
+        FamilyCreateApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/create
+            Method: post
+        FamilyCreateApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/create
+            Method: options
+        FamilyMembersApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/members
+            Method: post
+        FamilyMembersApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/members
+            Method: options
+        FamilyContactsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/contacts
+            Method: post
+        FamilyContactsApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/contacts
+            Method: options
+        FamilyAlertsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/alerts
+            Method: post
+        FamilyAlertsApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/alerts
+            Method: options
+        FamilyBlocklistApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/blocklist
+            Method: post
+        FamilyBlocklistApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/blocklist
+            Method: options
+        FamilyConfirmAlertApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/confirm-alert
+            Method: post
+        FamilyConfirmAlertApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/confirm-alert
+            Method: options
+        FamilyGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/{familyId}
+            Method: get
+        FamilyGetApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/family/{familyId}
+            Method: options
+
+  # Food allergen scanner: proxies the Open Food Facts barcode lookup and
+  # flags products against the family's member allergen profiles.
+  FoodLookupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: backend/api/foodHandler.handler
+      Timeout: 30
+      MemorySize: 256
+      ReservedConcurrentExecutions: 10
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref FamilyTable
+      Events:
+        FoodLookupApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/food-lookup
+            Method: post
+        FoodLookupApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/food-lookup
+            Method: options
+
+  # Zero-knowledge family chat: stores only public keys, wrapped group keys,
+  # and AES-GCM ciphertext. Plaintext never touches the server.
+  MessagingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: backend/api/messagingHandler.handler
+      ReservedConcurrentExecutions: 10
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MessagingTable
+      Events:
+        MessagingKeysApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/keys
+            Method: post
+        MessagingKeysApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/keys
+            Method: options
+        MessagingKeyGetApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/keys/{memberId}
+            Method: get
+        MessagingKeyGetApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/keys/{memberId}
+            Method: options
+        MessagingThreadsApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads
+            Method: post
+        MessagingThreadsApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads
+            Method: options
+        MessagingThreadsListApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads
+            Method: get
+        MessagingThreadsListApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads
+            Method: options
+        MessagingThreadKeysApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads/{threadId}/keys
+            Method: post
+        MessagingThreadKeysApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads/{threadId}/keys
+            Method: options
+        MessagingMessagesApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads/{threadId}/messages
+            Method: post
+        MessagingMessagesApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads/{threadId}/messages
+            Method: options
+        MessagingMessagesListApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads/{threadId}/messages
+            Method: get
+        MessagingMessagesListApiOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGatewayApi
+            Path: /api/messaging/threads/{threadId}/messages
+            Method: options
+
   CasesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -220,6 +443,37 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
+
+  # Family circle state: one item per familyId holding members, contacts,
+  # alerts, and blocklist. Same single-key shape as CasesTable.
+  FamilyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: familyId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: familyId
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
+
+  # Messaging state: one item per memberId (public key) and one per threadId
+  # (wrapped keys + ciphertext messages). Partition key is the prefixed `pk`
+  # ("key#<memberId>" / "thread#<threadId>") used by messageStore.
+  MessagingTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
 
   EvidenceBucket:
     Type: AWS::S3::Bucket
@@ -360,6 +614,24 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${FoodFeedbackFunction}"
       RetentionInDays: 30
 
+  FamilyFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${FamilyFunction}"
+      RetentionInDays: 30
+
+  FoodLookupFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${FoodLookupFunction}"
+      RetentionInDays: 30
+
+  MessagingFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${MessagingFunction}"
+      RetentionInDays: 30
+
   # Simple guardrail: alert when the API Gateway stage returns any 5xx in a
   # 5-minute window.
   ApiGateway5XXAlarm:
@@ -388,6 +660,12 @@ Outputs:
   CasesTableName:
     Description: "DynamoDB table storing redacted case records"
     Value: !Ref CasesTable
+  FamilyTableName:
+    Description: "DynamoDB table storing family circle state"
+    Value: !Ref FamilyTable
+  MessagingTableName:
+    Description: "DynamoDB table storing messaging keys, wrapped keys, and ciphertext"
+    Value: !Ref MessagingTable
   EvidenceBucketName:
     Description: "S3 bucket storing redacted evidence bundles"
     Value: !Ref EvidenceBucket

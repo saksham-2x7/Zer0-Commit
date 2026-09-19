@@ -52,7 +52,7 @@ export default function FoodScanView({ language, onNavigate }) {
         <p className="mt-6 max-w-2xl text-xl font-semibold leading-relaxed">{t(language, "food.noFamilyBody")}</p>
         <button
           type="button"
-          className="mt-8 h-16 bg-black px-10 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white"
+          className="btn-primary touch-target mt-8 h-16 px-10"
           onClick={() => onNavigate("family")}
         >
           {t(language, "food.createFamilyButton")}
@@ -79,12 +79,12 @@ export default function FoodScanView({ language, onNavigate }) {
           placeholder={t(language, "food.barcodePlaceholder")}
           inputMode="numeric"
           maxLength={14}
-          className="flex-1 border-4 border-black bg-white p-4 text-lg font-bold dark:border-white dark:bg-black dark:text-white"
+          className="field flex-1 text-lg"
         />
         <button
           type="submit"
           disabled={loading}
-          className="h-16 bg-black px-10 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed dark:bg-white dark:text-black dark:hover:bg-green-600 dark:hover:text-white"
+          className="btn-primary disabled:cursor-not-allowed h-16 px-10"
         >
           {loading ? t(language, "food.lookingUp") : t(language, "food.lookupButton")}
         </button>
@@ -104,19 +104,19 @@ export default function FoodScanView({ language, onNavigate }) {
       </div>
 
       {error && (
-        <p role="alert" className="mt-6 border-2 border-red-600 bg-red-50 p-3 font-semibold text-red-700 dark:border-red-400 dark:bg-red-950 dark:text-red-200">
+        <p role="alert" className="mt-6 alert-red p-3 font-semibold">
           {error}
         </p>
       )}
 
       {memberFlags.length > 0 && (
-        <div role="alert" className="mt-8 border-4 border-red-600 bg-red-50 p-6 dark:bg-red-950">
-          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-700 dark:text-red-200">
+        <div role="alert" className="mt-8 alert-red p-6">
+          <h3 className="text-sm font-black uppercase tracking-[0.2em]">
             {t(language, "food.flagTitle")}
           </h3>
           <ul className="mt-4 space-y-3">
             {memberFlags.map((flag) => (
-              <li key={flag.memberId} className="font-bold text-red-700 dark:text-red-200">
+              <li key={flag.memberId} className="font-bold">
                 {flag.name}: {flag.matched.join(", ")}
               </li>
             ))}
@@ -125,13 +125,13 @@ export default function FoodScanView({ language, onNavigate }) {
       )}
 
       {product && (
-        <article className="mt-8 border-4 border-black p-6 dark:border-white">
+        <article className="mt-8 border border-ink bg-soft p-6">
           <div className="flex flex-wrap items-start gap-6">
             {product.imageUrl && (
               <img
                 src={product.imageUrl}
                 alt=""
-                className="h-40 w-40 border-2 border-black object-contain dark:border-white"
+                className="h-40 w-40 border border-ink bg-paper object-contain"
               />
             )}
             <div className="min-w-0 flex-1">
@@ -149,7 +149,7 @@ export default function FoodScanView({ language, onNavigate }) {
                   <h4 className="text-xs font-black uppercase tracking-widest">{t(language, "food.allergens")}</h4>
                   <ul className="mt-2 flex flex-wrap gap-2">
                     {product.allergens.map((a) => (
-                      <li key={a} className="border-2 border-black px-2 py-1 text-xs font-bold uppercase dark:border-white">
+                      <li key={a} className="chip">
                         {a}
                       </li>
                     ))}
@@ -161,7 +161,7 @@ export default function FoodScanView({ language, onNavigate }) {
                   <h4 className="text-xs font-black uppercase tracking-widest">{t(language, "food.traces")}</h4>
                   <ul className="mt-2 flex flex-wrap gap-2">
                     {product.traces.map((a) => (
-                      <li key={a} className="border-2 border-black px-2 py-1 text-xs font-bold uppercase dark:border-white">
+                      <li key={a} className="chip">
                         {a}
                       </li>
                     ))}
@@ -173,7 +173,7 @@ export default function FoodScanView({ language, onNavigate }) {
                   <h4 className="text-xs font-black uppercase tracking-widest">{t(language, "food.additives")}</h4>
                   <ul className="mt-2 flex flex-wrap gap-2">
                     {product.additives.map((a) => (
-                      <li key={a} className="border-2 border-black px-2 py-1 text-xs font-bold uppercase dark:border-white">
+                      <li key={a} className="chip">
                         {a}
                       </li>
                     ))}

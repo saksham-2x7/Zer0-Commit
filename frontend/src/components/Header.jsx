@@ -25,7 +25,7 @@ export default function Header({
   onLanguageChange,
 }) {
   return (
-    <header className="border-b-4 border-black bg-white text-black dark:border-white dark:bg-black dark:text-white">
+    <header className="border-b border-ink bg-paper text-ink">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-5">
         <button
           type="button"
@@ -33,7 +33,7 @@ export default function Header({
           onClick={() => onNavigate("home")}
         >
           <span className="flex items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center border-2 border-black dark:border-white">
+            <span className="grid h-11 w-11 shrink-0 place-items-center border border-strong">
               <Icon icon="check" className="h-6 w-6" />
             </span>
             <span className="text-2xl font-black tracking-tight">{t(language, "appTitle")}</span>
@@ -44,7 +44,7 @@ export default function Header({
           <button
             type="button"
             aria-label={t(language, "header.help")}
-            className="touch-target border-2 border-black px-3 dark:border-white"
+            className="touch-target border border-ink px-3"
             onClick={() => onNavigate("help")}
           >
             <Icon icon="help" className="h-6 w-6" />
@@ -53,7 +53,7 @@ export default function Header({
             type="button"
             id="theme-toggle"
             aria-label={t(language, "themeToggleAria")}
-            className="touch-target border-2 border-black px-3 dark:border-white"
+            className="touch-target border border-ink px-3"
             onClick={onToggleTheme}
           >
             <Icon icon={theme === "dark" ? "moon" : "sun"} className="h-6 w-6" />
@@ -65,7 +65,7 @@ export default function Header({
 
       <nav
         aria-label={t(language, "header.navLabel")}
-        className="no-print hidden border-t-2 border-black md:block dark:border-white"
+        className="no-print hidden border-t border-ink md:block"
       >
         <ul className="mx-auto flex max-w-5xl items-stretch gap-1 px-4">
           {NAV_ITEMS.map(({ id, icon }) => {
@@ -75,10 +75,10 @@ export default function Header({
                 <button
                   type="button"
                   aria-current={active ? "page" : undefined}
-                  className={`touch-target gap-2 border-b-4 border-transparent px-4 py-2 text-sm font-black uppercase tracking-widest transition-colors ${
+                  className={`touch-target gap-2 border-b border-transparent px-4 py-2 text-sm font-black uppercase tracking-widest transition-colors ${
                     active
-                      ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-                      : "hover:border-black dark:hover:border-white"
+                      ? "border-strong bg-ink text-on-ink"
+                      : "hover:border-strong"
                   }`}
                   onClick={() => onNavigate(id)}
                 >
