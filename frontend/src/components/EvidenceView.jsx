@@ -15,15 +15,15 @@ const RISK_BADGE_KEY = {
 };
 
 const RISK_CARD_BORDER = {
-  high: "border-l-risk-high",
-  medium: "border-l-amber-500",
-  low: "border-l-green-600",
+  high: "border-l-[var(--color-risk-high)]",
+  medium: "border-l-[var(--color-risk-medium)]",
+  low: "border-l-[var(--color-risk-low)]",
 };
 
 const RISK_METER_FILL = {
-  high: "bg-risk-high",
-  medium: "bg-amber-500",
-  low: "bg-green-600",
+  high: "bg-[var(--color-risk-high)]",
+  medium: "bg-[var(--color-risk-medium)]",
+  low: "bg-[var(--color-risk-low)]",
 };
 
 const DANGER_LEVEL_KEY = {
@@ -204,7 +204,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
 
       {/* ─── Threat cards ────────────────────────────────── */}
       <section>
-        <h2 className="text-2xl font-black uppercase tracking-wide mb-8">
+        <h2 className="text-2xl font-black uppercase tracking-wide mb-8 border-b-4 border-b-[var(--color-accent-scam)] pb-2">
           {t(language, "page.evidence.why")}
         </h2>
         {matchedPatterns.length > 0 ? (
@@ -247,7 +247,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
 
       {/* ─── What to do Now ──────────────────────────────── */}
       <section>
-        <h2 className="text-2xl font-black uppercase tracking-wide mb-8">
+        <h2 className="text-2xl font-black uppercase tracking-wide mb-8 border-b-4 border-b-[var(--color-accent-scam)] pb-2">
           {t(language, "page.evidence.nextSteps")}
         </h2>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

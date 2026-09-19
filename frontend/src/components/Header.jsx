@@ -40,29 +40,40 @@ export default function Header({
           </span>
         </button>
 
-        <div className="flex flex-wrap items-center gap-1 md:ml-auto md:gap-2">
-          <button
-            type="button"
-            aria-label={t(language, "header.help")}
-            className="touch-target border border-ink px-3"
-            onClick={() => onNavigate("help")}
-          >
-            <Icon icon="help" className="h-6 w-6" />
-          </button>
-          <button
-            type="button"
-            id="theme-toggle"
-            aria-label={t(language, "themeToggleAria")}
-            className="touch-target border border-ink px-3"
-            onClick={onToggleTheme}
-          >
-            <Icon icon={theme === "dark" ? "moon" : "sun"} className="h-6 w-6" />
-          </button>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1 md:gap-2">
-          <TextSizeToggle language={language} textSize={textSize} onCycle={onCycleTextSize} />
-          <LanguageSelector language={language} onChange={onLanguageChange} />
+        <div className="flex items-center md:ml-auto">
+          <div className="flex items-center overflow-hidden rounded-[12px] border border-ink bg-ash">
+            <button
+              type="button"
+              aria-label={t(language, "header.help")}
+              className="touch-target rounded-none px-3"
+              onClick={() => onNavigate("help")}
+            >
+              <Icon icon="help" className="h-6 w-6" />
+            </button>
+            <span aria-hidden="true" className="h-7 w-px bg-[var(--color-border)]" />
+            <button
+              type="button"
+              id="theme-toggle"
+              aria-label={t(language, "themeToggleAria")}
+              className="touch-target rounded-none px-3"
+              onClick={onToggleTheme}
+            >
+              <Icon icon={theme === "dark" ? "moon" : "sun"} className="h-6 w-6" />
+            </button>
+            <span aria-hidden="true" className="h-7 w-px bg-[var(--color-border)]" />
+            <TextSizeToggle
+              language={language}
+              textSize={textSize}
+              onCycle={onCycleTextSize}
+              className="rounded-none border-0 bg-transparent"
+            />
+            <span aria-hidden="true" className="h-7 w-px bg-[var(--color-border)]" />
+            <LanguageSelector
+              language={language}
+              onChange={onLanguageChange}
+              className="rounded-none border-0"
+            />
+          </div>
         </div>
       </div>
 

@@ -1,10 +1,10 @@
 import { t } from "../i18n/translations";
 
-export default function TextSizeToggle({ language, textSize, onCycle }) {
+export default function TextSizeToggle({ language, textSize, onCycle, className }) {
   return (
     <button
       type="button"
-      className="btn-secondary whitespace-nowrap px-1.5 text-xs md:px-3 md:text-sm"
+      className={`btn-secondary whitespace-nowrap px-1.5 text-xs md:px-3 md:text-sm ${className ?? ""}`}
       onClick={onCycle}
       aria-label={t(language, `textSizeButton_${textSize}`)}
     >

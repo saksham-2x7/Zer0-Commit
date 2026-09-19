@@ -10,9 +10,9 @@ import Icon from "./icons";
 // sticky sidebar with Next Steps + Check Progress.
 
 const RISK_BORDER = {
-  high: "border-l-risk-high",
-  medium: "border-l-amber-500",
-  low: "border-l-green-600",
+  high: "border-l-[var(--color-risk-high)]",
+  medium: "border-l-[var(--color-risk-medium)]",
+  low: "border-l-[var(--color-risk-low)]",
 };
 
 const RISK_SCORE_KEY = {
@@ -154,7 +154,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
 
         {/* Why is this a scam? */}
         <div className="mb-10">
-          <h2 className="text-xl font-bold mb-10">
+          <h2 className="text-xl font-bold mb-10 border-b-4 border-b-[var(--color-accent-scam)] pb-2">
             {t(language, "page.results.why")}
           </h2>
           {matchedPatterns.length > 0 ? (
@@ -189,7 +189,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         <div className="mb-10">
           <div className="flex items-center gap-6 mb-10">
             <Icon icon="shieldCheck" className="h-6 w-6 text-green-600" />
-            <h2 className="text-xl font-bold">
+            <h2 className="text-xl font-bold border-b-4 border-b-[var(--color-accent-scam)] pb-2">
               {t(language, "page.results.safety")}
             </h2>
           </div>
@@ -241,7 +241,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         {reputation && (
           <div className="mb-10">
             <div className="flex items-center gap-6 mb-10">
-              <Icon icon="search" className="h-6 w-6" />
+              <Icon icon="search" className="h-6 w-6 text-cobalt" />
               <h2 className="text-xl font-bold">
                 {t(language, "results.reputationHeading")}
               </h2>

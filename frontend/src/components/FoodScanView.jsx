@@ -46,7 +46,7 @@ export default function FoodScanView({ language, onNavigate }) {
   if (!familyId) {
     return (
       <section aria-labelledby="food-no-family-title">
-        <h2 id="food-no-family-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
+        <h2 id="food-no-family-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl border-b-4 border-b-[var(--color-accent-food)] pb-2">
           {t(language, "food.noFamilyTitle")}
         </h2>
         <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "food.noFamilyBody")}</p>
@@ -63,7 +63,7 @@ export default function FoodScanView({ language, onNavigate }) {
 
   return (
     <section aria-labelledby="food-title">
-      <h2 id="food-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
+      <h2 id="food-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl border-b-4 border-b-[var(--color-accent-food)] pb-2">
         {t(language, "food.title")}
       </h2>
       <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "food.subtitle")}</p>

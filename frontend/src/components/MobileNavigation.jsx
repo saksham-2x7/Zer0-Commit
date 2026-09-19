@@ -19,7 +19,11 @@ export default function MobileNavigation({ language, activeView, onNavigate }) {
                 type="button"
                 aria-current={active ? "page" : undefined}
                 className={`touch-target flex-1 flex-col gap-1 text-[11px] font-black uppercase tracking-widest transition-colors ${
-                  active ? "bg-ink text-on-ink" : ""
+                  active
+                    ? id === "check"
+                      ? "bg-ink text-on-ink [box-shadow:inset_0_-3px_0_var(--color-accent-scam)]"
+                      : "bg-ink text-on-ink [box-shadow:inset_0_-3px_0_var(--color-primary)]"
+                    : ""
                 }`}
                 onClick={() => onNavigate(id)}
               >

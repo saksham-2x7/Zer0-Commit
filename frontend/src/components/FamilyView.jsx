@@ -247,7 +247,7 @@ export default function FamilyView({ language, onNavigate }) {
         <div className="mt-10 space-y-12">
           {/* Members */}
           <section aria-labelledby="family-members-title">
-            <h3 id="family-members-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
+            <h3 id="family-members-title" className="border-b border-[var(--color-accent-family)] pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.membersTitle")}
             </h3>
             <ul className="mt-6 space-y-4">
@@ -323,7 +323,7 @@ export default function FamilyView({ language, onNavigate }) {
 
           {/* Contacts */}
           <section aria-labelledby="family-contacts-title">
-            <h3 id="family-contacts-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
+            <h3 id="family-contacts-title" className="border-b border-[var(--color-accent-family)] pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.contactsTitle")}
             </h3>
             <ul className="mt-6 space-y-4">
@@ -391,7 +391,7 @@ export default function FamilyView({ language, onNavigate }) {
 
           {/* Alerts */}
           <section aria-labelledby="family-alerts-title">
-            <h3 id="family-alerts-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
+            <h3 id="family-alerts-title" className="border-b border-[var(--color-accent-family)] pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.alertsTitle")}
             </h3>
             <ul className="mt-6 space-y-4">
@@ -473,7 +473,7 @@ export default function FamilyView({ language, onNavigate }) {
 
           {/* Blocklist */}
           <section aria-labelledby="family-blocklist-title">
-            <h3 id="family-blocklist-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
+            <h3 id="family-blocklist-title" className="border-b border-[var(--color-accent-family)] pb-2 text-sm font-black uppercase tracking-[0.2em]">
               {t(language, "family.blocklistTitle")}
             </h3>
             <ul className="mt-6 space-y-4">

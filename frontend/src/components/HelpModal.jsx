@@ -124,7 +124,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
   }
 
   const content = (
-    <div className={asView ? "w-full space-y-12" : "card w-full max-w-2xl space-y-12 py-10"}>
+    <div className={asView ? "w-full space-y-12" : "card modal w-full max-w-2xl space-y-12 py-10"}>
       <div className="border-b border-strong pb-10">
         <h2 id="help-modal-heading" className="mb-6 text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
           {t(language, "page.help.title")}

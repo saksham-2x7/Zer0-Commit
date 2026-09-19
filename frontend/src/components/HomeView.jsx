@@ -7,10 +7,16 @@ const ACTIONS = [
   { key: "actionQr", icon: "history", target: "check" },
 ];
 
+const ACCENT_CLASS = {
+  family: "text-[var(--color-accent-family)]",
+  food: "text-[var(--color-accent-food)]",
+  chat: "text-[var(--color-accent-chat)]",
+};
+
 const FAMILY_ACTIONS = [
-  { key: "familyAction", icon: "family", target: "family" },
-  { key: "foodAction", icon: "shoppingBag", target: "food" },
-  { key: "chatAction", icon: "chat", target: "chat" },
+  { key: "familyAction", icon: "family", target: "family", accent: "family" },
+  { key: "foodAction", icon: "shoppingBag", target: "food", accent: "food" },
+  { key: "chatAction", icon: "chat", target: "chat", accent: "chat" },
 ];
 
 const GUARANTEED_DATA = ["id", "phone", "otp"];
@@ -41,6 +47,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
         <h2 className="text-2xl font-black uppercase tracking-wide">
           {t(language, "page.home.safetyGuarantee")}
         </h2>
+        <div aria-hidden="true" className="mt-1 h-1 w-12 rounded-full bg-[var(--color-accent-scam)]" />
         <div className="card space-y-4">
           <p className="text-lg font-black uppercase tracking-widest">
             {t(language, "page.home.dataPrivate")}
@@ -70,7 +77,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
             className="card touch-target flex-row items-center gap-3 text-left hover:bg-ink hover:text-on-ink sm:flex-col sm:items-start sm:gap-3"
             onClick={() => onNavigate("check")}
           >
-            <Icon icon={icon} className="h-7 w-7 shrink-0" />
+            <Icon icon={icon} className="h-7 w-7 shrink-0 text-cobalt" />
             <span className="text-base font-black uppercase tracking-wide sm:text-lg">
               {t(language, `page.home.${key}.title`)}
             </span>
@@ -83,15 +90,16 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
         <h2 className="text-2xl font-black uppercase tracking-wide">
           {t(language, "page.home.familyFeatures")}
         </h2>
+        <div aria-hidden="true" className="mt-1 h-1 w-12 rounded-full bg-[var(--color-accent-family)]" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {FAMILY_ACTIONS.map(({ key, icon, target }) => (
+          {FAMILY_ACTIONS.map(({ key, icon, target, accent }) => (
             <button
               type="button"
               key={key}
               className="card touch-target flex-row items-center gap-3 text-left hover:bg-ink hover:text-on-ink sm:flex-col sm:items-start sm:gap-3"
               onClick={() => onNavigate(target)}
             >
-              <Icon icon={icon} className="h-7 w-7 shrink-0" />
+              <Icon icon={icon} className={`h-7 w-7 shrink-0 ${ACCENT_CLASS[accent]}`} />
               <span className="text-base font-black uppercase tracking-wide sm:text-lg">
                 {t(language, `page.home.${key}.title`)}
               </span>
@@ -105,6 +113,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
         <h2 className="text-2xl font-black uppercase tracking-wide">
           {t(language, "page.home.recentChecks")}
         </h2>
+        <div aria-hidden="true" className="mt-1 h-1 w-12 rounded-full bg-[var(--color-accent-scam)]" />
         <ul className="space-y-3">
           {(history.length > 0
             ? history.slice(0, 3).map((entry) => {
@@ -147,7 +156,7 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
             <li key={index} className="card flex items-center justify-between gap-3">
               <div>
                 <p className="font-bold">{entry.text}</p>
-                <p className="text-sm text-muted">{entry.ago}</p>
+                <p className="text-[13px] font-medium text-muted">{entry.ago}</p>
               </div>
               <div className="flex flex-none items-center gap-3">
                 <span className={`risk-chip ${entry.tone}`}>

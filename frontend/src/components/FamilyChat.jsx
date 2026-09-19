@@ -234,7 +234,7 @@ export default function FamilyChat({ language }) {
 
   return (
     <section aria-labelledby="chat-title">
-      <h2 id="chat-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
+      <h2 id="chat-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl border-b-4 border-b-[var(--color-accent-chat)] pb-2">
         {t(language, "chat.title")}
       </h2>
       <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "chat.subtitle")}</p>
@@ -255,7 +255,7 @@ export default function FamilyChat({ language }) {
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
         {/* Thread list + create */}
         <div className="lg:col-span-1">
-          <h3 className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
+          <h3 className="border-b border-b-[var(--color-accent-chat)] pb-2 text-sm font-black uppercase tracking-[0.2em]">
             {t(language, "chat.threadsTitle")}
           </h3>
           <ul className="mt-4 space-y-3">
@@ -319,7 +319,7 @@ export default function FamilyChat({ language }) {
 
         {/* Messages */}
         <div className="lg:col-span-2">
-          <h3 className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
+          <h3 className="border-b border-b-[var(--color-accent-chat)] pb-2 text-sm font-black uppercase tracking-[0.2em]">
             {selectedThread ? selectedThread.name : t(language, "chat.messagesTitle")}
           </h3>
 
