@@ -272,10 +272,10 @@ export default function App() {
 
   const checkForm = (
     <form onSubmit={handleSubmit}>
-      <div className="mb-16">
+      <div className="mb-8 md:mb-12">
         <button
           type="button"
-          className="btn-primary"
+          className="btn-primary touch-target px-6"
           onClick={() => setView("home")}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" aria-hidden="true">
@@ -284,10 +284,10 @@ export default function App() {
           </svg>
           {t(language, "page.check.backHome")}
         </button>
-        <h2 className="mt-12 text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-7xl">
+        <h2 className="mt-6 text-4xl font-black uppercase leading-[0.95] tracking-tighter md:mt-10 md:text-6xl">
           {t(language, "page.check.hero")}
         </h2>
-        <p className="mt-8 max-w-2xl text-xl font-semibold leading-relaxed md:text-2xl">
+        <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">
           {t(language, "page.check.subtitle")}
         </p>
       </div>
@@ -306,7 +306,7 @@ export default function App() {
           tabIndex={activeTab === "text" ? 0 : -1}
           aria-selected={activeTab === "text"}
           aria-controls="panel-text"
-          className={`w-full min-h-[140px] border-strong p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b md:border-b-0 md:border-r ${
+          className={`w-full min-h-[104px] border-strong p-6 text-left transition-colors md:min-h-[132px] md:p-8 border-b md:border-b-0 md:border-r ${
             activeTab === "text"
               ? "bg-ink text-on-ink"
               : "hover:bg-ink hover:text-on-ink"
@@ -316,11 +316,11 @@ export default function App() {
             tabRefs.current.text?.focus();
           }}
         >
-          <span className="mb-8 block text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+          <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
             Method 01
           </span>
-          <span className="block text-2xl font-bold tracking-tighter">{t(language, "page.check.methodText")}</span>
-          <span className="mt-4 block text-base font-bold opacity-70">{t(language, "page.check.methodTextSub")}</span>
+          <span className="block text-xl font-bold tracking-tighter md:text-2xl">{t(language, "page.check.methodText")}</span>
+          <span className="mt-2 block text-sm font-bold opacity-70 md:text-base">{t(language, "page.check.methodTextSub")}</span>
         </button>
         <button
           type="button"
@@ -330,18 +330,18 @@ export default function App() {
           tabIndex={activeTab === "image" ? 0 : -1}
           aria-selected={activeTab === "image"}
           aria-controls="panel-image"
-          className={`w-full min-h-[140px] border-strong p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b md:border-b-0 md:border-r ${
+          className={`w-full min-h-[104px] border-strong p-6 text-left transition-colors md:min-h-[132px] md:p-8 border-b md:border-b-0 md:border-r ${
             activeTab === "image"
               ? "bg-ink text-on-ink"
               : "hover:bg-ink hover:text-on-ink"
           }`}
           onClick={() => setActiveTab("image")}
         >
-          <span className="mb-8 block text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+          <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
             Method 02
           </span>
-          <span className="block text-2xl font-bold tracking-tighter">{t(language, "page.check.methodImage")}</span>
-          <span className="mt-4 block text-base font-bold opacity-70">{t(language, "page.check.methodImageSub")}</span>
+          <span className="block text-xl font-bold tracking-tighter md:text-2xl">{t(language, "page.check.methodImage")}</span>
+          <span className="mt-2 block text-sm font-bold opacity-70 md:text-base">{t(language, "page.check.methodImageSub")}</span>
         </button>
         <button
           type="button"
@@ -351,18 +351,18 @@ export default function App() {
           tabIndex={activeTab === "scan" ? 0 : -1}
           aria-selected={activeTab === "scan"}
           aria-controls="panel-scan"
-          className={`w-full min-h-[140px] border-strong p-8 text-left transition-colors md:min-h-[180px] md:p-12 border-b md:border-b-0 ${
+          className={`w-full min-h-[104px] border-strong p-6 text-left transition-colors md:min-h-[132px] md:p-8 border-b md:border-b-0 ${
             activeTab === "scan"
               ? "bg-ink text-on-ink"
               : "hover:bg-ink hover:text-on-ink"
           }`}
           onClick={() => setActiveTab("scan")}
         >
-          <span className="mb-8 block text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
+          <span className="mb-4 block text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
             Method 03
           </span>
-          <span className="block text-2xl font-bold tracking-tighter">{t(language, "page.check.methodQr")}</span>
-          <span className="mt-4 block text-base font-bold opacity-70">{t(language, "page.check.methodQrSub")}</span>
+          <span className="block text-xl font-bold tracking-tighter md:text-2xl">{t(language, "page.check.methodQr")}</span>
+          <span className="mt-2 block text-sm font-bold opacity-70 md:text-base">{t(language, "page.check.methodQrSub")}</span>
         </button>
       </div>
 
@@ -372,14 +372,14 @@ export default function App() {
         aria-labelledby="tab-text"
         hidden={activeTab !== "text"}
         tabIndex={activeTab === "text" ? 0 : undefined}
-        className="border border-ink bg-paper p-6 md:p-12"
+        className="border border-ink bg-paper p-6 md:p-10"
       >
         {activeTab === "text" && (
           <>
             <TextInput language={language} value={rawText} onChange={setRawText} />
             <RedactionPreview language={language} text={liveRedactedText} />
             {phonesInText.length > 0 && (
-              <label className="mt-8 flex cursor-pointer items-start gap-4 border border-ink bg-soft p-6">
+              <label className="mt-6 flex cursor-pointer items-start gap-4 border border-ink bg-soft p-5 md:p-6">
                 <input
                   type="checkbox"
                   checked={onlineLookup}
@@ -394,7 +394,7 @@ export default function App() {
                 </span>
               </label>
             )}
-            <div className="mt-8 flex items-start gap-6 border border-green-600 bg-green-50 p-6 dark:bg-green-950">
+            <div className="mt-6 flex items-start gap-5 border border-green-600 bg-green-50 p-5 md:p-6 dark:bg-green-950">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 shrink-0 text-green-600" aria-hidden="true">
                 <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
                 <path d="m9 12 2 2 4-4" />
@@ -414,7 +414,7 @@ export default function App() {
         aria-labelledby="tab-image"
         hidden={activeTab !== "image"}
         tabIndex={activeTab === "image" ? 0 : undefined}
-        className="mt-16 border border-ink bg-paper p-6 md:p-12"
+        className="mt-8 border border-ink bg-paper p-6 md:p-10"
       >
         {activeTab === "image" && (
           <ImageUpload language={language} onImageSelected={handleImageSelected} onError={setError} />
@@ -426,7 +426,7 @@ export default function App() {
         aria-labelledby="tab-scan"
         hidden={activeTab !== "scan"}
         tabIndex={activeTab === "scan" ? 0 : undefined}
-        className="mt-16 border border-ink bg-paper p-6 md:p-12"
+        className="mt-8 border border-ink bg-paper p-6 md:p-10"
       >
         {activeTab === "scan" && (
           <Suspense fallback={<p className="text-muted">{t(language, "loadingScanner")}</p>}>
@@ -450,19 +450,19 @@ export default function App() {
       </p>
 
       {activeTab !== "scan" && (
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-end">
+<div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           {loading ? (
             <>
               <button
                 type="button"
-                className="btn-secondary h-20 px-12"
+                className="btn-secondary touch-target px-8"
                 onClick={handleCancel}
               >
                 {t(language, "cancelButton")}
               </button>
               <button
                 type="submit"
-                className="btn-primary h-20 px-16"
+                className="btn-primary touch-target px-10"
                 disabled
               >
                 {loadingLabel}
@@ -472,7 +472,7 @@ export default function App() {
             <>
               <button
                 type="button"
-                className="btn-secondary h-20 px-12"
+                className="btn-secondary touch-target px-8"
                 onClick={() => {
                   setRawText("");
                   setImageBase64(null);
@@ -485,16 +485,16 @@ export default function App() {
               </button>
               <button
                 type="submit"
-                className="btn-primary h-20 px-16"
+                className="btn-primary touch-target px-10"
               >
                 {t(language, "page.check.analyzeButton")}
               </button>
             </>
           )}
-        </div>
+</div>
       )}
 
-      <div className="mt-24 grid grid-cols-1 gap-16 border-t border-strong pt-16 md:grid-cols-2 md:gap-24">
+      <div className="mt-12 grid grid-cols-1 gap-10 border-t border-strong pt-10 md:grid-cols-2 md:gap-16">
         <div>
           <h3 className="text-sm font-black uppercase tracking-[0.2em]">{t(language, "page.check.privacyTitle1")}</h3>
           <p className="mt-6 text-xl font-semibold leading-relaxed">{t(language, "page.check.privacyBody1")}</p>

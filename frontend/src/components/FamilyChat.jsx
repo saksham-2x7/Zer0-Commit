@@ -234,10 +234,10 @@ export default function FamilyChat({ language }) {
 
   return (
     <section aria-labelledby="chat-title">
-      <h2 id="chat-title" className="text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-6xl">
+      <h2 id="chat-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
         {t(language, "chat.title")}
       </h2>
-      <p className="mt-6 max-w-2xl text-xl font-semibold leading-relaxed">{t(language, "chat.subtitle")}</p>
+      <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "chat.subtitle")}</p>
 
       {fingerprint && (
         <p className="mt-6 inline-block border border-ink bg-soft px-4 py-3 font-mono text-lg font-black tracking-widest">
@@ -310,7 +310,7 @@ export default function FamilyChat({ language }) {
             <button
               type="submit"
               disabled={loading || !ready}
-              className="btn-primary disabled:cursor-not-allowed h-14 w-full px-6"
+              className="btn-primary touch-target w-full px-6 disabled:cursor-not-allowed"
             >
               {t(language, "chat.createThreadButton")}
             </button>
@@ -361,7 +361,7 @@ export default function FamilyChat({ language }) {
               <button
                 type="submit"
                 disabled={loading || !draft.trim()}
-                className="btn-primary disabled:cursor-not-allowed h-16 px-10"
+                className="btn-primary touch-target px-8 disabled:cursor-not-allowed"
               >
                 {t(language, "chat.sendButton")}
               </button>

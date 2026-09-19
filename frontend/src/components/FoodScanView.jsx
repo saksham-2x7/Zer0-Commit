@@ -46,13 +46,13 @@ export default function FoodScanView({ language, onNavigate }) {
   if (!familyId) {
     return (
       <section aria-labelledby="food-no-family-title">
-        <h2 id="food-no-family-title" className="text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-6xl">
+        <h2 id="food-no-family-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
           {t(language, "food.noFamilyTitle")}
         </h2>
-        <p className="mt-6 max-w-2xl text-xl font-semibold leading-relaxed">{t(language, "food.noFamilyBody")}</p>
+        <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "food.noFamilyBody")}</p>
         <button
           type="button"
-          className="btn-primary touch-target mt-8 h-16 px-10"
+          className="btn-primary touch-target mt-6 px-8"
           onClick={() => onNavigate("family")}
         >
           {t(language, "food.createFamilyButton")}
@@ -63,12 +63,12 @@ export default function FoodScanView({ language, onNavigate }) {
 
   return (
     <section aria-labelledby="food-title">
-      <h2 id="food-title" className="text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-6xl">
+      <h2 id="food-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
         {t(language, "food.title")}
       </h2>
-      <p className="mt-6 max-w-2xl text-xl font-semibold leading-relaxed">{t(language, "food.subtitle")}</p>
+      <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "food.subtitle")}</p>
 
-      <form onSubmit={handleLookup} className="mt-10 flex flex-col gap-4 md:flex-row">
+      <form onSubmit={handleLookup} className="mt-8 flex flex-col gap-3 md:flex-row">
         <label htmlFor="food-barcode" className="sr-only">
           {t(language, "food.barcodeLabel")}
         </label>
@@ -84,7 +84,7 @@ export default function FoodScanView({ language, onNavigate }) {
         <button
           type="submit"
           disabled={loading}
-          className="btn-primary disabled:cursor-not-allowed h-16 px-10"
+          className="btn-primary touch-target disabled:cursor-not-allowed px-8 md:min-w-[180px]"
         >
           {loading ? t(language, "food.lookingUp") : t(language, "food.lookupButton")}
         </button>

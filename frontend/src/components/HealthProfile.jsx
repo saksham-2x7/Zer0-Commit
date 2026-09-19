@@ -197,10 +197,10 @@ export default function HealthProfile({ language, onBack }) {
     { icon: "zap", name: t(language, "page.health.merchant.tatapower") },
   ];
   const sectionHeading =
-    "text-[40px] font-black tracking-tighter uppercase mb-10 border-b border-strong pb-4";
+    "text-3xl font-black tracking-tighter uppercase mb-8 border-b border-strong pb-4";
 
   return (
-    <div className="w-full space-y-16 py-10 md:space-y-24">
+    <div className="w-full space-y-10 py-8 md:space-y-16">
       <button
         type="button"
         className="btn-secondary mb-4 w-auto"
@@ -209,9 +209,9 @@ export default function HealthProfile({ language, onBack }) {
         {t(language, "healthProfileBackButton")}
       </button>
 
-      <div className="mb-16 flex flex-col items-start justify-between gap-8 border-b border-strong pb-12 md:flex-row md:items-end">
+      <div className="mb-10 flex flex-col items-start justify-between gap-6 border-b border-strong pb-8 md:flex-row md:items-end">
         <div className="max-w-2xl">
-          <h1 className="mb-8 text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-7xl">
+          <h1 className="mb-6 text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
             {title.prefix && (
               <>
                 {title.prefix}
@@ -220,18 +220,18 @@ export default function HealthProfile({ language, onBack }) {
             )}
             {title.last}
           </h1>
-          <p className="text-xl font-bold leading-relaxed">{t(language, "page.health.sub")}</p>
+          <p className="text-lg font-bold leading-relaxed md:text-xl">{t(language, "page.health.sub")}</p>
           <a
             href="#settings"
-            className="btn-primary touch-target mt-8 inline-flex w-full md:w-auto"
+            className="btn-primary touch-target mt-6 inline-flex w-full md:w-auto"
           >
             {t(language, "page.health.editProfile")}
           </a>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 md:gap-24">
-        <div className="space-y-16 lg:col-span-7 md:space-y-24">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
+        <div className="space-y-10 lg:col-span-7 lg:space-y-16">
           <section aria-labelledby="heading-personal">
             <h2 id="heading-personal" className={sectionHeading}>
               {t(language, "page.health.personal")}
@@ -289,7 +289,7 @@ export default function HealthProfile({ language, onBack }) {
                   className="flex flex-col items-center justify-between gap-6 border border-ink bg-soft p-6 md:flex-row"
                 >
                   <div className="flex w-full items-center gap-6">
-                    <span className="bg-ink text-on-ink flex h-16 w-16 items-center justify-center text-2xl font-black">
+                    <span className="bg-ink text-on-ink flex h-14 w-14 items-center justify-center text-xl font-black">
                       {initials(contact.name)}
                     </span>
                     <div>
@@ -579,7 +579,7 @@ export default function HealthProfile({ language, onBack }) {
           </section>
         </div>
 
-        <div className="space-y-16 lg:col-span-5 md:space-y-24">
+        <div className="space-y-10 lg:col-span-5 lg:space-y-16">
           <section className="panel-inverse p-8">
             <h3 className="mb-6 text-xl font-black uppercase tracking-tighter">{t(language, "page.health.privacyMode")}</h3>
             <p className="mb-8 text-sm font-bold uppercase leading-relaxed">{t(language, "page.health.privacyBody")}</p>

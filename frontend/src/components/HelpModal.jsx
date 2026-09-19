@@ -126,7 +126,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
   const content = (
     <div className={asView ? "w-full space-y-12" : "card w-full max-w-2xl space-y-12 py-10"}>
       <div className="border-b border-strong pb-10">
-        <h2 id="help-modal-heading" className="mb-8 text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-[56px]">
+        <h2 id="help-modal-heading" className="mb-6 text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
           {t(language, "page.help.title")}
         </h2>
         <div className="flex w-full flex-col gap-0 border border-ink md:flex-row">
@@ -152,7 +152,7 @@ export default function HelpModal({ language, onClose, asView = false }) {
       </div>
 
       <section aria-labelledby="help-browse-heading">
-        <h3 id="help-browse-heading" className="mb-12 text-[40px] font-black uppercase tracking-tighter">
+        <h3 id="help-browse-heading" className="mb-8 text-3xl font-black uppercase tracking-tighter md:text-4xl">
           {t(language, "page.help.browse")}
         </h3>
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -170,9 +170,9 @@ export default function HelpModal({ language, onClose, asView = false }) {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-24 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-16">
         <section aria-labelledby="help-faq-heading" className="lg:col-span-8">
-          <h3 id="help-faq-heading" className="mb-12 border-b border-strong pb-4 text-[40px] font-black uppercase tracking-tighter">
+          <h3 id="help-faq-heading" className="mb-8 border-b border-strong pb-4 text-3xl font-black uppercase tracking-tighter md:text-4xl">
             {t(language, "page.help.faq")}
           </h3>
           {visibleFaqs.length === 0 ? (

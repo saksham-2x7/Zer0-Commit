@@ -102,12 +102,12 @@ export default function ResultsView({ language, result, redactedText, onStartOve
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-16" aria-live="polite">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12" aria-live="polite">
       {/* ─── Main column ──────────────────────────────────── */}
       <div className="lg:col-span-8">
         {/* Verdict banner */}
-        <div className={`border-l ${RISK_BORDER[result.riskLevel] || RISK_BORDER.low} bg-soft p-8 mb-12`}>
-          <div className="mb-8 flex flex-wrap gap-4">
+        <div className={`border-l ${RISK_BORDER[result.riskLevel] || RISK_BORDER.low} bg-soft p-6 mb-8`}>
+          <div className="mb-6 flex flex-wrap gap-3">
             {result.verdict && (
               <span className="chip">
                 {t(language, VERDICT_KEY[result.verdict] || "results.verdictUncertain")}
@@ -129,13 +129,13 @@ export default function ResultsView({ language, result, redactedText, onStartOve
           <p className="text-lg leading-relaxed">
             {result.explanation || t(language, "page.results.verdict")}
           </p>
-          <p className="mt-8 text-sm italic text-muted">
+          <p className="mt-6 text-sm italic text-muted">
             {result.riskDisclaimer || t(language, "riskDisclaimer")}
           </p>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-2 gap-8 mb-16 text-center text-sm text-muted">
+        <div className="grid grid-cols-2 gap-8 mb-10 text-center text-sm text-muted">
           <div>
             <p className="text-xs uppercase tracking-wide mb-4 font-semibold">{t(language, "page.results.riskScore")}</p>
             <p className="text-xl font-bold">
@@ -153,7 +153,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         </div>
 
         {/* Why is this a scam? */}
-        <div className="mb-16">
+        <div className="mb-10">
           <h2 className="text-xl font-bold mb-10">
             {t(language, "page.results.why")}
           </h2>
@@ -186,7 +186,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         </div>
 
         {/* Safety: Your Hidden Data */}
-        <div className="mb-16">
+        <div className="mb-10">
           <div className="flex items-center gap-6 mb-10">
             <Icon icon="shieldCheck" className="h-6 w-6 text-green-600" />
             <h2 className="text-xl font-bold">
@@ -220,8 +220,8 @@ export default function ResultsView({ language, result, redactedText, onStartOve
 
         {/* AI next steps — only when the AI produced its own, distinct list */}
         {hasDistinctNextSteps && (
-          <div className="mb-16">
-            <h2 className="text-xl font-bold mb-10">
+          <div className="mb-10">
+<h2 className="text-xl font-bold mb-6">
               {t(language, "results.nextStepsHeading")}
             </h2>
             <ol className="space-y-4 text-base">
@@ -239,7 +239,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
 
         {/* Online reputation check — only present when the user opted in */}
         {reputation && (
-          <div className="mb-16">
+          <div className="mb-10">
             <div className="flex items-center gap-6 mb-10">
               <Icon icon="search" className="h-6 w-6" />
               <h2 className="text-xl font-bold">
@@ -307,7 +307,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
         <ReportingBlock language={language} reportingLinks={result.reportingLinks} />
 
         {/* Bottom actions — preserved for App.test.jsx compatibility */}
-        <div className="mt-20 flex flex-col gap-8 sm:flex-row no-print">
+        <div className="mt-12 flex flex-col gap-4 sm:flex-row no-print">
           <button
             type="button"
             className="btn-secondary flex-1"
@@ -344,7 +344,7 @@ export default function ResultsView({ language, result, redactedText, onStartOve
       </div>
 
       {/* ─── Sidebar ──────────────────────────────────────── */}
-      <aside className="lg:col-span-4 sticky top-32 space-y-16">
+      <aside className="lg:col-span-4 sticky top-32 space-y-10">
         <div>
           <h3 className="text-lg font-bold mb-8">
             {t(language, "page.results.nextSteps")}

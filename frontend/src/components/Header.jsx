@@ -26,21 +26,21 @@ export default function Header({
 }) {
   return (
     <header className="border-b border-ink bg-paper text-ink">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-5">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-1 gap-y-2 px-4 py-3 md:gap-x-3 md:py-4">
         <button
           type="button"
-          className="touch-target gap-3 text-left"
+          className="touch-target flex-none gap-3 text-left"
           onClick={() => onNavigate("home")}
         >
-          <span className="flex items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center border border-strong">
-              <Icon icon="check" className="h-6 w-6" />
+          <span className="flex items-center gap-2 md:gap-3">
+            <span className="grid h-8 w-8 shrink-0 place-items-center border border-strong md:h-11 md:w-11">
+              <Icon icon="check" className="h-4 w-4 md:h-6 md:w-6" />
             </span>
-            <span className="text-2xl font-black tracking-tight">{t(language, "appTitle")}</span>
+            <span className="text-base font-black tracking-tight md:text-2xl">{t(language, "appTitle")}</span>
           </span>
         </button>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1 md:ml-auto md:gap-2">
           <button
             type="button"
             aria-label={t(language, "header.help")}
@@ -58,6 +58,9 @@ export default function Header({
           >
             <Icon icon={theme === "dark" ? "moon" : "sun"} className="h-6 w-6" />
           </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1 md:gap-2">
           <TextSizeToggle language={language} textSize={textSize} onCycle={onCycleTextSize} />
           <LanguageSelector language={language} onChange={onLanguageChange} />
         </div>
@@ -65,9 +68,9 @@ export default function Header({
 
       <nav
         aria-label={t(language, "header.navLabel")}
-        className="no-print hidden border-t border-ink md:block"
+        className="no-print hidden overflow-x-auto border-t border-ink md:block"
       >
-        <ul className="mx-auto flex max-w-5xl items-stretch gap-1 px-4">
+        <ul className="mx-auto flex max-w-6xl items-stretch gap-1 px-4">
           {NAV_ITEMS.map(({ id, icon }) => {
             const active = id === activeView;
             return (
@@ -75,14 +78,14 @@ export default function Header({
                 <button
                   type="button"
                   aria-current={active ? "page" : undefined}
-                  className={`touch-target gap-2 border-b border-transparent px-4 py-2 text-sm font-black uppercase tracking-widest transition-colors ${
+                  className={`touch-target gap-2 whitespace-nowrap border-b border-transparent px-3 py-2 text-sm font-black uppercase tracking-widest transition-colors ${
                     active
                       ? "border-strong bg-ink text-on-ink"
                       : "hover:border-strong"
                   }`}
                   onClick={() => onNavigate(id)}
                 >
-                  <Icon icon={icon} className="h-5 w-5" />
+                  <Icon icon={icon} className="hidden h-5 w-5 lg:inline-block" />
                   {t(language, `header.${id}`)}
                 </button>
               </li>

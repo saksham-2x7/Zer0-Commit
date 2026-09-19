@@ -113,7 +113,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
       </button>
 
       {/* ─── Certificate header ──────────────────────────── */}
-      <header className="border-b border-strong pb-8 mb-16">
+      <header className="border-b border-strong pb-6 mb-10">
         <h1
           ref={headingRef}
           tabIndex={-1}
@@ -130,7 +130,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
         <p className="mt-4">{t(language, "page.evidence.privacy")}</p>
         <p className="text-sm italic font-black">{t(language, "page.evidence.footnote")}</p>
 
-        <div className="no-print mt-10 flex flex-col gap-3 sm:flex-row">
+        <div className="no-print mt-8 flex flex-col gap-3 sm:flex-row">
           <button type="button" className="btn-secondary flex-1" onClick={() => window.print()}>
             <span className="flex items-center justify-center gap-2">
               <Icon icon="print" className="h-5 w-5" />
@@ -153,8 +153,8 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
 
       {/* ─── Privacy section ─────────────────────────────── */}
       <section className="evidence-card card">
-        <div className="space-y-20">
-          <div className="grid grid-cols-1 gap-20 md:col-span-2 md:grid-cols-2">
+        <div className="space-y-10">
+          <div className="grid grid-cols-1 gap-10 md:col-span-2 md:grid-cols-2">
             <div className="md:col-start-1">
               <h2 className="text-xl font-bold uppercase tracking-wide mb-8">
                 {t(language, "page.evidence.whatTyped")}
@@ -169,7 +169,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
                 </p>
               )}
             </div>
-            <div className="panel-inverse p-8 md:col-start-2">
+            <div className="panel-inverse p-6 md:col-start-2">
               <p className="text-sm font-semibold uppercase tracking-wide mb-4 opacity-70">
                 {t(language, "page.evidence.whatAISaw")}
               </p>
@@ -179,7 +179,7 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             <div className="flex items-start gap-6">
               <Icon icon="lock" className="h-6 w-6 flex-none text-green-600" />
               <div>
@@ -204,15 +204,15 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
 
       {/* ─── Threat cards ────────────────────────────────── */}
       <section>
-        <h2 className="text-2xl font-black uppercase tracking-wide mb-12">
+        <h2 className="text-2xl font-black uppercase tracking-wide mb-8">
           {t(language, "page.evidence.why")}
         </h2>
         {matchedPatterns.length > 0 ? (
-          <div className="space-y-12">
+          <div className="space-y-8">
             {matchedPatterns.map((pattern) => (
               <div
                 key={pattern}
-                className={`evidence-card border-l ${RISK_CARD_BORDER[riskLevel] || RISK_CARD_BORDER.low} bg-soft p-8 space-y-6`}
+                className={`evidence-card border-l ${RISK_CARD_BORDER[riskLevel] || RISK_CARD_BORDER.low} bg-soft p-6 space-y-5`}
               >
                 <div className="flex flex-wrap items-center gap-4">
                   <h3 className="text-lg font-bold">{patternNames[pattern] || pattern}</h3>
@@ -247,10 +247,10 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
 
       {/* ─── What to do Now ──────────────────────────────── */}
       <section>
-        <h2 className="text-2xl font-black uppercase tracking-wide mb-12">
+        <h2 className="text-2xl font-black uppercase tracking-wide mb-8">
           {t(language, "page.evidence.nextSteps")}
         </h2>
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div className="flex flex-col justify-between gap-6 bg-soft p-6">
             <p className="font-bold">
               {t(language, "page.evidence.step1")} — 1930
@@ -272,14 +272,14 @@ export default function EvidenceView({ language, result, redactedText, rawText, 
           </div>
         </div>
 
-        <button type="button" className="btn-secondary no-print mt-12" onClick={handleShare}>
+        <button type="button" className="btn-secondary touch-target no-print mt-8" onClick={handleShare}>
           <span className="flex items-center gap-2">
             <Icon icon="share" className="h-5 w-5" />
             {copied ? t(language, "page.evidence.copied") : t(language, "page.evidence.share")}
           </span>
         </button>
 
-        <div className="mt-16 border-t border-strong pt-8">
+        <div className="mt-10 border-t border-strong pt-8">
           <h3 className="text-sm font-black uppercase tracking-wide mb-4">
             {t(language, "page.evidence.legend")}
           </h3>

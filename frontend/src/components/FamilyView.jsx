@@ -170,10 +170,10 @@ export default function FamilyView({ language, onNavigate }) {
         >
           {t(language, "common.back")}
         </button>
-        <h2 id="family-create-title" className="text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-6xl">
+        <h2 id="family-create-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
           {t(language, "family.createTitle")}
         </h2>
-        <p className="mt-6 max-w-2xl text-xl font-semibold leading-relaxed">{t(language, "family.createSubtitle")}</p>
+        <p className="mt-4 max-w-2xl text-lg font-semibold leading-relaxed md:text-xl">{t(language, "family.createSubtitle")}</p>
         <form onSubmit={handleCreateFamily} className="mt-10 max-w-xl space-y-6">
           <div>
             <label htmlFor="family-name" className="block text-sm font-black uppercase tracking-widest">
@@ -209,7 +209,7 @@ export default function FamilyView({ language, onNavigate }) {
           <button
             type="submit"
             disabled={loading}
-            className="btn-primary disabled:cursor-not-allowed h-16 w-full px-8"
+            className="btn-primary touch-target w-full disabled:cursor-not-allowed px-8"
           >
             {loading ? t(language, "family.creating") : t(language, "family.createButton")}
           </button>
@@ -222,7 +222,7 @@ export default function FamilyView({ language, onNavigate }) {
     <section aria-labelledby="family-title">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 id="family-title" className="text-5xl font-black uppercase leading-[0.9] tracking-tighter md:text-6xl">
+          <h2 id="family-title" className="text-4xl font-black uppercase leading-[0.95] tracking-tighter md:text-5xl">
             {family ? family.name : t(language, "family.title")}
           </h2>
           <p className="mt-4 text-lg font-bold opacity-70">{t(language, "family.familyIdLabel")} {familyId}</p>
@@ -244,7 +244,7 @@ export default function FamilyView({ language, onNavigate }) {
       {loading && <p className="mt-6 font-bold">{t(language, "family.loading")}</p>}
 
       {family && (
-        <div className="mt-12 space-y-16">
+        <div className="mt-10 space-y-12">
           {/* Members */}
           <section aria-labelledby="family-members-title">
             <h3 id="family-members-title" className="border-b border-strong pb-2 text-sm font-black uppercase tracking-[0.2em]">
@@ -314,7 +314,7 @@ export default function FamilyView({ language, onNavigate }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary disabled:cursor-not-allowed h-14 px-6 md:col-span-3"
+                className="btn-primary touch-target px-6 disabled:cursor-not-allowed md:col-span-3"
               >
                 {t(language, "family.addMemberButton")}
               </button>
@@ -382,7 +382,7 @@ export default function FamilyView({ language, onNavigate }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary disabled:cursor-not-allowed h-14 px-6 md:col-span-3"
+                className="btn-primary touch-target px-6 disabled:cursor-not-allowed md:col-span-3"
               >
                 {t(language, "family.addContactButton")}
               </button>
@@ -464,7 +464,7 @@ export default function FamilyView({ language, onNavigate }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary disabled:cursor-not-allowed h-14 px-6 md:col-span-3"
+                className="btn-primary touch-target px-6 disabled:cursor-not-allowed md:col-span-3"
               >
                 {t(language, "family.addAlertButton")}
               </button>
@@ -503,7 +503,7 @@ export default function FamilyView({ language, onNavigate }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary disabled:cursor-not-allowed h-14 px-6"
+                className="btn-primary touch-target px-6 disabled:cursor-not-allowed"
               >
                 {t(language, "family.addBlocklistButton")}
               </button>

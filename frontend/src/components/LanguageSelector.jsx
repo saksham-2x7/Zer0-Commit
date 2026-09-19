@@ -3,7 +3,7 @@ import { t, LANGUAGE_NAMES } from "../i18n/translations";
 export default function LanguageSelector({ language, onChange }) {
   return (
     <select
-      className="btn-secondary cursor-pointer appearance-none bg-paper pr-8"
+      className="btn-secondary cursor-pointer appearance-none bg-paper pr-8 max-w-[110px]"
       value={language}
       onChange={(e) => onChange(e.target.value)}
       aria-label={t(language, "selectLanguageLabel")}
