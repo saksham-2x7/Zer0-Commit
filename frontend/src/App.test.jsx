@@ -415,24 +415,15 @@ describe("App — keyboard tab navigation", () => {
 });
 
 describe("App — theme", () => {
-  test("the theme toggle switches the dark class and persists the choice", () => {
+  test("is light-only: the dark class is never applied to <html>, even with a stored dark preference", () => {
+    window.localStorage.setItem("scamsahayak-theme", "dark");
     render(<App />);
-
-    // Dark is the default; first click opts out to light.
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Toggle dark mode" }));
     expect(document.documentElement.classList.contains("dark")).toBe(false);
-    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("light");
-
-    fireEvent.click(screen.getByRole("button", { name: "Toggle dark mode" }));
-    expect(document.documentElement.classList.contains("dark")).toBe(true);
-    expect(window.localStorage.getItem("scamsahayak-theme")).toBe("dark");
   });
 
-  test("restores a saved light theme", () => {
-    window.localStorage.setItem("scamsahayak-theme", "light");
+  test("does not render a light/dark toggle button", () => {
     render(<App />);
-    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    expect(screen.queryByRole("button", { name: "Toggle dark mode" })).not.toBeInTheDocument();
   });
 });
 

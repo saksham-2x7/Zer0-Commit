@@ -9,16 +9,14 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Design tokens — "Warm Trust" / "Sandalwood Dusk" ──────────────
-   Light: warm parchment bg #FAF6F0, surface #FFFDF8, elevated #FFFFFF,
-   ink text #1C1917, saffron primary #C2410C, scam accent indigo #4338CA.
-   Dark (default): warm charcoal bg #161310, surface #1E1A17,
-   elevated #27221E, cream ink #F3EFE9, saffron primary #F97316.
-   Feature tints: scam #818CF8, family #F472B6, food #2DD4BF
-   (dark) / #4338CA, #BE185D, #0F766E (light). */
+/* ─── Design tokens — "Warm Trust" (light-only) ────────────────────
+   Light: warm cream bg #FBF8F3, surface #FFFDF8, elevated #FFFFFF,
+   deep warm charcoal ink #211C15, saffron primary #C2410C
+   (hover #9A3412), scam accent indigo #4338CA. Dark mode was
+   removed — the app is light-only. */
 :root {
-  --color-bg: #faf6f0;
-  --color-ink: #1c1917;
+--color-bg: #fbf8f3;
+  --color-ink: #211c15;
   --color-on-ink: #ffffff;
   --color-paper: #fffdf8;
   --color-ash: #ffffff;
@@ -30,13 +28,14 @@
   --color-ghost: #f2ede4;
 
   --color-border: #e8e1d6;
-  --color-border-soft: rgba(28, 25, 23, 0.08);
+  --color-border-soft: rgba(33, 28, 21, 0.08);
   --color-border-strong: #8a7f6f;
-  --color-muted: #6e675c;
+  --color-muted: #6b6357;
   --color-soft: #f6f1e8;
   --color-text-2: #57534e;
 
-  --color-primary: #c2410c;
+--color-primary: #c2410c;
+  --color-primary-hover: #9a3412;
   --color-on-primary: #ffffff;
   --color-secondary: #b45309;
   --color-info: #0369a1;
@@ -57,60 +56,12 @@
   --radius-card: 12px;
   --radius-pill: 999px;
 
-  --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.06),
-    0 8px 24px rgba(28, 25, 23, 0.08);
-  --shadow-float: 0 4px 12px rgba(28, 25, 23, 0.1),
-    0 16px 40px rgba(28, 25, 23, 0.14);
-  --shadow-soft: 0 1px 2px rgba(28, 25, 23, 0.05);
-  --ring-cobalt: rgba(67, 56, 202, 0.2);
-}
-
-/* Dark: warm charcoal #161310, surface #1E1A17, elevated #27221E,
-   cream #F3EFE9, borders #3C352C / #6A6253, danger #FF7070,
-   saffron primary #F97316, accent scam #818CF8 family #F472B6
-   food #2DD4BF, success #34D399 warning #FBBF24. */
-html.dark {
-  --color-bg: #161310;
-  --color-ink: #f3efe9;
-  --color-on-ink: #15100a;
-  --color-paper: #1e1a17;
-  --color-ash: #27221e;
-  --color-elevated: #27221e;
-  --color-signal: #ff7070;
-  --color-cobalt: #818cf8;
-  --color-cobalt-hover: #a5b4fc;
-
-  --color-ghost: #161310;
-
-  --color-border: #3c352c;
-  --color-border-soft: rgba(255, 255, 255, 0.08);
-  --color-border-strong: #6a6253;
-  --color-muted: #a69a8a;
-  --color-soft: #1e1a17;
-  --color-text-2: #c9c0b4;
-
-  --color-primary: #f97316;
-  --color-on-primary: #15100a;
-  --color-secondary: #fbbf24;
-  --color-info: #38bdf8;
-  --color-success: #34d399;
-  --color-warning: #fbbf24;
-  --color-danger: #ff7070;
-
-  --color-accent-scam: #818cf8;
-  --color-accent-family: #f472b6;
-  --color-accent-food: #2dd4bf;
-
-  --color-risk-high: var(--color-danger);
-  --color-risk-medium: var(--color-warning);
-  --color-risk-low: var(--color-success);
-
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.28),
-    0 8px 24px rgba(0, 0, 0, 0.34);
-  --shadow-float: 0 4px 12px rgba(0, 0, 0, 0.34),
-    0 16px 40px rgba(0, 0, 0, 0.42);
-  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.22);
-  --ring-cobalt: rgba(129, 140, 248, 0.24);
+--shadow-card: 0 1px 2px rgba(33, 28, 21, 0.06),
+    0 8px 24px rgba(33, 28, 21, 0.08);
+  --shadow-float: 0 4px 12px rgba(33, 28, 21, 0.1),
+    0 16px 40px rgba(33, 28, 21, 0.14);
+  --shadow-soft: 0 1px 2px rgba(33, 28, 21, 0.05);
+--ring-cobalt: rgba(67, 56, 202, 0.2);
 }
 
 /* ─── Base ───────────────────────────────────────────────────────── */
@@ -149,9 +100,6 @@ body {
 ::selection {
   background-color: rgba(67, 56, 202, 0.22);
   color: var(--color-ink);
-}
-html.dark ::selection {
-  background-color: rgba(129, 140, 248, 0.28);
 }
 
 h1,
@@ -290,8 +238,8 @@ svg {
   box-shadow: var(--shadow-soft);
 }
 .btn-primary:not(:disabled):hover {
-  background-color: color-mix(in srgb, var(--color-primary) 88%, #000);
-  border-color: color-mix(in srgb, var(--color-primary) 88%, #000);
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
   box-shadow: var(--shadow-float);
 }
 
@@ -332,9 +280,6 @@ svg {
   border-radius: var(--radius-card);
   padding: 1.25rem;
   box-shadow: var(--shadow-card);
-}
-html.dark .card {
-  border-color: var(--color-border);
 }
 .card.modal {
   background-color: var(--color-elevated);
@@ -465,9 +410,6 @@ html.dark .card {
   text-transform: uppercase;
   color: var(--color-cobalt);
 }
-html.dark .kicker {
-  color: var(--color-cobalt);
-}
 
 /* Section rule: 1px structural divider under section headers. */
 .section-rule {
@@ -531,9 +473,6 @@ html.dark .kicker {
 .bg-green-600 {
   background-color: var(--color-success);
 }
-html.dark .bg-green-600 {
-  background-color: #047857;
-}
 
 /* ─── Focus visibility — cobalt 2px ring, offset 2px ─────────────── */
 :is(button, a, input, select, textarea, [role="tab"], [tabindex], summary):focus-visible {
@@ -595,10 +534,6 @@ html.dark .bg-green-600 {
 /* Keep Leaflet's own controls below the fixed mobile nav (z-40). */
 .location-map .leaflet-control {
   z-index: 10;
-}
-/* Dark mode: invert the light OSM tiles so the map matches the theme. */
-html.dark .location-map .leaflet-tile {
-  filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
 }
 .location-map .leaflet-popup-content {
   font-family: inherit;

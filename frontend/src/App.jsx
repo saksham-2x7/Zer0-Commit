@@ -18,7 +18,6 @@ import FoodScanView from "./components/FoodScanView";
 import LocationView from "./components/LocationView";
 import { analyzeMessage } from "./services/api";
 import { redactText } from "./utils/redact";
-import { useTheme } from "./utils/useTheme";
 import { useTextSize } from "./utils/useTextSize";
 import { useLanguage } from "./utils/useLanguage";
 import { loadHistory, saveHistoryEntry, clearHistory } from "./utils/history";
@@ -77,7 +76,6 @@ function extractPhones(text) {
 }
 
 export default function App() {
-  const { theme, toggleTheme } = useTheme();
   const { textSize, cycleTextSize } = useTextSize();
   const { language, setLanguage } = useLanguage();
   const [view, setView] = useState("home");
@@ -394,7 +392,7 @@ export default function App() {
                 </span>
               </label>
             )}
-            <div className="mt-6 flex items-start gap-5 border border-green-600 bg-green-50 p-5 md:p-6 dark:bg-green-950">
+            <div className="mt-6 flex items-start gap-5 border border-green-600 bg-green-50 p-5 md:p-6">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-10 w-10 shrink-0 text-green-600" aria-hidden="true">
                 <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1 1 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
                 <path d="m9 12 2 2 4-4" />
@@ -524,8 +522,6 @@ export default function App() {
         language={language}
         activeView={activeView}
         onNavigate={setView}
-        theme={theme}
-        onToggleTheme={toggleTheme}
         textSize={textSize}
         onCycleTextSize={cycleTextSize}
         onLanguageChange={setLanguage}
@@ -563,8 +559,6 @@ export default function App() {
         ) : view === "settings" ? (
           <SettingsView
             language={language}
-            theme={theme}
-            onToggleTheme={toggleTheme}
             textSize={textSize}
             onCycleTextSize={cycleTextSize}
             onLanguageChange={setLanguage}

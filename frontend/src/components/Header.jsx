@@ -17,8 +17,6 @@ export default function Header({
   language,
   activeView,
   onNavigate,
-  theme,
-  onToggleTheme,
   textSize,
   onCycleTextSize,
   onLanguageChange,
@@ -48,16 +46,6 @@ export default function Header({
               onClick={() => onNavigate("help")}
             >
               <Icon icon="help" className="h-6 w-6" />
-            </button>
-            <span aria-hidden="true" className="h-7 w-px bg-[var(--color-border)]" />
-            <button
-              type="button"
-              id="theme-toggle"
-              aria-label={t(language, "themeToggleAria")}
-              className="touch-target rounded-none px-3"
-              onClick={onToggleTheme}
-            >
-              <Icon icon={theme === "dark" ? "moon" : "sun"} className="h-6 w-6" />
             </button>
             <span aria-hidden="true" className="h-7 w-px bg-[var(--color-border)]" />
             <TextSizeToggle
