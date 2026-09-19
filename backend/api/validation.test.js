@@ -7,7 +7,36 @@ const VALID_PNG_BASE64 = Buffer.concat([PNG_MAGIC, Buffer.from("fake-png-body")]
 describe("validateAnalyzeRequest", () => {
   test("normalizes a valid text request", () => {
     const result = validateAnalyzeRequest({ language: "en", inputType: "text", rawText: "hello" });
-    expect(result).toEqual({ language: "en", inputType: "text", rawText: "hello" });
+    expect(result).toEqual({
+      language: "en",
+      inputType: "text",
+      rawText: "hello",
+      onlineLookup: false,
+      lookupPhones: [],
+    });
+  });
+
+  test("normalizes onlineLookup and filters lookupPhones", () => {
+    const result = validateAnalyzeRequest({
+      language: "en",
+      inputType: "text",
+      rawText: "call 9876543210",
+      onlineLookup: true,
+      lookupPhones: ["9876543210", "garbage", "+91 98765 43210"],
+    });
+    expect(result.onlineLookup).toBe(true);
+    expect(result.lookupPhones).toEqual(["9876543210", "+91 98765 43210"]);
+  });
+
+  test("ignores lookupPhones when onlineLookup is not requested", () => {
+    const result = validateAnalyzeRequest({
+      language: "en",
+      inputType: "text",
+      rawText: "call 9876543210",
+      lookupPhones: ["9876543210"],
+    });
+    expect(result.onlineLookup).toBe(false);
+    expect(result.lookupPhones).toEqual([]);
   });
 
   test("normalizes a valid image request and returns the pre-decoded bytes", () => {
@@ -23,6 +52,8 @@ describe("validateAnalyzeRequest", () => {
       imageBase64: VALID_PNG_BASE64,
       imageMimeType: "image/png",
       bytes: Buffer.concat([PNG_MAGIC, Buffer.from("fake-png-body")]),
+      onlineLookup: false,
+      lookupPhones: [],
     });
   });
 

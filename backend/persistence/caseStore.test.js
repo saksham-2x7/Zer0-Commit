@@ -41,6 +41,7 @@ describe("caseStore", () => {
     const call = ddbMock.call(0);
     expect(call.args[0].input.TableName).toBe("scamsahayak-cases");
     expect(call.args[0].input.Item).toMatchObject(record);
+    expect(typeof call.args[0].input.Item.ttl).toBe("number");
   });
 
   test("never persists raw text, raw image bytes, or credentials", async () => {
@@ -68,5 +69,50 @@ describe("caseStore", () => {
 
     const saved = await saveCase({ caseId: "case_4", riskLevel: "low", matchedPatterns: [] });
     expect(saved.schemaVersion).toBe("1.0");
+  });
+
+  test("stamps a ttl of now + default 30-day retention so DynamoDB TTL fires", async () => {
+    delete process.env.CASES_TABLE_NAME;
+    delete process.env.EVIDENCE_RETENTION_DAYS;
+
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    try {
+      const saved = await saveCase({ caseId: "case_ttl", riskLevel: "low", matchedPatterns: [] });
+      const expected = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000) + 30 * 86400;
+      expect(Math.abs(saved.ttl - expected)).toBeLessThanOrEqual(5);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test("honors the EVIDENCE_RETENTION_DAYS env override", async () => {
+    delete process.env.CASES_TABLE_NAME;
+    process.env.EVIDENCE_RETENTION_DAYS = "90";
+
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    try {
+      const saved = await saveCase({ caseId: "case_ttl2", riskLevel: "low", matchedPatterns: [] });
+      const expected = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000) + 90 * 86400;
+      expect(Math.abs(saved.ttl - expected)).toBeLessThanOrEqual(5);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  test("falls back to 30-day retention when EVIDENCE_RETENTION_DAYS is not a positive number", async () => {
+    delete process.env.CASES_TABLE_NAME;
+    process.env.EVIDENCE_RETENTION_DAYS = "not-a-number";
+
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-01-01T00:00:00Z"));
+    try {
+      const saved = await saveCase({ caseId: "case_ttl3", riskLevel: "low", matchedPatterns: [] });
+      const expected = Math.floor(new Date("2026-01-01T00:00:00Z").getTime() / 1000) + 30 * 86400;
+      expect(Math.abs(saved.ttl - expected)).toBeLessThanOrEqual(5);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

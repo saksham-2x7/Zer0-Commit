@@ -33,7 +33,7 @@ export default function HistoryPanel({ language, history, onSelect, onClear, onB
                     />
                     {t(language, RISK_LABEL_KEYS[entry.result.riskLevel] || "riskLow")}
                   </span>
-                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                  <span className="text-sm tabular-nums text-slate-500 dark:text-slate-400">
                     {new Date(entry.savedAt).toLocaleString()}
                   </span>
                 </div>

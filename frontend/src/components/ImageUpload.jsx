@@ -136,7 +136,7 @@ export default function ImageUpload({ language, onImageSelected, onError }) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/png,image/jpeg"
+        accept="image/*"
         className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0])}
       />

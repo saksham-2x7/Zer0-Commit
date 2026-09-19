@@ -16,6 +16,7 @@ const { analyze } = require("./analyzeHandler");
 const { ocr } = require("./ocrHandler");
 const { extractHealthTags } = require("./healthTagsHandler");
 const { generateFoodFeedback } = require("./foodFeedbackHandler");
+const { report } = require("./reportHandler");
 const { corsHeaders } = require("./cors");
 const { ApiError } = require("./errors");
 const { getMaxInputBytes } = require("./validation");
@@ -38,6 +39,7 @@ const ROUTES = {
   "/api/ocr": ocr,
   "/api/health-tags": extractHealthTags,
   "/api/food-feedback": generateFoodFeedback,
+  "/api/report": report,
 };
 
 function generateRequestId() {

@@ -3,17 +3,28 @@ import { t } from "../i18n/translations";
 import ReportingBlock from "./ReportingBlock";
 import { buildEvidenceBundle, downloadEvidenceBundle } from "../utils/evidenceBundle";
 import { isSpeechSynthesisSupported, speak, stopSpeaking } from "../utils/speech";
+import Icon from "./icons";
 
-const RISK_STYLES = {
-  high: "risk-badge risk-badge-high",
-  medium: "risk-badge risk-badge-medium",
-  low: "risk-badge risk-badge-low",
+// Design-spec §3.4 — redesigned results sub-page: risk-score banner, stat
+// cards, numbered "Why is this a scam?" rows, safety/redaction section, and
+// sticky sidebar with Next Steps + Check Progress.
+
+const RISK_BORDER = {
+  high: "border-l-risk-high",
+  medium: "border-l-amber-500",
+  low: "border-l-green-600",
 };
 
-const RISK_ICONS = {
-  high: "\u26A0",
-  medium: "?",
-  low: "\u2713",
+const RISK_SCORE_KEY = {
+  high: "page.results.score.high",
+  medium: "page.results.score.medium",
+  low: "page.results.score.low",
+};
+
+const RISK_BADGE_KEY = {
+  high: "page.results.badge",
+  medium: "vocab.mediumRisk",
+  low: "vocab.lowRisk",
 };
 
 const RISK_LABEL_KEYS = {
@@ -22,39 +33,57 @@ const RISK_LABEL_KEYS = {
   low: "riskLow",
 };
 
-export default function ResultsView({ language, result, redactedText, onStartOver }) {
+const PATTERN_REASON_KEY = {
+  urgency: "page.results.reason.urgency",
+  otp_request: "page.results.reason.otp_request",
+  screen_share_request: "page.results.reason.screen_share_request",
+  suspicious_link: "page.results.reason.suspicious_link",
+  impersonation: "page.results.reason.impersonation",
+  suspicious_collect_request: "page.results.reason.suspicious_collect_request",
+};
+
+const VERDICT_KEY = {
+  scam: "results.verdictScam",
+  legit: "results.verdictLegit",
+  uncertain: "results.verdictUncertain",
+};
+
+export default function ResultsView({ language, result, redactedText, onStartOver, onViewEvidence }) {
   const [preparingDownload, setPreparingDownload] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [hasSpoken, setHasSpoken] = useState(false);
   const headingRef = useRef(null);
   const patternNames = t(language, "patternNames");
   const evidenceByPattern = new Map((result.evidence || []).map((e) => [e.pattern, e.snippet]));
+  const matchedPatterns = result.matchedPatterns || [];
+  const reputation = result.reputation;
+  const scamFindingCount =
+    reputation?.entities?.reduce(
+      (n, e) => n + (e.findings || []).filter((f) => f.scamRelated).length,
+      0
+    ) || 0;
+  // In fallback mode nextSteps mirrors the checklist — only surface the
+  // dedicated "what to do next" list when the AI produced its own steps.
+  const hasDistinctNextSteps =
+    Array.isArray(result.nextSteps) &&
+    result.nextSteps.length > 0 &&
+    JSON.stringify(result.nextSteps) !== JSON.stringify(result.checklist || []);
 
   useEffect(() => {
-    // The clicked trigger (e.g. the Check button) has unmounted with the view
-    // swap — move focus onto the result heading so screen-reader + keyboard
-    // users land somewhere meaningful instead of the <body>.
     headingRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    // Stop any in-progress read-aloud when the result changes or unmounts.
     return () => stopSpeaking();
   }, [result]);
 
   async function handleDownload() {
-    // Ship It mode: the backend already stored a redacted bundle in S3 and
-    // returned a short-lived signed URL — use that instead of rebuilding
-    // locally, so the downloaded copy matches what's actually on record.
     if (result.evidenceBundle?.available && result.evidenceBundle?.downloadUrl) {
       setPreparingDownload(true);
       window.open(result.evidenceBundle.downloadUrl, "_blank", "noopener,noreferrer");
       setPreparingDownload(false);
       return;
     }
-
-    // Build It fallback: build and download the same redacted bundle
-    // client-side (documented in CONTRACT.md).
     const bundle = buildEvidenceBundle({ result, redactedText, language });
     downloadEvidenceBundle(bundle);
   }
@@ -67,40 +96,234 @@ export default function ResultsView({ language, result, redactedText, onStartOve
     }
     const riskLabel = t(language, RISK_LABEL_KEYS[result.riskLevel] || "riskLow");
     const spokenText = [riskLabel, result.explanation, ...(result.checklist || [])].join(". ");
-    // Reset the button state as soon as speech actually ends (or fails).
     speak(spokenText, language, () => setSpeaking(false));
     setSpeaking(true);
     setHasSpoken(true);
   }
 
   return (
-    <div className="space-y-4" aria-live="polite">
-      <div className="card">
-        <div className="flex items-center justify-between gap-3">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-16" aria-live="polite">
+      {/* ─── Main column ──────────────────────────────────── */}
+      <div className="lg:col-span-8">
+        {/* Verdict banner */}
+        <div className={`border-l-8 ${RISK_BORDER[result.riskLevel] || RISK_BORDER.low} bg-slate-50 dark:bg-zinc-900 p-16 mb-16 rounded-r-lg`}>
+          <div className="mb-8 flex flex-wrap gap-4">
+            {result.verdict && (
+              <span className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-black text-white dark:bg-white dark:text-slate-900">
+                {t(language, VERDICT_KEY[result.verdict] || "results.verdictUncertain")}
+              </span>
+            )}
+            <span className="inline-flex items-center gap-2 rounded-full bg-risk-high px-4 py-2 text-sm font-black text-white">
+              {t(language, RISK_BADGE_KEY[result.riskLevel] || "page.results.badge")}
+            </span>
+          </div>
           <h2
             ref={headingRef}
             tabIndex={-1}
-            className="text-xl font-bold outline-none"
+            className="text-2xl font-bold text-slate-900 dark:text-white mb-4 outline-none"
           >
-            {t(language, "resultsHeading")}
+            {t(language, "page.results.title")}
           </h2>
-          <span
-            role="status"
-            className={`inline-flex items-center gap-2 ${RISK_STYLES[result.riskLevel] || RISK_STYLES.low}`}
-          >
-            <span aria-hidden="true" className="text-lg font-black leading-none">
-              {RISK_ICONS[result.riskLevel] || RISK_ICONS.low}
-            </span>
-            {t(language, RISK_LABEL_KEYS[result.riskLevel] || "riskLow")}
-          </span>
+          <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
+            {result.explanation || t(language, "page.results.verdict")}
+          </p>
+          <p className="mt-8 text-sm italic text-slate-500 dark:text-slate-400">
+            {result.riskDisclaimer || t(language, "riskDisclaimer")}
+          </p>
         </div>
-        <p className="mt-2 text-sm italic text-slate-500 dark:text-slate-400">
-          {result.riskDisclaimer || t(language, "riskDisclaimer")}
-        </p>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-2 gap-16 mb-20 text-center text-sm text-slate-600 dark:text-slate-400">
+          <div>
+            <p className="text-xs uppercase tracking-wide mb-4 font-semibold">{t(language, "page.results.riskScore")}</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white">
+              {t(language, RISK_SCORE_KEY[result.riskLevel] || "page.results.score.low")}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-wide mb-4 font-semibold">{t(language, "page.results.redactedItems")}</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white">
+              {result.inputSummary?.redactionApplied
+                ? t(language, "page.results.redactedYes")
+                : t(language, "page.results.redactedNo")}
+            </p>
+          </div>
+        </div>
+
+        {/* Why is this a scam? */}
+        <div className="mb-20">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-12">
+            {t(language, "page.results.why")}
+          </h2>
+          {matchedPatterns.length > 0 ? (
+            <div className="space-y-12">
+              {matchedPatterns.map((pattern, i) => (
+                <div key={pattern} className="flex gap-10 items-start">
+                  <span className="flex-none w-12 h-12 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center text-lg font-black">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
+                      {patternNames[pattern] || pattern}
+                    </h3>
+                    <p className="text-base text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
+                      {t(language, PATTERN_REASON_KEY[pattern]) || t(language, "noPatternsFound")}
+                    </p>
+                    {evidenceByPattern.get(pattern) && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400 font-mono leading-relaxed">
+                        "{evidenceByPattern.get(pattern)}"
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-slate-600 dark:text-slate-300">{t(language, "noPatternsFound")}</p>
+          )}
+        </div>
+
+        {/* Safety: Your Hidden Data */}
+        <div className="mb-20">
+          <div className="flex items-center gap-6 mb-12">
+            <Icon icon="shieldCheck" className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              {t(language, "page.results.safety")}
+            </h2>
+          </div>
+          <div className="border-2 border-black dark:border-white p-10 bg-slate-50 dark:bg-zinc-900 font-mono text-lg leading-relaxed rounded-lg mb-8">
+            {redactedText || t(language, "page.results.sample")}
+          </div>
+          <div className="flex items-center gap-4 text-sm text-slate-600 dark:text-slate-400 mb-12">
+            <Icon icon="shieldCheck" className="h-5 w-5 text-green-600 dark:text-green-400 flex-none" />
+            <p>{t(language, "page.results.safetyNote")}</p>
+          </div>
+
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-8">
+            {t(language, "checklistHeading")}
+          </h3>
+          {result.checklist?.length > 0 ? (
+            <ul className="space-y-6 text-base text-slate-700 dark:text-slate-300">
+              {result.checklist.map((item, idx) => (
+                <li key={idx} className="flex gap-6 items-start">
+                  <Icon icon="check" className="h-5 w-5 mt-1 text-green-600 dark:text-green-400 flex-none" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-slate-600 dark:text-slate-300">{t(language, "noChecklistItems")}</p>
+          )}
+        </div>
+
+        {/* AI next steps — only when the AI produced its own, distinct list */}
+        {hasDistinctNextSteps && (
+          <div className="mb-20">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-12">
+              {t(language, "results.nextStepsHeading")}
+            </h2>
+            <ol className="space-y-6 text-base text-slate-700 dark:text-slate-300">
+              {result.nextSteps.map((step, idx) => (
+                <li key={idx} className="flex gap-6 items-start">
+                  <span className="flex-none w-10 h-10 rounded-full bg-black text-white dark:bg-white dark:text-slate-900 flex items-center justify-center text-sm font-black">
+                    {idx + 1}
+                  </span>
+                  <span className="pt-2">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+
+        {/* Online reputation check — only present when the user opted in */}
+        {reputation && (
+          <div className="mb-20">
+            <div className="flex items-center gap-6 mb-12">
+              <Icon icon="search" className="h-6 w-6 text-slate-700 dark:text-slate-300" />
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                {t(language, "results.reputationHeading")}
+              </h2>
+            </div>
+            {reputation.available ? (
+              <div className="space-y-6">
+                <p
+                  className={`text-base font-bold ${
+                    scamFindingCount > 0
+                      ? "text-red-700 dark:text-red-400"
+                      : "text-green-700 dark:text-green-400"
+                  }`}
+                >
+                  {scamFindingCount > 0
+                    ? t(language, "results.reputationScamFound")
+                    : t(language, "results.reputationClean")}
+                </p>
+                {reputation.entities?.map((entity, ei) => (
+                  <div key={ei} className="rounded-lg bg-slate-50 p-6 dark:bg-zinc-900">
+                    <p className="mb-4 text-sm font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {entity.type === "phone"
+                        ? t(language, "results.reputationPhone")
+                        : t(language, "results.reputationWebsite")}
+                    </p>
+                    {entity.findings?.length > 0 ? (
+                      <ul className="space-y-3 text-sm text-slate-700 dark:text-slate-300">
+                        {entity.findings.slice(0, 3).map((f, fi) => (
+                          <li key={fi}>
+                            {f.url ? (
+                              <a
+                                href={f.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-semibold underline decoration-slate-400 underline-offset-4 hover:text-slate-900 dark:hover:text-white"
+                              >
+                                {f.title || f.url}
+                              </a>
+                            ) : (
+                              <span className="font-semibold">{f.title}</span>
+                            )}
+                            {f.snippet && (
+                              <p className="mt-1 text-slate-600 dark:text-slate-400">{f.snippet}</p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {t(language, "results.reputationNoFindings")}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-600 dark:text-slate-300">
+                {t(language, "results.reputationUnavailable")}
+              </p>
+            )}
+          </div>
+        )}
+
+        <ReportingBlock language={language} reportingLinks={result.reportingLinks} />
+
+        {/* Bottom actions — preserved for App.test.jsx compatibility */}
+        <div className="mt-20 flex flex-col gap-8 sm:flex-row no-print">
+          <button
+            type="button"
+            className="btn-secondary flex-1"
+            onClick={handleDownload}
+            disabled={preparingDownload}
+          >
+            {preparingDownload
+              ? t(language, "downloadingEvidenceButton")
+              : t(language, "downloadEvidenceButton")}
+          </button>
+          <button type="button" className="btn-primary flex-1" onClick={onStartOver}>
+            {t(language, "startOverButton")}
+          </button>
+        </div>
 
         {isSpeechSynthesisSupported() && (
-          <>
-            <button type="button" className="btn-secondary mt-3" onClick={handleToggleReadAloud}>
+          <div className="mt-12 text-center no-print">
+            <button type="button" className="btn-secondary" onClick={handleToggleReadAloud}>
               {speaking ? t(language, "stopReadingButton") : t(language, "readAloudButton")}
             </button>
             <p className="sr-only" aria-live="polite" data-testid="speech-status">
@@ -110,73 +333,94 @@ export default function ResultsView({ language, result, redactedText, onStartOve
                   ? t(language, "speechStatusStopped")
                   : ""}
             </p>
-          </>
+          </div>
         )}
 
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
-            {t(language, "matchedPatternsHeading")}
-          </h3>
-          {result.matchedPatterns?.length > 0 ? (
-            <ul className="mt-2 space-y-2">
-              {result.matchedPatterns.map((pattern) => (
-                <li key={pattern} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-                  <p className="font-medium text-slate-800 dark:text-slate-100">
-                    {patternNames[pattern] || pattern}
-                  </p>
-                  {evidenceByPattern.get(pattern) && (
-                    <p className="mt-1 whitespace-pre-wrap break-words font-mono text-sm text-slate-600 dark:text-slate-400">
-                      "{evidenceByPattern.get(pattern)}"
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-slate-600 dark:text-slate-300">{t(language, "noPatternsFound")}</p>
-          )}
-        </div>
-
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
-            {t(language, "explanationHeading")}
-          </h3>
-          <p className="mt-1 text-slate-700 dark:text-slate-300">{result.explanation}</p>
-        </div>
-
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">
-            {t(language, "checklistHeading")}
-          </h3>
-          {result.checklist?.length > 0 ? (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-slate-700 dark:text-slate-300">
-              {result.checklist?.map((item, index) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-slate-600 dark:text-slate-300">{t(language, "noChecklistItems")}</p>
-          )}
-        </div>
+        <p className="mt-12 text-center text-sm text-slate-500 dark:text-slate-400">
+          {t(language, "disclaimer")}
+        </p>
       </div>
 
-      <ReportingBlock language={language} reportingLinks={result.reportingLinks} />
+      {/* ─── Sidebar ──────────────────────────────────────── */}
+      <aside className="lg:col-span-4 sticky top-32 space-y-16">
+        <div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-12">
+            {t(language, "page.results.nextSteps")}
+          </h3>
+          <ul className="space-y-10">
+            <li>
+              <button
+                type="button"
+                className="w-full text-left flex gap-8 items-center p-8 rounded-lg bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                onClick={handleDownload}
+              >
+                <Icon icon="download" className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  {t(language, "page.results.download")}
+                </span>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="w-full text-left flex gap-8 items-center p-8 rounded-lg bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                onClick={() => window.print()}
+              >
+                <Icon icon="print" className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  {t(language, "page.results.print")}
+                </span>
+              </button>
+            </li>
+            {onViewEvidence && (
+              <li>
+                <button
+                  type="button"
+                  className="w-full text-left flex gap-8 items-center p-8 rounded-lg bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+                  onClick={onViewEvidence}
+                >
+                  <Icon icon="playCircle" className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    {t(language, "page.results.viewProof")}
+                  </span>
+                </button>
+              </li>
+            )}
+            <li>
+              <a
+                href="https://cybercrime.gov.in/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full text-left flex gap-8 items-center p-8 rounded-lg bg-slate-50 dark:bg-zinc-900 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
+              >
+                <Icon icon="alertTriangle" className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+                <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  {t(language, "page.results.fileComplaint")}
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button
-          type="button"
-          className="btn-secondary flex-1"
-          onClick={handleDownload}
-          disabled={preparingDownload}
-        >
-          {preparingDownload ? t(language, "downloadingEvidenceButton") : t(language, "downloadEvidenceButton")}
-        </button>
-        <button type="button" className="btn-primary flex-1" onClick={onStartOver}>
-          {t(language, "startOverButton")}
-        </button>
-      </div>
-
-      <p className="text-center text-sm text-slate-500 dark:text-slate-400">{t(language, "disclaimer")}</p>
+        <div>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-12">
+            {t(language, "page.results.progress")}
+          </h3>
+          <div className="space-y-12 relative">
+            <div className="absolute left-6 top-6 bottom-6 w-px bg-slate-300 dark:bg-slate-600" />
+            {[1, 2, 3].map((step) => (
+              <div key={step} className="flex gap-10 items-center relative">
+                <span className="flex-none w-12 h-12 rounded-full bg-green-600 text-white flex items-center justify-center text-sm font-bold z-10">
+                  {step}
+                </span>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t(language, `page.results.step${step}`)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
     </div>
   );
 }

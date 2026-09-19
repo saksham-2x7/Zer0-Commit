@@ -253,9 +253,6 @@ Resources:
   FrontendHostingBucket:
     Type: AWS::S3::Bucket
     Properties:
-      WebsiteConfiguration:
-        IndexDocument: index.html
-        ErrorDocument: index.html
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -271,6 +268,20 @@ Resources:
         SigningBehavior: always
         OriginAccessControlOriginType: s3
 
+  FrontendSecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: ScamSahayakSecurityHeadersPolicy
+        Comment: HSTS + X-Content-Type-Options nosniff on every frontend response
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 31536000
+            IncludeSubdomains: false
+            Override: true
+          ContentTypeOptions:
+            Override: true
+
   FrontendDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
@@ -279,8 +290,6 @@ Resources:
           - Id: FrontendOrigin
             DomainName: !GetAtt FrontendHostingBucket.RegionalDomainName
             OriginAccessControlId: !Ref FrontendOriginAccessControl
-            S3OriginConfig:
-              OriginAccessIdentity: ""
         Enabled: true
         DefaultRootObject: index.html
         DefaultCacheBehavior:
@@ -294,6 +303,7 @@ Resources:
             - GET
             - HEAD
           Compress: true
+          ResponseHeadersPolicyId: !Ref FrontendSecurityHeadersPolicy
           MinTTL: 0
           DefaultTTL: 60
           MaxTTL: 300
@@ -387,6 +397,3 @@ Outputs:
   FrontendUrl:
     Description: "HTTPS URL of the deployed frontend (CloudFront, OAC, private bucket)"
     Value: !Sub "https://${FrontendDistribution.DomainName}"
-  FrontendWebsiteUrl:
-    Description: "S3 static-website URL for reference — the CloudFront FrontendUrl is the real endpoint (HTTPS)"
-    Value: !Sub "http://${FrontendHostingBucket.WebsiteURL}"

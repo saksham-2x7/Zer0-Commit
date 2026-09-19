@@ -1,5 +1,5 @@
 import { describe, test, expect, vi, afterEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { render, screen, fireEvent, act, waitFor } from "@testing-library/react";
 import TextInput from "./TextInput";
 
 const MAX_TEXT_CHARS = 8000;
@@ -23,6 +23,8 @@ function installSpeechRecognition() {
 afterEach(() => {
   delete window.SpeechRecognition;
   delete window.webkitSpeechRecognition;
+  delete window.navigator.clipboard;
+  delete document.execCommand;
   vi.restoreAllMocks();
 });
 
@@ -95,5 +97,35 @@ describe("TextInput", () => {
   test("does not show the counter while well under the limit", () => {
     render(<TextInput language="en" value="short" onChange={vi.fn()} />);
     expect(screen.queryByText(/\/ 8000/)).not.toBeInTheDocument();
+  });
+});
+
+describe("TextInput — paste", () => {
+  test("pastes clipboard text into the input when the Clipboard API is available", async () => {
+    const clipboard = { readText: vi.fn().mockResolvedValue("Hello from the clipboard!") };
+    Object.defineProperty(window.navigator, "clipboard", {
+      value: clipboard,
+      configurable: true,
+    });
+
+    const onChange = vi.fn();
+    render(<TextInput language="en" value="" onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /paste text/i }));
+
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith("Hello from the clipboard!"));
+    expect(clipboard.readText).toHaveBeenCalledTimes(1);
+  });
+
+  test("shows a friendly error when pasting is blocked", async () => {
+    document.execCommand = vi.fn(() => false);
+
+    render(<TextInput language="en" value="" onChange={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /paste text/i }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert")).toHaveTextContent(/paste did not work/i)
+    );
   });
 });

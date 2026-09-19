@@ -13,6 +13,8 @@ const { ApiError } = require("./errors");
 const { redactText } = require("../redaction/redact");
 const { detectScamPatterns } = require("../detection/scamDetector");
 const { generateExplanation } = require("../ai/explainRisk");
+const { analyzeWithRules } = require("../ai/analyzeWithRules");
+const { lookupReputation } = require("../reputation/lookup");
 const { extractText } = require("../ocr/textractClient");
 const { saveCase } = require("../persistence/caseStore");
 const { buildEvidenceBundle, storeEvidenceBundle } = require("../evidence/evidenceBundle");
@@ -23,6 +25,21 @@ const RISK_DISCLAIMER = "This is a risk signal, not an official fraud determinat
 
 function generateCaseId() {
   return "case_" + randomUUID();
+}
+
+function unionPatterns(...lists) {
+  const seen = new Set();
+  const out = [];
+  for (const list of lists) {
+    if (!Array.isArray(list)) continue;
+    for (const p of list) {
+      if (!seen.has(p)) {
+        seen.add(p);
+        out.push(p);
+      }
+    }
+  }
+  return out;
 }
 
 /**
@@ -59,12 +76,50 @@ async function analyze(rawRequest) {
   // the detector, Bedrock, logs, or storage from here on.
   const redactedText = redactText(text);
 
+  // 1. Deterministic regex pass — always runs, supplies the fixed pattern
+  //    keys the contract promises and acts as the safety net.
   const { riskLevel, matchedPatterns, evidence } = detectScamPatterns(redactedText);
+
+  // 2. Optional online reputation lookup — strictly opt-in (frontend sends
+  //    lookupPhones only with explicit user consent). Degrades gracefully.
+  let reputation = null;
+  if (request.onlineLookup) {
+    try {
+      reputation = await lookupReputation({
+        redactedText,
+        lookupPhones: request.lookupPhones,
+      });
+    } catch (error) {
+      console.error("Reputation lookup threw, continuing without it:", error.name || "UnknownError");
+      reputation = { available: false, reason: "error", checkedAt: new Date().toISOString(), entities: [], summary: "" };
+    }
+  }
+
+  // 3. LLM judge with pre-written system rules — verdict (real vs fake),
+  //    confidence, risk level, explanation, next steps. Falls back to a
+  //    deterministic verdict derived from the regex result when Bedrock is
+  //    unavailable (mock mode, no model, throttling, malformed output).
+  const llm = await analyzeWithRules({
+    redactedText,
+    language,
+    reputation,
+    regexResult: { riskLevel, matchedPatterns },
+  });
+
+  // 4. Explanation + evidence checklist (existing path; also the fallback
+  //    explanation when the LLM judge could not run).
   const { explanation, checklist, languageUsed, generationMode } = await generateExplanation({
     riskLevel,
     matchedPatterns,
     language,
   });
+
+  const verdict = llm.verdict;
+  const verdictConfidence = llm.confidence;
+  const nextSteps = llm.nextSteps ?? checklist;
+  const finalRiskLevel = llm.generationMode === "bedrock" ? llm.riskLevel : riskLevel;
+  const finalExplanation = llm.generationMode === "bedrock" ? llm.explanation : explanation;
+  const finalPatterns = unionPatterns(matchedPatterns, llm.matchedPatterns);
 
   const caseId = generateCaseId();
   const createdAt = new Date().toISOString();
@@ -74,9 +129,11 @@ async function analyze(rawRequest) {
     createdAt,
     language,
     inputType,
-    riskLevel,
-    matchedPatterns,
+    riskLevel: finalRiskLevel,
+    matchedPatterns: finalPatterns,
     evidence,
+    verdict,
+    verdictConfidence,
     ocrUsed,
     redactionApplied: true,
     generationMode,
@@ -88,8 +145,8 @@ async function analyze(rawRequest) {
     language,
     inputType,
     redactedText,
-    riskLevel,
-    matchedPatterns,
+    riskLevel: finalRiskLevel,
+    matchedPatterns: finalPatterns,
     evidence,
     checklist,
     reportingLinks: REPORTING_LINKS,
@@ -102,12 +159,15 @@ async function analyze(rawRequest) {
 
   return {
     caseId,
-    riskLevel,
+    verdict,
+    verdictConfidence,
+    riskLevel: finalRiskLevel,
     riskDisclaimer: RISK_DISCLAIMER,
-    matchedPatterns,
+    matchedPatterns: finalPatterns,
     evidence,
-    explanation,
+    explanation: finalExplanation,
     checklist,
+    nextSteps,
     languageUsed,
     inputSummary: {
       inputType,
@@ -117,6 +177,7 @@ async function analyze(rawRequest) {
     },
     reportingLinks: REPORTING_LINKS,
     evidenceBundle: evidenceBundleResult,
+    ...(reputation ? { reputation } : {}),
   };
 }
 

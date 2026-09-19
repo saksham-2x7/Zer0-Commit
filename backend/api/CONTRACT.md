@@ -341,11 +341,3 @@ every role:
 - Change anything in `backend/api/CONTRACT.md`? Flag it to the whole team
   first — it is the shared source of truth for how modules speak to each
   other.
-
-## Git workflow — everyone is on `main`
-
-- Only touch files inside your own folder (see README ownership table).
-- Commit message prefix by owner: `feat(detection): ...`, `feat(ai): ...`,
-  `feat(api): ...`, `feat(frontend): ...`, `feat(infra): ...`
-- Pull before you push. If you get a conflict outside your folder, something
-  went wrong — stop and ask, don't force-push over someone else's work.

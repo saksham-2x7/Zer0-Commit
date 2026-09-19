@@ -3,6 +3,8 @@ node_modules/
 .env.local
 dist/
 build/
+coverage/
+frontend/coverage/
 .aws-sam/
 *.log
 .DS_Store

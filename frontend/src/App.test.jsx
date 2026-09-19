@@ -32,6 +32,9 @@ beforeEach(() => {
   // keep each test's localStorage state isolated.
   window.localStorage.clear();
   window.localStorage.setItem("scamsahayak-has-seen-help", "true");
+  // App mirrors its view into location.hash; clear it so a hash left by a
+  // previous test (e.g. #/help) cannot steer the next mount.
+  window.history.replaceState(null, "", window.location.pathname);
 });
 
 afterEach(() => {
@@ -43,11 +46,11 @@ describe("App — text submission", () => {
     mockFetchOnce(SAMPLE_RESULT);
     render(<App />);
 
-    const textarea = screen.getByPlaceholderText(/paste the sms/i);
+    const textarea = screen.getByPlaceholderText(/paste your message/i);
     fireEvent.change(textarea, {
       target: { value: "URGENT: share your OTP, call 9876543210 immediately." },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
 
@@ -61,10 +64,10 @@ describe("App — text submission", () => {
     mockFetchOnce(SAMPLE_RESULT);
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "URGENT: share your OTP" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
     await screen.findByText(/high risk/i);
     expect(screen.getByText(/Creates urgency or threatens/i)).toBeInTheDocument();
@@ -81,10 +84,10 @@ describe("App — text submission", () => {
     );
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "hello there" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/readable text/i);
@@ -97,10 +100,10 @@ describe("App — text submission", () => {
     );
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "hello there" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/Something went wrong/i);
@@ -110,7 +113,7 @@ describe("App — text submission", () => {
 
   test("blocks submission with a friendly message when there is no input", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
     expect(screen.getByRole("alert")).toHaveTextContent(/please paste a message/i);
   });
 
@@ -118,10 +121,10 @@ describe("App — text submission", () => {
     global.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "URGENT: share your OTP" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/couldn't reach the server/i);
@@ -139,15 +142,15 @@ describe("App — text submission", () => {
     );
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "URGENT: share your OTP" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
     fireEvent.click(await screen.findByRole("button", { name: /cancel/i }));
 
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /check message/i })).not.toBeDisabled()
+      expect(screen.getByRole("button", { name: /check for scam/i })).not.toBeDisabled()
     );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -222,8 +225,9 @@ describe("App — help guide", () => {
 
   test("can be reopened anytime via the help button", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /how to use/i }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Help" }));
+    expect(screen.getByRole("heading", { name: /how can we help you today/i })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
 
@@ -252,10 +256,10 @@ describe("App — evidence download", () => {
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => {});
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "URGENT: share your OTP" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
     await screen.findByText(/high risk/i);
 
     fireEvent.click(screen.getByRole("button", { name: /save a copy of this result/i }));
@@ -289,11 +293,18 @@ describe("App — history", () => {
     );
   }
 
+  // History is reachable both from the header nav and the fixed bottom nav,
+  // so it renders twice (with and without the header wrapper) — clicking the
+  // first one is enough; the test asserts the panel either way.
+  function openHistory() {
+    fireEvent.click(screen.getAllByRole("button", { name: "History" })[0]);
+  }
+
   test("opens the history panel and renders saved entries", () => {
     seedHistory();
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    openHistory();
     expect(screen.getByText("URGENT: share your OTP")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /view this past result/i })).toHaveLength(2);
   });
@@ -302,7 +313,7 @@ describe("App — history", () => {
     seedHistory();
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    openHistory();
     fireEvent.click(screen.getAllByRole("button", { name: /view this past result/i })[0]);
 
     await screen.findByText(/high risk/i);
@@ -313,18 +324,18 @@ describe("App — history", () => {
     seedHistory();
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    openHistory();
     fireEvent.click(screen.getByRole("button", { name: "Clear history" }));
 
     expect(screen.getByText(/no checks yet/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /back/i }));
-    expect(screen.getByPlaceholderText(/paste the sms/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/paste your message/i)).toBeInTheDocument();
     expect(window.localStorage.getItem("scamsahayak-history")).toBeNull();
   });
 
   test("shows the empty state when history is empty", () => {
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    openHistory();
     expect(screen.getByText(/no checks yet/i)).toBeInTheDocument();
   });
 });
@@ -334,48 +345,70 @@ describe("App — start over", () => {
     mockFetchOnce(SAMPLE_RESULT);
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "URGENT: share your OTP" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
     await screen.findByText(/high risk/i);
 
     fireEvent.click(screen.getByRole("button", { name: /check another message/i }));
 
-    expect(screen.getByPlaceholderText(/paste the sms/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/paste your message/i)).toBeInTheDocument();
     expect(screen.queryByText(/high risk/i)).not.toBeInTheDocument();
   });
 });
 
 describe("App — keyboard tab navigation", () => {
-  test("arrow keys move between paste / upload / scan tabs", () => {
+  test("arrow keys move between tabs and Home/End jump to first/last", () => {
     render(<App />);
     const tablist = screen.getByRole("tablist", { name: /input tabs/i });
 
     fireEvent.keyDown(tablist, { key: "ArrowRight" });
-    expect(screen.getByRole("tab", { name: /upload screenshot/i })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: /image upload/i })).toHaveAttribute(
       "aria-selected",
       "true"
     );
 
     fireEvent.keyDown(tablist, { key: "ArrowRight" });
-    expect(screen.getByRole("tab", { name: /scan code/i })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: /qr scanner/i })).toHaveAttribute(
       "aria-selected",
       "true"
     );
 
     fireEvent.keyDown(tablist, { key: "ArrowLeft" });
-    expect(screen.getByRole("tab", { name: /upload screenshot/i })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: /image upload/i })).toHaveAttribute(
       "aria-selected",
       "true"
     );
 
-    fireEvent.keyDown(tablist, { key: "ArrowLeft" });
+    fireEvent.keyDown(tablist, { key: "Home" });
+    expect(screen.getByRole("tab", { name: /text message/i })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+
     fireEvent.keyDown(tablist, { key: "End" });
-    expect(screen.getByRole("tab", { name: /paste message/i })).toHaveAttribute(
+    expect(screen.getByRole("tab", { name: /qr scanner/i })).toHaveAttribute(
       "aria-selected",
       "true"
     );
+  });
+
+  test("tabs use roving tabindex and the main landmark is a focusable skip target", () => {
+    render(<App />);
+
+    expect(screen.getByRole("tab", { name: /text message/i })).toHaveAttribute("tabindex", "0");
+    expect(screen.getByRole("tab", { name: /image upload/i })).toHaveAttribute(
+      "tabindex",
+      "-1"
+    );
+    expect(screen.getByRole("tab", { name: /qr scanner/i })).toHaveAttribute("tabindex", "-1");
+
+    const main = document.querySelector("#main-content");
+    expect(main).toHaveAttribute("tabindex", "-1");
+    expect(document.querySelector("header")).not.toBeNull();
+    // Header (banner landmark) must sit outside <main>, not inside it.
+    expect(main.contains(document.querySelector("header"))).toBe(false);
   });
 });
 
@@ -408,10 +441,10 @@ describe("App — read aloud", () => {
     });
     try {
       render(<App />);
-      fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+      fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
         target: { value: "URGENT: share your OTP" },
       });
-      fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+      fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
       await screen.findByText(/high risk/i);
 
       fireEvent.click(screen.getByRole("button", { name: /read result aloud/i }));
@@ -436,10 +469,10 @@ describe("App — evidence download fallback", () => {
     const clickSpy = vi.spyOn(window.HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 
     render(<App />);
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "URGENT: share your OTP" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
     await screen.findByText(/high risk/i);
 
     fireEvent.click(screen.getByRole("button", { name: /save a copy of this result/i }));
@@ -455,10 +488,10 @@ describe("App — empty result sections", () => {
     mockFetchOnce({ ...SAMPLE_RESULT, matchedPatterns: [], evidence: [], checklist: [] });
     render(<App />);
 
-    fireEvent.change(screen.getByPlaceholderText(/paste the sms/i), {
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
       target: { value: "hello there" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /check message/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
 
     await screen.findByText(/no specific warning signs were matched/i);
     expect(screen.getByText(/no recommended steps/i)).toBeInTheDocument();
@@ -467,11 +500,127 @@ describe("App — empty result sections", () => {
 
 describe("App — help modal keyboard", () => {
   test("pressing Escape closes the help modal", () => {
+    window.localStorage.removeItem("scamsahayak-has-seen-help");
     render(<App />);
-    fireEvent.click(screen.getByRole("button", { name: /how to use/i }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});
+
+describe("App — shell navigation", () => {
+  test("moves between the home, settings, and check views", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Home" })[0]);
+    expect(screen.getByText(/check if a message is a scam/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /1930/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Settings" })[0]);
+    expect(screen.getByRole("button", { name: /save all changes/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Check" })[0]);
+    expect(screen.getByPlaceholderText(/paste your message/i)).toBeInTheDocument();
+  });
+
+  test("results view links to the evidence view and back to home", async () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
+      target: { value: "URGENT: share your OTP" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
+    await screen.findByText(/high risk/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /view scam proof/i }));
+    expect(screen.getByRole("heading", { name: /scam proof certificate/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /back to home/i }));
+    expect(screen.getByText(/check if a message is a scam/i)).toBeInTheDocument();
+  });
+
+  test("home recent checks show real history and selecting one opens the result", async () => {
+    window.localStorage.setItem(
+      "scamsahayak-history",
+      JSON.stringify([
+        {
+          savedAt: "2026-09-01T10:00:00.000Z",
+          language: "en",
+          redactedText: "URGENT: share your OTP",
+          result: SAMPLE_RESULT,
+        },
+      ])
+    );
+    render(<App />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Home" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: /save evidence/i }));
+
+    await screen.findByText(/high risk/i);
+    expect(screen.getByText(/this message shows urgency and asks for your OTP/i)).toBeInTheDocument();
+  });
+});
+
+describe("App — online reputation lookup opt-in", () => {
+  test("offers the online-lookup checkbox only when the raw text contains a phone number", () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    render(<App />);
+
+    const textarea = screen.getByPlaceholderText(/paste your message/i);
+    fireEvent.change(textarea, { target: { value: "URGENT: verify now" } });
+    expect(screen.queryByRole("checkbox", { name: /check this number online/i })).not.toBeInTheDocument();
+
+    fireEvent.change(textarea, { target: { value: "URGENT: call 9876543210 now" } });
+    expect(screen.getByRole("checkbox", { name: /check this number online/i })).toBeInTheDocument();
+  });
+
+  test("sends NO phone numbers when the checkbox is left unticked", async () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
+      target: { value: "URGENT: call 9876543210 now" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const [, options] = global.fetch.mock.calls[0];
+    const sentBody = JSON.parse(options.body);
+    expect(sentBody.onlineLookup).toBeFalsy();
+    expect(sentBody.lookupPhones).toBeUndefined();
+  });
+
+  test("sends the phone number for lookup ONLY after the user ticks the box", async () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
+      target: { value: "URGENT: call 9876543210 now" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /check this number online/i }));
+    fireEvent.click(screen.getByRole("button", { name: /check for scam/i }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const [, options] = global.fetch.mock.calls[0];
+    const sentBody = JSON.parse(options.body);
+    expect(sentBody.onlineLookup).toBe(true);
+    expect(sentBody.lookupPhones).toEqual(["9876543210"]);
+    // The redacted text still never carries the raw number.
+    expect(sentBody.rawText).not.toContain("9876543210");
+  });
+
+  test("clearing the input also resets the online-lookup consent", async () => {
+    mockFetchOnce(SAMPLE_RESULT);
+    render(<App />);
+
+    fireEvent.change(screen.getByPlaceholderText(/paste your message/i), {
+      target: { value: "URGENT: call 9876543210 now" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /check this number online/i }));
+    fireEvent.click(screen.getByRole("button", { name: /clear all/i }));
+
+    expect(screen.queryByRole("checkbox", { name: /check this number online/i })).not.toBeInTheDocument();
   });
 });

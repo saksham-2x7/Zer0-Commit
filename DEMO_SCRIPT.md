@@ -16,7 +16,10 @@ the purpose of the recording.
 - Build and publish the site: `cd frontend && npm run build`, then
   `aws s3 sync frontend/dist s3://<FrontendBucketName> --delete` where
   `FrontendBucketName` is the stack output. The deployed URL is the
-  `FrontendWebsiteUrl` output.
+  `FrontendUrl` output (HTTPS, via CloudFront — e.g.
+  `https://dXXXXXXXXXXXX.cloudfront.net`). Deploy once, read `FrontendUrl`,
+  and set the stack's `AllowedOrigin` to it, then redeploy so the API's
+  CORS accepts the served origin.
 - Have a synthetic example screenshot ready: a plain text message mocked up
   in a notes app or image editor, e.g. *"URGENT: Your KYC will expire
   today. Share your OTP immediately to verify, or your account will be
@@ -25,7 +28,7 @@ the purpose of the recording.
   own redaction, not to feed it something sensitive in the first place.
   Keep the image under the **4 MB** limit (the default `MAX_INPUT_BYTES` —
   the app rejects anything larger).
-- Confirm the deployed frontend URL (the `FrontendWebsiteUrl` output) loads
+- Confirm the deployed frontend URL (the `FrontendUrl` output) loads
   and successfully calls the deployed `ApiUrl`.
 
 ## Shot list
@@ -38,7 +41,7 @@ the purpose of the recording.
    FY23 to 2,92,800 in FY24 (RBI/RBI-annual-data reports)." Say it as a
    narrator, never as something the app itself displays.
 2. **(0:15–0:30) Screenshot upload.** Open ScamSahayak (the deployed
-   `FrontendWebsiteUrl`), select "Upload screenshot," choose the synthetic
+   `FrontendUrl`), select "Upload screenshot," choose the synthetic
    example image (must be under 4 MB).
 3. **(0:30–0:45) Visible redaction.** Point out the "What we'll send"
    notice before pressing "Check message" — personal details are masked
@@ -58,17 +61,16 @@ the purpose of the recording.
 8. **(1:55–2:10) Safe action checklist.** Show "What to do now."
 9. **(2:10–2:25) Reporting guidance.** Show the "Report this" block: the
    `1930` helpline tel: link and the `cybercrime.gov.in` link.
-10. **(2:25–2:40) Evidence bundle download.** Click "Save a copy of this
-    result" — show either the signed S3 download (deployed mode) or the
-    local JSON download (Build It mode), whichever the demo environment is
-    actually running.
-11. **(2:40–2:50) Deployed AWS URL + architecture.** Briefly show the
-    browser address bar with the real deployed URL — the
-    `FrontendWebsiteUrl` stack output (e.g.
-    `http://<stack>-frontendhostingbucket-xxxxx.s3-website-<region>.amazonaws.com`)
-    — then cut to the architecture diagram in `README.md` to name the AWS
-    services used (Lambda, API Gateway, Textract, Bedrock, DynamoDB, S3).
-12. **(2:50–3:00) Limitation + disclaimer, closing line.** State one real
+10. **(2:25–2:50) Evidence bundle download + deployed AWS URL/architecture.**
+    First, click "Save a copy of this result" — show either the signed S3
+    download (deployed mode) or the local JSON download (Build It mode),
+    whichever the demo environment is actually running. Then briefly show
+    the browser address bar with the real deployed HTTPS URL — the
+    `FrontendUrl` stack output (e.g.
+    `https://dXXXXXXXXXXXX.cloudfront.net`) — before cutting to the
+    architecture diagram in `README.md` to name the AWS services used
+    (Lambda, API Gateway, Textract, Bedrock, DynamoDB, S3, CloudFront).
+11. **(2:50–3:00) Limitation + disclaimer, closing line.** State one real
     limitation out loud (e.g. "this is a deterministic pattern check, not a
     trained classifier — it can miss new scam wording") and close on the
     disclaimer already shown in the app: this is guidance, not an official

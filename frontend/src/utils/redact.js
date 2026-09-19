@@ -39,10 +39,29 @@ function buildDigitMap(blocks) {
 
 const DIGIT_MAP = buildDigitMap(DIGIT_BLOCKS);
 
-// Zero-width (ZWSP, ZWNJ, ZWJ, BOM, word joiner) and bidi (LRM, RLM) control
-// characters carry no visible meaning of their own — they're widely used to
-// disguise real numbers, so they are stripped before pattern matching.
-const STRIP_CHARS = new Set(["\u200b", "\u200c", "\u200d", "\ufeff", "\u2060", "\u200e", "\u200f"]);
+// Zero-width (ZWSP, ZWNJ, ZWJ, BOM, word joiner) and bidi (LRM, RLM,
+// embedding/override U+202A-202E, isolate U+2066-2069) control characters
+// carry no visible meaning of their own — they're widely used to disguise
+// real numbers, so they are stripped before pattern matching. Matches
+// backend/redaction/redact.js ZERO_WIDTH_CHARS.
+const STRIP_CHARS = new Set([
+  "\u200b",
+  "\u200c",
+  "\u200d",
+  "\u200e",
+  "\u200f",
+  "\u2060",
+  "\u202a",
+  "\u202b",
+  "\u202c",
+  "\u202d",
+  "\u202e",
+  "\u2066",
+  "\u2067",
+  "\u2068",
+  "\u2069",
+  "\ufeff",
+]);
 
 const RULES = [
   // UPI id: name@bank (checked before phone/generic digit rules so the

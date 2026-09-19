@@ -8,7 +8,8 @@
  * Stored shape (schemaVersion 1.0):
  * {
  *   caseId, createdAt, language, inputType, riskLevel, matchedPatterns,
- *   evidence, ocrUsed, redactionApplied, generationMode, schemaVersion
+ *   evidence, ocrUsed, redactionApplied, generationMode, schemaVersion,
+ *   ttl
  * }
  */
 
@@ -30,11 +31,21 @@ function isDeployedMode() {
   return Boolean(process.env.CASES_TABLE_NAME);
 }
 
+function retentionSeconds() {
+  const days = Number(process.env.EVIDENCE_RETENTION_DAYS);
+  const safeDays = Number.isFinite(days) && days > 0 ? days : 30;
+  return safeDays * 86400;
+}
+
 /**
  * @param {object} record - the redacted case record (see shape above)
  */
 async function saveCase(record) {
-  const item = { ...record, schemaVersion: record.schemaVersion || "1.0" };
+  const item = {
+    ...record,
+    schemaVersion: record.schemaVersion || "1.0",
+    ttl: Math.floor(Date.now() / 1000) + retentionSeconds(),
+  };
 
   if (!isDeployedMode()) {
     localStore.set(item.caseId, item);

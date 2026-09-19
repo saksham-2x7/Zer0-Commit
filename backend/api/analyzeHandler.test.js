@@ -1,7 +1,9 @@
 const { mockClient } = require("aws-sdk-client-mock");
 const { TextractClient, DetectDocumentTextCommand } = require("@aws-sdk/client-textract");
+const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-bedrock-runtime");
 
 const textractMock = mockClient(TextractClient);
+const bedrockMock = mockClient(BedrockRuntimeClient);
 
 const { analyze, handler } = require("./analyzeHandler");
 const { corsHeaders } = require("./cors");
@@ -149,6 +151,210 @@ describe("analyze — image input", () => {
     await expect(
       analyze({ language: "en", inputType: "image", imageBase64: VALID_PNG_BASE64, imageMimeType: "image/png" })
     ).rejects.toMatchObject({ code: "OCR_FAILED" });
+  });
+});
+
+describe("analyze — LLM judge with pre-written rules (fallback mode)", () => {
+  const ORIGINAL_ENV = process.env;
+
+  beforeEach(() => {
+    process.env = { ...ORIGINAL_ENV, MOCK_BEDROCK: "true" };
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  test("returns a verdict derived from the regex risk level when Bedrock is unavailable", async () => {
+    const result = await analyze({
+      language: "en",
+      inputType: "text",
+      rawText: "URGENT: Share your OTP immediately to verify.",
+    });
+
+    expect(result.verdict).toBe("scam");
+    expect(result.verdictConfidence).toBe("medium");
+    expect(result.riskLevel).toBe("high");
+    expect(result.nextSteps).toEqual(result.checklist);
+    expect(result).not.toHaveProperty("reputation");
+  });
+
+  test("returns 'legit' verdict for a benign transactional message", async () => {
+    const result = await analyze({
+      language: "en",
+      inputType: "text",
+      rawText: "Your transaction of Rs 500 at BigBazar succeeded. Ref: 123456.",
+    });
+
+    expect(result.verdict).toBe("legit");
+    expect(result.riskLevel).toBe("low");
+  });
+
+  test("includes reputation findings when onlineLookup is requested", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        Heading: "9876543210",
+        AbstractText: "This number is reported as a scam by multiple users.",
+        AbstractURL: "https://example.com/report",
+        RelatedTopics: [],
+      }),
+    });
+
+    try {
+      const result = await analyze({
+        language: "en",
+        inputType: "text",
+        rawText: "URGENT: Share your OTP, call 9876543210 immediately.",
+        onlineLookup: true,
+        lookupPhones: ["9876543210"],
+      });
+
+      expect(result.reputation).toBeDefined();
+      expect(result.reputation.available).toBe(true);
+      expect(result.reputation.entities[0]).toMatchObject({ type: "phone", value: "9876543210" });
+      expect(result.reputation.entities[0].findings[0].scamRelated).toBe(true);
+      expect(result.verdict).toBe("scam");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  test("degrades gracefully when the online lookup fails", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockRejectedValue(new Error("ENOTFOUND"));
+
+    try {
+      const result = await analyze({
+        language: "en",
+        inputType: "text",
+        rawText: "URGENT: Share your OTP, call 9876543210 immediately.",
+        onlineLookup: true,
+        lookupPhones: ["9876543210"],
+      });
+
+      expect(result.reputation).toEqual(
+        expect.objectContaining({ available: false, reason: "error" })
+      );
+      expect(result.verdict).toBe("scam");
+      expect(result.riskLevel).toBe("high");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  test("drops invalid lookupPhones during validation", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ Heading: "", AbstractText: "", RelatedTopics: [] }),
+    });
+
+    try {
+      const result = await analyze({
+        language: "en",
+        inputType: "text",
+        rawText: "URGENT: Share your OTP, call 9876543210 immediately.",
+        onlineLookup: true,
+        lookupPhones: ["12345", "not-a-number"],
+      });
+
+      // No valid phones -> no entities -> lookup reports no_entities.
+      expect(result.reputation).toEqual(
+        expect.objectContaining({ available: false, reason: "no_entities" })
+      );
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  test("never sends lookupPhones when onlineLookup is not requested", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn();
+
+    try {
+      const result = await analyze({
+        language: "en",
+        inputType: "text",
+        rawText: "URGENT: Share your OTP, call 9876543210 immediately.",
+        lookupPhones: ["9876543210"],
+      });
+
+      expect(result).not.toHaveProperty("reputation");
+      expect(global.fetch).not.toHaveBeenCalled();
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+});
+
+describe("analyze — LLM judge with pre-written rules (Bedrock mode)", () => {
+  const ORIGINAL_ENV = process.env;
+
+  beforeEach(() => {
+    bedrockMock.reset();
+    process.env = {
+      ...ORIGINAL_ENV,
+      MOCK_BEDROCK: "false",
+      BEDROCK_MODEL_ID: "anthropic.claude-3-haiku-20240307-v1:0",
+    };
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  function encodeBody(obj) {
+    return new TextEncoder().encode(JSON.stringify(obj));
+  }
+
+  test("uses the LLM verdict, explanation, and next steps when Bedrock responds", async () => {
+    bedrockMock.on(InvokeModelCommand).resolves({
+      body: encodeBody({
+        content: [
+          {
+            text: JSON.stringify({
+              verdict: "scam",
+              confidence: "high",
+              riskLevel: "high",
+              matchedPatterns: ["otp_request"],
+              explanation: "The message asks for your OTP under time pressure.",
+              nextSteps: ["Do not share the OTP.", "Call 1930.", "Report at cybercrime.gov.in."],
+            }),
+          },
+        ],
+      }),
+    });
+
+    const result = await analyze({
+      language: "en",
+      inputType: "text",
+      rawText: "URGENT: Share your OTP immediately to verify.",
+    });
+
+    expect(result.verdict).toBe("scam");
+    expect(result.verdictConfidence).toBe("high");
+    expect(result.explanation).toContain("OTP");
+    expect(result.nextSteps).toHaveLength(3);
+    expect(result.checklist).toHaveLength(4);
+    expect(result.matchedPatterns).toEqual(expect.arrayContaining(["otp_request", "urgency"]));
+  });
+
+  test("falls back to the deterministic verdict when Bedrock output is malformed", async () => {
+    bedrockMock.on(InvokeModelCommand).resolves({
+      body: encodeBody({ content: [{ text: "not json" }] }),
+    });
+
+    const result = await analyze({
+      language: "en",
+      inputType: "text",
+      rawText: "URGENT: Share your OTP immediately to verify.",
+    });
+
+    expect(result.verdict).toBe("scam");
+    expect(result.verdictConfidence).toBe("medium");
+    expect(result.explanation).toMatch(/risk signal/i);
   });
 });
 

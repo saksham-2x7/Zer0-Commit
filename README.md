@@ -43,6 +43,14 @@ member/helper checking it on their behalf.
    involved.
 10. Dark mode, and a local (on-device only) history of past checks.
 
+![Risk result badge in high-risk state — screenshot to be added](docs/screenshots/risk-result-badge.png "Risk result badge (high-risk state)")
+
+*screenshot to be added*
+
+![Redaction preview masking personal details before analysis — screenshot to be added](docs/screenshots/redaction-preview.png "Redaction preview before analysis")
+
+*screenshot to be added*
+
 **What it deliberately does *not* do:** claim a message is definitely a
 scam, claim a "low risk" result is safe, freeze funds, recover money,
 identify a caller, file a complaint automatically, or approve/reject a
@@ -71,7 +79,7 @@ and safety model.
 | Barcode scan → product lookup (Open Food Facts) | **Implemented & tested** (verified end-to-end in a browser against a real barcode and the live API) |
 | SAM infrastructure template (Lambda, API Gateway, DynamoDB, S3, IAM) | **Written, not yet deployed** — see Limitations |
 | Live AWS deployment | **Not deployed** — no AWS CLI/credentials were available in the environment this was built in |
-| S3 static frontend hosting (bucket + policy + Outputs in `infra/template.yaml`) | **Implemented in the template**, not yet deployed — requires `aws s3 sync frontend/dist s3://<FrontendBucketName>` after `sam deploy` (see "Frontend hosting") |
+| CloudFront HTTPS frontend hosting (private bucket + OAC + `FrontendUrl` output in `infra/template.yaml`) | **Implemented in the template**, not yet deployed — requires `aws s3 sync frontend/dist s3://<FrontendBucketName>` after `sam deploy` (see "Frontend hosting") |
 | Demo video | **Not recorded** — see [DEMO_SCRIPT.md](DEMO_SCRIPT.md) for the planned script |
 
 ## Architecture
@@ -97,12 +105,14 @@ backend/api/analyzeHandler.js   ← orchestrator (Lambda)
    └─▶ backend/evidence/evidenceBundle.js   (S3 — redacted evidence bundle + signed URL)
 ```
 
-Hosting: the built frontend (`frontend/dist`) is served from an S3
-static-website bucket created by `infra/template.yaml`
-(`FrontendHostingBucket` + a public-read policy); the `FrontendWebsiteUrl`
-output is its URL (plain HTTP — wrap in CloudFront for HTTPS). The API lives
+Hosting: the built frontend (`frontend/dist`) is served from a **private**
+S3 bucket created by `infra/template.yaml` (`FrontendHostingBucket`) and
+delivered over **HTTPS by CloudFront** via Origin Access Control (OAC) — no
+public bucket, no plain HTTP. The `FrontendUrl` output is the deployed,
+HTTPS frontend URL (`https://<distribution>.cloudfront.net`). The API lives
 behind API Gateway and **must** be given the frontend's real origin via the
-`AllowedOrigin` parameter.
+`AllowedOrigin` parameter — set it to the `FrontendUrl` value before
+deploying.
 
 ## AWS services used, and why
 
@@ -114,7 +124,7 @@ behind API Gateway and **must** be given the frontend's real origin via the
 | **Amazon Bedrock** | Turns a risk level + matched pattern categories (never the raw message) into a bilingual, elder-friendly explanation and checklist. |
 | **Amazon DynamoDB** | Stores the redacted case record (risk level, matched patterns, evidence snippets — never raw text/images) for basic audit/debugging. |
 | **Amazon S3** | Stores the redacted evidence bundle a user can attach when filing a report, behind a short-lived signed URL. |
-| **Amazon S3 (frontend hosting)** | Serves the built `frontend/dist` site as a static website (public-read bucket + policy in `infra/template.yaml`). Static assets only — no user data; HTTPS requires CloudFront. |
+| **Amazon S3 (frontend hosting)** | Serves the built `frontend/dist` site from a **private** bucket (no public policy). CloudFront reads it via OAC and serves it over HTTPS. Static assets only — no user data. |
 
 Everything below is deliberately **not** an AWS service and does not touch
 the backend at all — it runs entirely in the browser, at no AWS cost:
@@ -255,11 +265,13 @@ On first deploy, `--guided` will ask for a stack name/region and walk
 through the parameters in `infra/template.yaml` (`BedrockModelId`,
 `MockBedrock`, `AllowedOrigin`, `MaxInputBytes`, `EvidenceRetentionDays`).
 Set `MockBedrock=false` and `AllowedOrigin` to your deployed frontend's real
-URL for a production-like deploy. The template's `AllowedOrigin` default is a
-placeholder (`https://YOUR_DOMAIN.example.com`) — leaving it as-is **breaks**
-browser calls to the API, and `"*"` in production lets any website call it.
-Note the `ApiUrl` and `FrontendWebsiteUrl` outputs — those are what
-`VITE_API_BASE_URL` and the deployed URL should be.
+URL for a production-like deploy. The frontend is served over HTTPS from
+CloudFront, so `AllowedOrigin` should be the `FrontendUrl` output value
+(`https://<distribution>.cloudfront.net`). The template's `AllowedOrigin`
+default is a placeholder (`https://YOUR_DOMAIN.example.com`) — leaving it
+as-is **breaks** browser calls to the API, and `"*"` in production lets any
+website call it. Note the `ApiUrl` and `FrontendUrl` outputs — those are
+what `VITE_API_BASE_URL` and the deployed URL should be.
 
 **This template has not been deployed or tested against a real AWS
 account** — the environment this was built in had no AWS CLI, SAM CLI, or
@@ -268,29 +280,30 @@ deploying to anything beyond a personal sandbox account.
 
 ### Frontend hosting
 
-`infra/template.yaml` creates an S3 static-website bucket
-(`FrontendHostingBucket`) with a public-read policy and exposes its name and
-URL as `FrontendBucketName` / `FrontendWebsiteUrl` outputs. After `sam
-deploy`, build the site and sync it into the bucket (bucket name = the
-`FrontendBucketName` output):
+`infra/template.yaml` creates a **private** S3 bucket
+(`FrontendHostingBucket`), a CloudFront distribution with an Origin Access
+Control (OAC) bucket policy so only CloudFront can read it, and a
+`ResponseHeadersPolicy` (HSTS + `X-Content-Type-Options: nosniff`). The
+`FrontendUrl` output is the deployed HTTPS URL. After `sam deploy`, build
+the site and sync it into the bucket (bucket name = the `FrontendBucketName`
+output):
 
 ```bash
 cd frontend && npm run build
 aws s3 sync frontend/dist s3://<FrontendBucketName> --delete
 ```
 
-Open `FrontendWebsiteUrl` (e.g.
-`http://<stack>-frontendhostingbucket-xxxxx.s3-website-<region>.amazonaws.com`)
-— that's the deployable URL the demo shows. Points to remember:
+Open `FrontendUrl` (e.g.
+`https://dXXXXXXXXXXXX.cloudfront.net`) — that's the deployable HTTPS URL the
+demo shows. Points to remember:
 
-- The S3 static-website endpoint serves **plain HTTP**. For HTTPS (or a
-  friendly domain) put a CloudFront distribution in front — out of scope for
-  the hackathon, see SECURITY.md for the caveat that implies.
-- The bucket is public **only** for the static site assets. It holds no user
-  data; the private `EvidenceBucket` stays fully blocked. Account-level
-  "Block public access" must allow the bucket-level settings in the template.
-- Set the stack's `AllowedOrigin` to the `FrontendWebsiteUrl` (or the
-  CloudFront URL) and redeploy so the API's CORS accepts the served origin.
+- The bucket is **private** — no public-read policy, no S3 website endpoint.
+  CloudFront reads it through OAC and serves everything over **HTTPS** on
+  the default `*.cloudfront.net` domain (no ACM/custom domain needed).
+- Set the stack's `AllowedOrigin` to the `FrontendUrl` output
+  (`https://<distribution>.cloudfront.net`) and redeploy so the API's CORS
+  accepts the served origin. Deploy with the placeholder once, read the
+  `FrontendUrl` output, set `AllowedOrigin`, and redeploy.
 - Build with `VITE_API_BASE_URL` pointing at the `ApiUrl` output minus the
   `/api/analyze` suffix, i.e. `https://<api-id>.execute-api.<region>.amazonaws.com/Prod`
   (the frontend appends `/api/analyze` itself).
@@ -343,10 +356,10 @@ never requests or reproduces OTPs, PINs, CVVs, or passwords.
 - No automated evaluation harness/benchmark dataset exists yet — pattern
   and Bedrock-prompt quality is untested beyond the unit tests in this repo.
 - No demo video has been recorded (see `DEMO_SCRIPT.md` for the plan).
-- Static frontend hosting exists in the SAM template (S3 bucket + policy +
-  Outputs), but it is plain HTTP (no CloudFront/HTTPS), and neither it nor
-  the stack itself has been deployed against a real AWS account here —
-  see "Deploying (Ship It mode)".
+- The CloudFront HTTPS hosting is implemented in the SAM template (private
+  bucket + OAC + security headers), but neither it nor the stack itself has
+  been deployed against a real AWS account here — see "Deploying (Ship It
+  mode)".
 - The scanner's live-camera path was verified structurally against the
   `@zxing/browser` API but not end-to-end with a physical camera in this
   environment (no webcam available) — the upload-a-photo path *was*

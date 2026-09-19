@@ -11,6 +11,23 @@ export default {
           low: "#166534",
         },
       },
+      fontFamily: {
+        // Archivo for the Latin UI; the Noto Sans family backs the Indic
+        // scripts (Devanagari/Tamil/Telugu/Bengali) so glyphs fall through
+        // to a matching script font.
+        sans: [
+          "Archivo",
+          "Noto Sans",
+          "Noto Sans Devanagari",
+          "Noto Sans Tamil",
+          "Noto Sans Telugu",
+          "Noto Sans Bengali",
+          "system-ui",
+          "-apple-system",
+          "Roboto",
+          "sans-serif",
+        ],
+      },
     },
   },
   plugins: [],

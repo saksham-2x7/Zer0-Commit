@@ -84,7 +84,7 @@ function validateAnalyzeRequest(body) {
     throw new ApiError("INVALID_REQUEST", "Request body must be a JSON object.");
   }
 
-  const { language, inputType, rawText, imageBase64, imageMimeType } = body;
+  const { language, inputType, rawText, imageBase64, imageMimeType, onlineLookup, lookupPhones } = body;
 
   if (!SUPPORTED_LANGUAGES.has(language)) {
     throw new ApiError("UNSUPPORTED_LANGUAGE", `Language must be one of: ${[...SUPPORTED_LANGUAGES].join(", ")}.`);
@@ -94,6 +94,14 @@ function validateAnalyzeRequest(body) {
     throw new ApiError("UNSUPPORTED_INPUT_TYPE", `inputType must be one of: ${[...SUPPORTED_INPUT_TYPES].join(", ")}.`);
   }
 
+  // Online reputation lookup is strictly opt-in: the frontend only sends
+  // lookupPhones when the user explicitly consented to checking the number
+  // online. Domains are extracted server-side from redacted text.
+  const normalizedOnlineLookup = onlineLookup === true;
+  const normalizedLookupPhones = normalizedOnlineLookup && Array.isArray(lookupPhones)
+    ? lookupPhones.filter((p) => typeof p === "string" && /^[+\d\s-]{10,16}$/.test(p)).slice(0, 3)
+    : [];
+
   if (inputType === "text") {
     if (typeof rawText !== "string" || rawText.trim().length === 0) {
       throw new ApiError("INVALID_REQUEST", "Please provide text to analyze.");
@@ -101,13 +109,13 @@ function validateAnalyzeRequest(body) {
     if (rawText.length > DEFAULT_MAX_TEXT_CHARS) {
       throw new ApiError("INPUT_TOO_LARGE", `Text must be ${DEFAULT_MAX_TEXT_CHARS} characters or fewer.`);
     }
-    return { language, inputType, rawText };
+    return { language, inputType, rawText, onlineLookup: normalizedOnlineLookup, lookupPhones: normalizedLookupPhones };
   }
 
   // inputType === "image"
   const validated = validateImageBytes(imageBase64, imageMimeType);
 
-  return { language, inputType, ...validated };
+  return { language, inputType, ...validated, onlineLookup: normalizedOnlineLookup, lookupPhones: normalizedLookupPhones };
 }
 
 module.exports = {

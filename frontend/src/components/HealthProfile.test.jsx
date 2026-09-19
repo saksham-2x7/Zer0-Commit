@@ -88,6 +88,21 @@ describe("HealthProfile", () => {
     expect(window.localStorage.getItem("scamsahayak-health-profile")).toBeNull();
   });
 
+  test("shows an error and does not start OCR for a file larger than 4 MiB", () => {
+    const bigFile = new File(
+      [new Uint8Array(4 * 1024 * 1024 + 1)],
+      "huge.png",
+      { type: "image/png" }
+    );
+    const { container } = render(<HealthProfile language="en" onBack={vi.fn()} />);
+    fireEvent.change(getFileInput(container), { target: { files: [bigFile] } });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/4 MB/i);
+    expect(ocrImage).not.toHaveBeenCalled();
+    expect(extractHealthTags).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem("scamsahayak-health-profile")).toBeNull();
+  });
+
   test("shows the specific message for a backend error code", async () => {
     ocrImage.mockRejectedValue(Object.assign(new Error("bad language"), { code: "UNSUPPORTED_LANGUAGE" }));
 
@@ -127,5 +142,60 @@ describe("HealthProfile", () => {
 
     expect(screen.queryByText("Diabetes")).not.toBeInTheDocument();
     expect(window.localStorage.getItem("scamsahayak-health-profile")).toBeNull();
+  });
+});
+
+describe("HealthProfile — personal details & contacts", () => {
+  test("saves personal details on-device and confirms", () => {
+    render(<HealthProfile language="en" onBack={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("Full Name"), { target: { value: "Geeta Kumari" } });
+    fireEvent.click(screen.getByRole("button", { name: /save details/i }));
+
+    const stored = JSON.parse(window.localStorage.getItem("scamsahayak-health-personal"));
+    expect(stored.fullName).toBe("Geeta Kumari");
+    expect(screen.getByRole("status")).toHaveTextContent(/device only/i);
+  });
+
+  test("restores previously saved personal details", () => {
+    window.localStorage.setItem(
+      "scamsahayak-health-personal",
+      JSON.stringify({ fullName: "Geeta Kumari", phone: "+91 1", age: "60", household: "Parent" })
+    );
+    render(<HealthProfile language="en" onBack={vi.fn()} />);
+
+    expect(screen.getByLabelText("Full Name")).toHaveValue("Geeta Kumari");
+  });
+
+  test("rejects an overlong detail with a friendly alert and saves nothing", () => {
+    render(<HealthProfile language="en" onBack={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("Age"), { target: { value: "1".repeat(200) } });
+    fireEvent.click(screen.getByRole("button", { name: /save details/i }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(/too long/i);
+    expect(window.localStorage.getItem("scamsahayak-health-personal")).toBeNull();
+  });
+
+  test("unblocking a number flips its button to Unblocked", () => {
+    render(<HealthProfile language="en" onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^unblock$/i })[0]);
+
+    expect(screen.getByRole("button", { name: /^unblocked$/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^unblock$/i })).toHaveLength(1);
+  });
+
+  test("adds a family contact and persists it in the personal record", () => {
+    render(<HealthProfile language="en" onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /add another family member/i }));
+    fireEvent.change(screen.getByLabelText(/^name$/i), { target: { value: "Rohan Mehta" } });
+    fireEvent.change(screen.getByLabelText(/^phone$/i), { target: { value: "+91 90000 11111" } });
+    fireEvent.click(screen.getByRole("button", { name: /add contact/i }));
+
+    expect(screen.getByText("Rohan Mehta")).toBeInTheDocument();
+    const stored = JSON.parse(window.localStorage.getItem("scamsahayak-health-personal"));
+    expect(stored.contacts).toEqual([{ name: "Rohan Mehta", phone: "+91 90000 11111" }]);
   });
 });

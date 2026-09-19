@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { t, translations } from "../i18n/translations";
+import { t, translations, detectNavigatorLanguage } from "../i18n/translations";
 
 const STORAGE_KEY = "scamsahayak-language";
 
@@ -8,9 +8,11 @@ function getInitialLanguage() {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored && translations[stored]) return stored;
   } catch {
-    // localStorage unavailable — fall through to default.
+    // localStorage unavailable — fall through to the navigator default.
   }
-  return "en";
+  // Match the main UI on first run: pick up the browser's language instead of
+  // unconditionally starting in English.
+  return detectNavigatorLanguage();
 }
 
 /** Manages the UI language: persists the choice and keeps <html lang> + <title> in sync. */

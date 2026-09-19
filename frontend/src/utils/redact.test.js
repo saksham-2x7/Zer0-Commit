@@ -91,6 +91,15 @@ describe("redactText — disguised digit normalization", () => {
     expect(result).not.toContain(obfuscated);
     expect(result).toMatch(/98\*+10/);
   });
+
+  test("masks a phone split with bidi embedding/override controls (U+202A/U+202C)", () => {
+    const obfuscated = "9\u202A8\u202C8\u202A0\u202C0\u202A1\u202C2\u202A3\u202C4\u202A5\u202C6\u202A7\u202C";
+    const result = redactText(`Call ${obfuscated} now`);
+    expect(result).not.toContain("988001234567");
+    expect(result).not.toContain("\u202A");
+    expect(result).toMatch(/\*+/);
+    expect(result).toBe(backendRedactText(`Call ${obfuscated} now`));
+  });
 });
 
 describe("redactText — backend parity", () => {
@@ -98,6 +107,7 @@ describe("redactText — backend parity", () => {
     "Call me on 9876543210 please.",
     "Devanagari ९८७६५४३२१० end.",
     "zwsp 98\u200B76\u200C54\u200D32\uFEFF10 x",
+    "bidi 9\u202A8\u202C8\u202A0\u202C0\u202A1\u202C2\u202A3\u202C4\u202A5\u202C6\u202A7\u202C",
     "My account number is 123456789012.",
     "Pay to john.doe@okhdfcbank now.",
     "Contact me at pushpa.r@example.com",

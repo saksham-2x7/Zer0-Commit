@@ -174,7 +174,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
 
       {decoded && decoded.isQr && (
         <div className="card space-y-3" aria-live="polite">
-          <h3 className="font-semibold">{t(language, "scanQrFoundHeading")}</h3>
+          <h3 className="text-lg font-semibold">{t(language, "scanQrFoundHeading")}</h3>
           <p className="text-sm text-slate-600 dark:text-slate-300">{t(language, "scanQrFoundHint")}</p>
           <p className="whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 font-mono text-sm dark:bg-slate-900">
             {decoded.text}
@@ -190,7 +190,7 @@ export default function Scanner({ language, onQrDecoded, onSetupHealthProfile })
 
       {decoded && !decoded.isQr && (
         <div className="card space-y-3" aria-live="polite">
-          <h3 className="font-semibold">{t(language, "scanBarcodeFoundHeading")}</h3>
+          <h3 className="text-lg font-semibold">{t(language, "scanBarcodeFoundHeading")}</h3>
           <p className="font-mono text-sm text-slate-600 dark:text-slate-300">{decoded.text}</p>
           {productLoading ? (
             <p className="text-slate-500 dark:text-slate-400" role="status">

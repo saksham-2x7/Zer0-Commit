@@ -27,8 +27,15 @@ async function post(path, body, signal) {
   return data;
 }
 
-export function analyzeMessage({ language, inputType, rawText, imageBase64, imageMimeType }, signal) {
-  return post("/api/analyze", { language, inputType, rawText, imageBase64, imageMimeType }, signal);
+export function analyzeMessage(
+  { language, inputType, rawText, imageBase64, imageMimeType, onlineLookup, lookupPhones },
+  signal
+) {
+  return post(
+    "/api/analyze",
+    { language, inputType, rawText, imageBase64, imageMimeType, onlineLookup, lookupPhones },
+    signal
+  );
 }
 
 /** OCR-only — used by the health-profile feature. No scam analysis, nothing persisted. */
@@ -44,4 +51,13 @@ export function extractHealthTags({ text, language }) {
 /** Conversational feedback on a scanned product against confirmed health tags. Not medical advice. */
 export function getFoodFeedback({ language, healthTags, product }) {
   return post("/api/food-feedback", { language, healthTags, product });
+}
+
+/**
+ * Guided scam-reporting flow. Call once with the description (+ optional
+ * messages/screenshots) to get the analysis and follow-up questions, then
+ * again with the answers to get the final step-by-step reporting guide.
+ */
+export function submitReport({ language, description, messages, screenshots, answers }, signal) {
+  return post("/api/report", { language, description, messages, screenshots, answers }, signal);
 }

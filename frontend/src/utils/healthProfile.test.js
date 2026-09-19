@@ -1,5 +1,12 @@
 import { describe, test, expect, beforeEach } from "vitest";
-import { loadHealthProfile, saveHealthProfile, clearHealthProfile } from "./healthProfile";
+import {
+  loadHealthProfile,
+  saveHealthProfile,
+  clearHealthProfile,
+  loadPersonalDetails,
+  savePersonalDetails,
+  clearPersonalDetails,
+} from "./healthProfile";
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -35,5 +42,25 @@ describe("healthProfile", () => {
     clearHealthProfile();
     expect(window.localStorage.getItem("scamsahayak-health-profile")).toBeNull();
     expect(loadHealthProfile()).toEqual([]);
+  });
+});
+
+describe("healthProfile personal details", () => {
+  test("loads null when nothing is stored and returns a saved record otherwise", () => {
+    expect(loadPersonalDetails()).toBeNull();
+    savePersonalDetails({ fullName: "Ramesh", contacts: [] });
+    expect(loadPersonalDetails()).toEqual({ fullName: "Ramesh", contacts: [] });
+  });
+
+  test("survives corrupted stored JSON", () => {
+    window.localStorage.setItem("scamsahayak-health-personal", "{not json");
+    expect(loadPersonalDetails()).toBeNull();
+  });
+
+  test("clearPersonalDetails removes the stored record", () => {
+    savePersonalDetails({ fullName: "Ramesh" });
+    clearPersonalDetails();
+    expect(window.localStorage.getItem("scamsahayak-health-personal")).toBeNull();
+    expect(loadPersonalDetails()).toBeNull();
   });
 });
