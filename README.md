@@ -380,3 +380,80 @@ template, and this README) was built with Claude Code (Anthropic).
 ## License
 
 See [LICENSE](LICENSE).
+
+## Deployment
+
+### Local Docker (API only)
+
+The root `Dockerfile` runs the backend dev API server
+(`backend/api/devServer.js`) in a container. It serves **API only** — the
+backend deliberately has no static file server, so the built frontend is NOT
+served by the container. The frontend runs via Vite dev locally, or via
+CloudFront once deployed (below).
+
+```bash
+docker compose up --build        # API at http://localhost:3000
+```
+
+`docker-compose.yml` sets `MOCK_BEDROCK=true` (deterministic fallback, no real
+Bedrock calls), `ALLOWED_ORIGIN=http://localhost:3000`, and `PORT=3000`.
+Override those in the compose file's `environment:` before any production-ish
+run. Run the frontend against it:
+
+```bash
+echo "VITE_API_BASE_URL=http://localhost:3000" > frontend/.env
+cd frontend && npm run dev       # http://localhost:5173
+```
+
+Optional: bake the API URL into the image at build time —
+`docker build --build-arg VITE_API_BASE_URL=https://<api-id>.execute-api.<region>.amazonaws.com/Prod .`
+(the build stage compiles `frontend/dist`) — but remember nothing in the
+container serves those static files.
+
+### AWS SAM (serverless)
+
+Prerequisites: [AWS CLI](https://docs.aws.amazon.com/cli/), [AWS SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html),
+and credentials with permission to create Lambda, API Gateway, DynamoDB, S3,
+CloudFront, and IAM resources.
+
+```bash
+sam build --template infra/template.yaml
+sam deploy --guided              # set MockBedrock=false, AllowedOrigin=<FrontendUrl>
+```
+
+Then build and push the frontend into the `FrontendBucketName` output:
+
+```bash
+cd frontend && npm run build
+aws s3 sync frontend/dist s3://<FrontendBucketName> --delete
+```
+
+The deployed site is the `FrontendUrl` output (`https://<distribution>.cloudfront.net`).
+See "Deploying (Ship It mode)" above for parameter details.
+
+### CI/CD (GitHub Actions)
+
+- `.github/workflows/ci.yml` — every push/PR to `main`: backend job (npm ci →
+  Jest with the 80% coverage threshold → mocked-Bedrock smoke) and frontend
+  job (npm ci → `npm run build` → Vitest run).
+- `.github/workflows/deploy.yml` — push to `main` or manual
+  `workflow_dispatch`: build the frontend with `VITE_API_BASE_URL` from the
+  `API_URL` secret, `sam build` + `sam deploy` (stack `scamsahayak`, region
+  from `AWS_REGION`), `aws s3 sync frontend/dist` to `FRONTEND_BUCKET`, then
+  invalidate CloudFront.
+
+Required repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Value |
+|---|---|
+| `AWS_ROLE_ARN` | ARN of the IAM role the GitHub OIDC provider assumes |
+| `AWS_REGION` | AWS region, e.g. `ap-south-1` |
+| `API_URL` | Stack `ApiUrl` output **without** the `/api/analyze` suffix, e.g. `https://<api-id>.execute-api.<region>.amazonaws.com/Prod` |
+| `FRONTEND_BUCKET` | Stack `FrontendBucketName` output |
+| `CLOUDFRONT_DISTRIBUTION_ID` | The CloudFront distribution serving the frontend bucket |
+
+`deploy.yml` authenticates via **OIDC** — no long-lived AWS keys stored in
+GitHub. Set up a GitHub OIDC provider (`token.actions.githubusercontent.com`)
+and a trust-policy'd role for it so `aws-actions/configure-aws-credentials`
+can assume `AWS_ROLE_ARN`; follow the official setup at
+https://github.com/aws-actions/configure-aws-credentials (OIDC section).

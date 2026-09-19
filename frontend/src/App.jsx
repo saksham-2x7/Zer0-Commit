@@ -13,6 +13,9 @@ import ResultsView from "./components/ResultsView";
 import HistoryPanel from "./components/HistoryPanel";
 import HealthProfile from "./components/HealthProfile";
 import ReportFlow from "./components/ReportFlow";
+import FamilyView from "./components/FamilyView";
+import FoodScanView from "./components/FoodScanView";
+import FamilyChat from "./components/FamilyChat";
 import { analyzeMessage } from "./services/api";
 import { redactText } from "./utils/redact";
 import { useTheme } from "./utils/useTheme";
@@ -50,7 +53,7 @@ const Scanner = lazy(() => import("./components/Scanner"));
 
 const HAS_SEEN_HELP_KEY = "scamsahayak-has-seen-help";
 const TABS = ["text", "image", "scan"];
-const VALID_VIEWS = new Set(["home", "check", "results", "history", "health", "settings", "help", "evidence", "report"]);
+const VALID_VIEWS = new Set(["home", "check", "results", "history", "health", "settings", "help", "evidence", "report", "family", "food", "chat"]);
 
 // Indian phone numbers in the user's RAW input (the redacted copy masks them).
 // Used only to decide whether the opt-in "check this number online" checkbox
@@ -575,6 +578,12 @@ export default function App() {
           />
         ) : view === "report" ? (
           <ReportFlow language={language} onBack={() => setView("home")} />
+        ) : view === "family" ? (
+          <FamilyView language={language} onNavigate={setView} />
+        ) : view === "food" ? (
+          <FoodScanView language={language} onNavigate={setView} />
+        ) : view === "chat" ? (
+          <FamilyChat language={language} />
         ) : view === "help" ? (
           <HelpModal language={helpLanguage} onClose={() => setView("home")} asView />
         ) : view === "check" ? (

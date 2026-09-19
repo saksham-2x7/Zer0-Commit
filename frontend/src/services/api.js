@@ -13,6 +13,15 @@ async function post(path, body, signal) {
     signal,
   });
 
+  return handleResponse(response);
+}
+
+async function get(path, signal) {
+  const response = await fetch(`${BASE_URL}${path}`, { signal });
+  return handleResponse(response);
+}
+
+async function handleResponse(response) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
@@ -60,4 +69,76 @@ export function getFoodFeedback({ language, healthTags, product }) {
  */
 export function submitReport({ language, description, messages, screenshots, answers }, signal) {
   return post("/api/report", { language, description, messages, screenshots, answers }, signal);
+}
+
+// ---------------------------------------------------------------------------
+// Family circle
+// ---------------------------------------------------------------------------
+
+export function createFamily({ name, adminName }) {
+  return post("/api/family/create", { name, adminName });
+}
+
+export function getFamily(familyId) {
+  return get(`/api/family/${familyId}`);
+}
+
+export function addFamilyMember({ familyId, name, role, allergies }) {
+  return post("/api/family/members", { familyId, name, role, allergies });
+}
+
+export function addFamilyContact({ familyId, name, phone, note, flaggedBy }) {
+  return post("/api/family/contacts", { familyId, name, phone, note, flaggedBy });
+}
+
+export function addFamilyAlert({ familyId, title, detail, riskLevel }) {
+  return post("/api/family/alerts", { familyId, title, detail, riskLevel });
+}
+
+export function confirmFamilyAlert({ familyId, alertId, memberId }) {
+  return post("/api/family/alerts/confirm", { familyId, alertId, memberId });
+}
+
+export function addFamilyBlocklist({ familyId, phone, addedBy }) {
+  return post("/api/family/blocklist", { familyId, phone, addedBy });
+}
+
+// ---------------------------------------------------------------------------
+// Food / product lookup (family-wide allergen flags)
+// ---------------------------------------------------------------------------
+
+export function foodLookup({ barcode, familyId }) {
+  return post("/api/food-lookup", { barcode, familyId });
+}
+
+// ---------------------------------------------------------------------------
+// Family chat (zero-knowledge E2E)
+// ---------------------------------------------------------------------------
+
+export function registerMessagingKey({ memberId, publicKeyJwk }) {
+  return post("/api/messaging/keys", { memberId, publicKeyJwk });
+}
+
+export function getMessagingKey(memberId) {
+  return get(`/api/messaging/keys/${memberId}`);
+}
+
+export function createMessagingThread({ name, memberIds }) {
+  return post("/api/messaging/threads", { name, memberIds });
+}
+
+export function storeWrappedKey({ threadId, memberId, wrappedKey, iv, ownerPublicKeyId }) {
+  return post(`/api/messaging/threads/${threadId}/keys`, { memberId, wrappedKey, iv, ownerPublicKeyId });
+}
+
+export function sendMessage({ threadId, senderId, iv, ciphertext }) {
+  return post(`/api/messaging/threads/${threadId}/messages`, { senderId, iv, ciphertext });
+}
+
+export function listThreads() {
+  return get("/api/messaging/threads");
+}
+
+export function listMessages(threadId) {
+  return get(`/api/messaging/threads/${threadId}/messages`);
 }

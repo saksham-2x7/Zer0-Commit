@@ -9,6 +9,10 @@
  * Mirrors the Lambda error contract: unknown routes return a 404 body whose
  * error code is NOT_FOUND (see errors.js + CONTRACT.md), and request bodies
  * above the analyze-payload ceiling are rejected with 413 INPUT_TOO_LARGE.
+ *
+ * Routes are { method, path, fn } entries where path is an exact string or
+ * a RegExp (capture groups are passed to fn as the second argument, so GET
+ * routes can read path params like /api/family/:familyId).
  */
 
 const http = require("http");
@@ -17,6 +21,9 @@ const { ocr } = require("./ocrHandler");
 const { extractHealthTags } = require("./healthTagsHandler");
 const { generateFoodFeedback } = require("./foodFeedbackHandler");
 const { report } = require("./reportHandler");
+const familyHandler = require("./familyHandler");
+const foodHandler = require("./foodHandler");
+const messagingHandler = require("./messagingHandler");
 const { corsHeaders } = require("./cors");
 const { ApiError } = require("./errors");
 const { getMaxInputBytes } = require("./validation");
@@ -34,13 +41,35 @@ if (!process.env.ALLOWED_ORIGIN) {
   process.env.ALLOWED_ORIGIN = "http://localhost:5173";
 }
 
-const ROUTES = {
-  "/api/analyze": analyze,
-  "/api/ocr": ocr,
-  "/api/health-tags": extractHealthTags,
-  "/api/food-feedback": generateFoodFeedback,
-  "/api/report": report,
-};
+const ROUTES = [
+  // Existing POST endpoints.
+  { method: "POST", path: "/api/analyze", fn: analyze },
+  { method: "POST", path: "/api/ocr", fn: ocr },
+  { method: "POST", path: "/api/health-tags", fn: extractHealthTags },
+  { method: "POST", path: "/api/food-feedback", fn: generateFoodFeedback },
+  { method: "POST", path: "/api/report", fn: report },
+
+  // Family circle.
+  { method: "POST", path: "/api/family/create", fn: familyHandler.createFamilyHandler },
+  { method: "POST", path: "/api/family/members", fn: familyHandler.addMemberHandler },
+  { method: "POST", path: "/api/family/contacts", fn: familyHandler.addContactHandler },
+  { method: "POST", path: "/api/family/alerts", fn: familyHandler.addAlertHandler },
+  { method: "POST", path: "/api/family/blocklist", fn: familyHandler.addBlocklistEntryHandler },
+  { method: "POST", path: "/api/family/confirm-alert", fn: familyHandler.confirmAlertHandler },
+  { method: "GET", path: /^\/api\/family\/([^/]+)$/, fn: (_body, m) => familyHandler.getFamilyHandler({ familyId: m[1] }) },
+
+  // Food/product scan with family allergy flags.
+  { method: "POST", path: "/api/food-lookup", fn: foodHandler.foodLookupHandler },
+
+  // E2E encrypted messaging ("crypto chan").
+  { method: "POST", path: "/api/messaging/keys", fn: messagingHandler.registerKeyHandler },
+  { method: "GET", path: /^\/api\/messaging\/keys\/([^/]+)$/, fn: (_body, m) => messagingHandler.getMemberKeyHandler({ memberId: m[1] }) },
+  { method: "POST", path: "/api/messaging/threads", fn: messagingHandler.createThreadHandler },
+  { method: "GET", path: "/api/messaging/threads", fn: messagingHandler.listThreadsHandler },
+  { method: "POST", path: /^\/api\/messaging\/threads\/([^/]+)\/keys$/, fn: (body, m) => messagingHandler.storeWrappedKeyHandler({ ...body, threadId: m[1] }) },
+  { method: "POST", path: /^\/api\/messaging\/threads\/([^/]+)\/messages$/, fn: (body, m) => messagingHandler.sendMessageHandler({ ...body, threadId: m[1] }) },
+  { method: "GET", path: /^\/api\/messaging\/threads\/([^/]+)\/messages$/, fn: (_body, m) => messagingHandler.listMessagesHandler({ threadId: m[1] }) },
+];
 
 function generateRequestId() {
   return "req_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 8);
@@ -57,6 +86,18 @@ function sendJson(res, statusCode, payload) {
   res.end(JSON.stringify(payload));
 }
 
+function findRoute(method, url) {
+  return ROUTES.find((route) => {
+    if (route.method !== method) {
+      return false;
+    }
+    if (typeof route.path === "string") {
+      return route.path === url;
+    }
+    return route.path.test(url);
+  });
+}
+
 function createServer() {
   return http.createServer((req, res) => {
     const headers = corsHeaders();
@@ -70,8 +111,8 @@ function createServer() {
       return;
     }
 
-    const routeFn = ROUTES[req.url];
-    if (req.method !== "POST" || !routeFn) {
+    const route = findRoute(req.method, req.url);
+    if (!route) {
       sendJson(res, 404, {
         error: { code: "NOT_FOUND", message: "Endpoint not found", requestId: generateRequestId() },
       });
@@ -115,8 +156,9 @@ function createServer() {
         return;
       }
 
+      const match = typeof route.path === "string" ? null : req.url.match(route.path);
       try {
-        const result = await routeFn(parsed);
+        const result = await route.fn(parsed, match);
         sendJson(res, 200, result);
       } catch (err) {
         if (err instanceof ApiError) {

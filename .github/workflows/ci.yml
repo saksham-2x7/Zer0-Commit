@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,20 +20,31 @@ jobs:
       - name: Install backend deps
         run: npm ci
 
-      - name: Backend tests + coverage
-        run: npm test -- --runInBand --coverage
+      - name: Backend tests (Jest, 80% coverage threshold)
+        run: npm test -- --runInBand
 
       - name: Backend smoke (mocked Bedrock)
         run: MOCK_BEDROCK=true npm run smoke
 
-      - name: Install frontend deps
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
         working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend deps
         run: npm ci
 
-      - name: Frontend tests + coverage
-        working-directory: frontend
-        run: npm test -- --run --coverage
-
       - name: Frontend build
-        working-directory: frontend
         run: npm run build
+
+      - name: Frontend tests (Vitest)
+        run: npm test -- --run

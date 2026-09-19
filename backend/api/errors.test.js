@@ -20,6 +20,7 @@ describe("ApiError", () => {
       INVALID_IMAGE: 400,
       OCR_FAILED: 422,
       ANALYSIS_FAILED: 422,
+      LOOKUP_FAILED: 502,
       NOT_FOUND: 404,
       INTERNAL_ERROR: 500,
     };

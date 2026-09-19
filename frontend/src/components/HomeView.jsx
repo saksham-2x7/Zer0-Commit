@@ -7,6 +7,12 @@ const ACTIONS = [
   { key: "actionQr", icon: "history", target: "check" },
 ];
 
+const FAMILY_ACTIONS = [
+  { key: "familyAction", icon: "family", target: "family" },
+  { key: "foodAction", icon: "shoppingBag", target: "food" },
+  { key: "chatAction", icon: "chat", target: "chat" },
+];
+
 const GUARANTEED_DATA = ["id", "phone", "otp"];
 
 export default function HomeView({ language, onNavigate, history = [], onSelectHistory }) {
@@ -71,6 +77,28 @@ export default function HomeView({ language, onNavigate, history = [], onSelectH
             <span className="text-sm">{t(language, `page.home.${key}.desc`)}</span>
           </button>
         ))}
+      </section>
+
+      <section aria-label={t(language, "page.home.familyFeatures")} className="space-y-4">
+        <h2 className="text-2xl font-black uppercase tracking-wide">
+          {t(language, "page.home.familyFeatures")}
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {FAMILY_ACTIONS.map(({ key, icon, target }) => (
+            <button
+              type="button"
+              key={key}
+              className="card touch-target flex-col items-start gap-3 text-left hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black"
+              onClick={() => onNavigate(target)}
+            >
+              <Icon icon={icon} className="h-7 w-7" />
+              <span className="text-lg font-black uppercase tracking-wide">
+                {t(language, `page.home.${key}.title`)}
+              </span>
+              <span className="text-sm">{t(language, `page.home.${key}.desc`)}</span>
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="space-y-4">

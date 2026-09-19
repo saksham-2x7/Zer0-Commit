@@ -1,0 +1,55 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install backend deps
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_BASE_URL: ${{ secrets.API_URL }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: SAM build
+        uses: aws-actions/aws-sam-cli-github-action@v2
+        with:
+          sam-command: build
+          args: --template infra/template.yaml
+
+      - name: SAM deploy
+        uses: aws-actions/aws-sam-cli-github-action@v2
+        with:
+          sam-command: deploy
+          args: --no-confirm-changeset --no-fail-on-empty-changeset --stack-name scamsahayak --capabilities CAPABILITY_IAM --region ${{ secrets.AWS_REGION }}
+
+      - name: Sync frontend to S3
+        run: aws s3 sync frontend/dist s3://${{ secrets.FRONTEND_BUCKET }} --delete
+
+      - name: Invalidate CloudFront cache
+        run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"

@@ -164,4 +164,87 @@ describe("devServer", () => {
       jest.resetModules();
     }
   });
+
+  test("family create -> GET family roundtrip", async () => {
+    const createRes = await fetch(`${baseUrl}/api/family/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Sharma Family", adminName: "Arjun" }),
+    });
+    expect(createRes.status).toBe(200);
+    const { familyId } = await createRes.json();
+
+    const getRes = await fetch(`${baseUrl}/api/family/${familyId}`);
+    expect(getRes.status).toBe(200);
+    const { family } = await getRes.json();
+    expect(family.name).toBe("Sharma Family");
+    expect(family.members[0]).toMatchObject({ name: "Arjun", role: "admin" });
+  });
+
+  test("family member with allergies -> food-lookup flags them (unknown barcode path)", async () => {
+    const createRes = await fetch(`${baseUrl}/api/family/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "F", adminName: "Admin" }),
+    });
+    const { familyId } = await createRes.json();
+
+    await fetch(`${baseUrl}/api/family/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ familyId, name: "Meera", role: "elder", allergies: ["peanut"] }),
+    });
+
+    // Unknown barcode -> NOT_FOUND (no network call to Open Food Facts).
+    const lookupRes = await fetch(`${baseUrl}/api/food-lookup`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ barcode: "0000000000000", familyId }),
+    });
+    expect(lookupRes.status).toBe(404);
+    const body = await lookupRes.json();
+    expect(body.error.code).toBe("NOT_FOUND");
+  });
+
+  test("GET unknown family -> 404 NOT_FOUND", async () => {
+    const res = await fetch(`${baseUrl}/api/family/fam_missing`);
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error.code).toBe("NOT_FOUND");
+  });
+
+  test("messaging: register key, create thread, send ciphertext, list messages", async () => {
+    const keyRes = await fetch(`${baseUrl}/api/messaging/keys`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        memberId: "mem_1",
+        publicKeyJwk: { kty: "EC", crv: "P-256", x: "abc", y: "def" },
+      }),
+    });
+    expect(keyRes.status).toBe(200);
+    const { fingerprint } = await keyRes.json();
+    expect(fingerprint).toMatch(/^[0-9a-f]{4}-/);
+
+    const threadRes = await fetch(`${baseUrl}/api/messaging/threads`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "Family", memberIds: ["mem_1", "mem_2"] }),
+    });
+    const { threadId } = await threadRes.json();
+
+    const sendRes = await fetch(`${baseUrl}/api/messaging/threads/${threadId}/messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ senderId: "mem_1", iv: "base64iv", ciphertext: "base64cipher" }),
+    });
+    expect(sendRes.status).toBe(200);
+
+    const listRes = await fetch(`${baseUrl}/api/messaging/threads/${threadId}/messages`);
+    expect(listRes.status).toBe(200);
+    const { messages } = await listRes.json();
+    expect(messages).toHaveLength(1);
+    expect(messages[0].ciphertext).toBe("base64cipher");
+    expect(messages[0].plaintext).toBeUndefined();
+  });
 });
