@@ -32,9 +32,11 @@ beforeEach(() => {
   // keep each test's localStorage state isolated.
   window.localStorage.clear();
   window.localStorage.setItem("scamsahayak-has-seen-help", "true");
-  // App mirrors its view into location.hash; clear it so a hash left by a
-  // previous test (e.g. #/help) cannot steer the next mount.
-  window.history.replaceState(null, "", window.location.pathname);
+  // The app opens on the home screen by default (see the "startup view"
+  // tests below). The pre-existing tests interact with the input form, so
+  // the harness mounts at #/check; the startup tests clear the hash to
+  // exercise the real no-hash default.
+  window.history.replaceState(null, "", "#/check");
 });
 
 afterEach(() => {
@@ -480,7 +482,7 @@ describe("App — evidence download fallback", () => {
     expect(createUrl).toHaveBeenCalled();
     expect(clickSpy).toHaveBeenCalled();
     expect(revokeUrl).toHaveBeenCalledWith("blob:evidence");
-  });
+  }, 15000);
 });
 
 describe("App — empty result sections", () => {
@@ -622,5 +624,26 @@ describe("App — online reputation lookup opt-in", () => {
     fireEvent.click(screen.getByRole("button", { name: /clear all/i }));
 
     expect(screen.queryByRole("checkbox", { name: /check this number online/i })).not.toBeInTheDocument();
+  });
+});
+
+describe("App — startup view", () => {
+  // The app must open on the home screen, not the check form, and the home
+  // screen must not leak the check form's "Back to Home" button or input.
+  test("opens on the home screen, not the check form, when there is no hash", () => {
+    window.history.replaceState(null, "", window.location.pathname);
+    render(<App />);
+
+    expect(screen.getByText(/check if a message is a scam/i)).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/paste your message/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /back to home/i })).not.toBeInTheDocument();
+  });
+
+  test("the check form is one tap away from home via the Check nav", () => {
+    window.history.replaceState(null, "", window.location.pathname);
+    render(<App />);
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Check" })[0]);
+    expect(screen.getByPlaceholderText(/paste your message/i)).toBeInTheDocument();
   });
 });

@@ -40,8 +40,8 @@ const Scanner = lazy(() => import("./components/Scanner"));
 //   evidence EvidenceView (design evidence.html)             history
 //   report   ReportFlow (guided scam reporting, 3 steps)     home
 //
-// The default view is "check" so a returning user lands straight on the
-// input form; the home screen is one tap away in the header/bottom nav.
+// The default view is "home" — the app opens on the landing screen; the
+// check form is one tap away in the header/bottom nav.
 //
 // Multi-page feel: the current view is mirrored into location.hash
 // (#/home, #/check, #/report, ...) so the URL changes with every screen,
@@ -77,7 +77,7 @@ export default function App() {
   const { theme, toggleTheme } = useTheme();
   const { textSize, cycleTextSize } = useTextSize();
   const { language, setLanguage } = useLanguage();
-  const [view, setView] = useState("check");
+  const [view, setView] = useState("home");
   const [activeTab, setActiveTab] = useState("text"); // "text" | "image" | "scan"
   const [rawText, setRawText] = useState("");
   const [imageBase64, setImageBase64] = useState(null);
@@ -577,9 +577,9 @@ export default function App() {
           <ReportFlow language={language} onBack={() => setView("home")} />
         ) : view === "help" ? (
           <HelpModal language={helpLanguage} onClose={() => setView("home")} asView />
-        ) : (
+        ) : view === "check" ? (
           checkForm
-        )}
+        ) : null}
 
         {showHelp && !(view === "help") && (
           <HelpModal language={helpLanguage} onClose={() => setShowHelp(false)} />
