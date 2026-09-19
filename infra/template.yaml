@@ -368,6 +368,35 @@ Resources:
             Path: /api/location/family/{familyId}
             Method: options
 
+  # Daily blocklist reputation refresh from free public threat feeds
+  # (URLhaus CSV, optionally PhishTank when PHISHTANK_API_KEY is set). Fails
+  # open — any feed/DynamoDB outage logs a warning and returns synced 0, so
+  # the analyze flow is never blocked. Single concurrency keeps the daily job
+  # from stacking; each run overwrites rows, so a missed run self-heals.
+  BlocklistSyncFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../
+      Handler: backend/blocklistSync.handler
+      Timeout: 120
+      MemorySize: 256
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BlocklistTable
+          PHISHTANK_API_KEY: ""
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BlocklistTable
+      Events:
+        BlocklistSyncSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 0 * * ? *)
+            Name: ScamSahayakBlocklistSyncDaily
+            Description: Daily UTC-midnight refresh of the URLhaus/PhishTank blocklist
+            Enabled: true
+
   CasesTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -417,6 +446,23 @@ Resources:
       TimeToLiveSpecification:
         AttributeName: ttl
         Enabled: true
+
+  # Scam blocklist reputation store: one item per blocked entity value
+  # (registrable domain / UPI id / phone). PK "value" matches the PK lookup
+  # in backend/reputation/blocklistCheck.js and the writes from the daily
+  # BlocklistSyncFunction.
+  BlocklistTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: value
+          AttributeType: S
+      KeySchema:
+        - AttributeName: value
+          KeyType: HASH
+      SSESpecification:
+        SSEEnabled: true
 
   EvidenceBucket:
     Type: AWS::S3::Bucket
@@ -575,6 +621,12 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/${LocationFunction}"
       RetentionInDays: 30
 
+  BlocklistSyncFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${BlocklistSyncFunction}"
+      RetentionInDays: 30
+
   # Simple guardrail: alert when the API Gateway stage returns any 5xx in a
   # 5-minute window.
   ApiGateway5XXAlarm:
@@ -609,6 +661,9 @@ Outputs:
   LocationsTableName:
     Description: "DynamoDB table storing 24h live locations per family member"
     Value: !Ref LocationsTable
+  BlocklistTableName:
+    Description: "DynamoDB table storing blocked domains, UPI ids and phone numbers from public threat feeds"
+    Value: !Ref BlocklistTable
   EvidenceBucketName:
     Description: "S3 bucket storing redacted evidence bundles"
     Value: !Ref EvidenceBucket

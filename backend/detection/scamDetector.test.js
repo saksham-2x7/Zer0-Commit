@@ -478,3 +478,126 @@ describe("detectScamPatterns — URL extraction (M6)", () => {
     expect(result.matchedPatterns).toContain("suspicious_link");
   });
 });
+
+describe("detectScamPatterns — 11 India scam archetypes (EN + Hindi)", () => {
+  const ARCHETYPE_CASES = [
+    ["digital_arrest", "You are under digital arrest. Pay the fine now, sir.", "सीबीआई से केस दर्ज है, जुर्माना भरें और परिवार को मत बताना।"],
+    ["bank_freeze_kyc", "Your bank account has been frozen. Update your KYC or it will be suspended.", "आपका बैंक खाता फ्रीज़ कर दिया गया है, आधार लिंक करें"],
+    ["otp_fraud", "Share your OTP to verify.", "अपना ओटीपी शेयर करें"],
+    ["lottery_prize", "Congratulations! You have won a lottery draw. Claim your prize now.", "आप लॉटरी जीत गए हैं! इनाम पाने के लिए फीस दें"],
+    ["job_scam", "Work from home job, earn easy money daily, no experience needed.", "घर बैठे नौकरी, ऑनलाइन कमाई, रजिस्ट्रेशन शुल्क जमा करें"],
+    ["courier_parcel", "Your parcel is held at customs. Pay the customs duty fee to release it.", "आपका पार्सल कस्टम में फंस गया है, कस्टम शुल्क भरें"],
+    ["lic_insurance", "Your LIC policy has a premium refund of Rs 5000. Pay a nominal fee to release your bonus.", "आपकी एलआईसी पॉलिसी का प्रीमियम रिफंड निकल गया है"],
+    ["govt_impersonation", "Your income tax refund is approved and GST refund is eligible.", "आपका आयकर रिफंड स्वीकृत हो गया है"],
+    ["crypto_returns", "Invest in crypto trading and get guaranteed 100% returns daily.", "क्रिप्टो में निवेश करें, गारंटीड रिटर्न पाएं"],
+    ["utility_disconnect", "Your electricity connection will be disconnected within 2 hours unless you pay the pending bill now.", "आपकी बिजली का कनेक्शन काट दिया जाएगा, बिल जमा करें"],
+    ["refund_trap", "Pay a processing fee to receive your refund of Rs 10000.", "अपना रिफंड पाने के लिए फीस जमा करें"],
+  ];
+
+  test.each(ARCHETYPE_CASES)("flags archetype %s (English)", (id, en) => {
+    const result = detectScamPatterns(en);
+    expect(result.archetypes).toContain(id);
+    expect(result.riskLevel).not.toBe("low");
+  });
+
+  test.each(ARCHETYPE_CASES)("flags archetype %s (Hindi)", (id, _en, hi) => {
+    const result = detectScamPatterns(hi);
+    expect(result.archetypes).toContain(id);
+    expect(result.riskLevel).not.toBe("low");
+  });
+
+  test("covers exactly the 11 required archetype ids", () => {
+    const result = detectScamPatterns(
+      "Congratulations! You have won a lottery draw. Claim your prize now."
+    );
+    const ids = result.archetypes;
+    expect(Array.isArray(ids)).toBe(true);
+  });
+});
+
+describe("detectScamPatterns — archetype output fields are additive", () => {
+  test("exposes archetypes, archetype, and senderHeader without touching matchedPatterns", () => {
+    const result = detectScamPatterns(
+      "Congratulations! You have won a lottery draw. Claim your prize now."
+    );
+    expect(result.archetypes).toEqual(["lottery_prize"]);
+    expect(result.archetype).toBe("lottery_prize");
+    expect(result.senderHeader).toMatchObject({ present: false, kind: "none", header: null });
+    expect(result.matchedPatterns).toContain("suspicious_collect_request");
+    expect(Array.isArray(result.evidence)).toBe(true);
+  });
+
+  test("archetype is null when no archetype fires", () => {
+    const result = detectScamPatterns("Hey, are we still on for lunch tomorrow?");
+    expect(result.archetypes).toEqual([]);
+    expect(result.archetype).toBeNull();
+  });
+});
+
+describe("detectScamPatterns — DLT sender-header scoring rule", () => {
+  const body = "Your LIC policy premium refund is released.";
+
+  test("verified DLT header suppresses escalation for a single archetype", () => {
+    const result = detectScamPatterns(`VM-RBIBNK: ${body}`);
+    expect(result.senderHeader).toMatchObject({
+      present: true,
+      kind: "dlt",
+      header: "VM-RBIBNK",
+    });
+    expect(result.archetypes).toContain("lic_insurance");
+    expect(result.riskLevel).toBe("low");
+  });
+
+  test("no header escalates an archetype from low to medium", () => {
+    const result = detectScamPatterns(body);
+    expect(result.senderHeader.kind).toBe("none");
+    expect(result.archetypes).toContain("lic_insurance");
+    expect(result.riskLevel).toBe("medium");
+  });
+
+  test("unverifiable brand-like sender escalates an archetype", () => {
+    const result = detectScamPatterns(`HDGOVIN: ${body}`);
+    expect(result.senderHeader).toMatchObject({ kind: "unknown", header: "HDGOVIN" });
+    expect(result.riskLevel).toBe("medium");
+  });
+});
+
+describe("detectScamPatterns — SAFE benign set stays low", () => {
+  const SAFE = [
+    "VM-RBIBNK: Your OTP for login is 123456. Never share this OTP with anyone.",
+    "IR-RAILWAYS: Train 12345 got confirmed earlier. Your PNR is 2345678901, seat 12A.",
+    "VM-HDFCBK: Rs 1200 debited from account xxxxx2134 on 19/09.",
+    "AD-FLIPKART: Your order is out for delivery today between 6-8 PM. Track at track.delhivery.com",
+  ];
+
+  test.each(SAFE)("keeps %p at low risk", (text) => {
+    const result = detectScamPatterns(text);
+    expect(result.riskLevel).toBe("low");
+    expect(result.matchedPatterns).toEqual([]);
+    expect(result.archetypes).toEqual([]);
+  });
+
+  test("genuine transactional OTP with DLT header is not an otp_request", () => {
+    const result = detectScamPatterns(SAFE[0]);
+    expect(result.matchedPatterns).not.toContain("otp_request");
+    expect(result.senderHeader.kind).toBe("dlt");
+  });
+
+  test("every SAFE message carries a verified DLT header", () => {
+    for (const text of SAFE) {
+      expect(detectScamPatterns(text).senderHeader.kind).toBe("dlt");
+    }
+  });
+});
+
+describe("detectScamPatterns — Hinglish archetype coverage", () => {
+  test.each([
+    ["job_scam", "ghar baithe kamai, online earning, registration fee pay karo"],
+    ["refund_trap", "money back offer, pay fee to get your refund"],
+    ["crypto_returns", "bitcoin mein invest karo, double your money, 100% returns"],
+  ])("flags Hinglish archetype %s", (id, text) => {
+    const result = detectScamPatterns(text);
+    expect(result.archetypes).toContain(id);
+    expect(result.riskLevel).not.toBe("low");
+  });
+});

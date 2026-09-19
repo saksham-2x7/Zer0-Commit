@@ -420,6 +420,231 @@ const HIGH_RISK_PATTERNS = new Set([
   "digital_arrest",
 ]);
 
+// ── 11 India scam archetypes (Silver Guard / MIT open-source research) ─────
+// Each archetype carries scam-keyword regexes in English, Hindi, and Hinglish
+// (including common transliterations). Matches are surfaced as ADDITIVE
+// top-level fields (result.archetypes / result.archetype) so the fixed
+// matchedPatterns taxonomy promised in CONTRACT.md is untouched. Archetype
+// presence feeds a scored risk adjustment (see detectScamPatterns) rather than
+// a hard verdict, and is further modulated by the sender-header rule.
+
+function digitalArrestArchetype(text) {
+  const strong = matchAnyRegex(text, DIGITAL_ARREST_STRONG_RULES);
+  if (strong) return strong;
+  const extra = matchAnyRegex(text, [
+    /\benforcement\s+directorate\b/i,
+    /\bE\.D\.\b/i,
+    /\bcourt\s+notice\b/i,
+    /\bcyber\s+crime\b/i,
+    /\bcyber\s+cell\b/i,
+    /\bpolice\s+case\b/i,
+    /ईडी/,
+    /साइबर\s*क्राइम/,
+    /कोर्ट\s*नोटिस/,
+    /अरेस्ट/,
+  ]);
+  return extra || digitalArrestMatch(text);
+}
+
+const ARCHETYPE_RULES = {
+  digital_arrest: digitalArrestArchetype,
+  bank_freeze_kyc: [
+    /\bbank\s+account\s+(?:has\s+been|is\s+being|is)?\s*(?:frozen|freezed|blocked|suspended|closed|deactivated)\b/i,
+    /\baccount\s+(?:will\s+be|is\s+going\s+to\s+be|has\s+been|is\s+being)\s+(?:blocked|frozen|suspended|deactivated|closed)\s*(?:within|today|soon|permanently)?/i,
+    /\bkyc\s+(?:update|updation|expiry|expire|pending|incomplete|not\s+updated|mandatory|not\s+done)\b/i,
+    /\bupdate\s+your\s+kyc\b/i,
+    /\bkyc\s+(?:will\s+be\s+)?(?:blocked|suspended|deactivated)\b/i,
+    /\baadhaar\s+(?:link|seeding|update|upload|not\s+linked)\b/i,
+    /\blink\s+(?:your\s+)?aadhaar\b/i,
+    /बैंक\s*खाता/,
+    /केवाईसी/,
+    /आधार/,
+    /खाता\s*(?:ब्लॉक|फ्रीज़|फ्रीज|बंद|सस्पेंड|अपडेट)/,
+  ],
+  otp_fraud: otpContextMatch, // C1: context-aware — request + demand, not a bare mention
+  lottery_prize: [
+    /\byou\s+(?:have\s+)?won\b/i,
+    /\b(?:lottery|draw|prize|jackpot).{0,20}\b(?:won|win|claim)\w*\b/i,
+    /\blottery\s+winner\b/i,
+    /\bwin\s+(?:the\s+)?(?:lottery|prize|jackpot|draw)\b/i,
+    /\bclaim\s+(?:your\s+)?(?:prize|reward|winnings)\b/i,
+    /\bprize\s+money\b/i,
+    /\bcashback\s+(?:of|offer|alert|credited|back|amount)\b/i,
+    /\bcongratulations.{0,40}(?:won|prize|lottery)/i,
+    /लॉटरी/,
+    /इनाम/,
+    /जीत\s*गए/,
+    /पुरस्कार/,
+    /बक्षीस/,
+    /लकी\s*ड्रॉ/,
+    /कैशबैक/,
+    /\binaam\b/i,
+  ],
+  job_scam: [
+    /\bwork\s+from\s+home\b/i,
+    /\b(?:part|full)[\s-]?time\s+job\b/i,
+    /\bearn\s+(?:money|income|₹|rs\.?\s*\d+)\b/i,
+    /\bmake\s+money\s+online\b/i,
+    /\beasy\s+(?:money|income|earning|earnings)\b/i,
+    /\bonline\s+earning\b/i,
+    /\bdaily\s+(?:income|earning|earnings|salary)\b/i,
+    /\bregistration\s+(?:fee|charge)\b/i,
+    /\bjoining\s+(?:kit|fee|amount|charge)\b/i,
+    /\bdata\s+entry\s+job\b/i,
+    /\btelegram\s+job\b/i,
+    /नौकरी/,
+    /घर\s*बैठे/,
+    /कमाई/,
+    /आसान\s*कमाई/,
+    /पार्ट\s*टाइम/,
+    /रजिस्ट्रेशन\s*शुल्क/,
+    /ऑनलाइन\s*कमाई/,
+    /\bghar\s+baithe\b/i,
+    /\bnaukri\b/i,
+    /\bkamai\b/i,
+  ],
+  courier_parcel: [
+    /\b(?:parcel|courier|package|shipment)\b[^.!?\n]{0,60}\b(?:customs|duty|held|stuck|blocked|seized|undelivered|redelivery|clearance|charge|fee|free)\b/i,
+    /\bcustoms\s+clearance\s+(?:fee|charge|payment)\b/i,
+    /\bpay\s+(?:customs\s+)?duty\b/i,
+    /\bdelivery\s+(?:is\s+)?(?:held|stuck|failed|blocked)\b/i,
+    /\breconnect\s+(?:delivery|parcel)\b/i,
+    /पार्सल/,
+    /कूरियर/,
+    /कस्टम/,
+    /कस्टम\s*शुल्क/,
+    /डिलीवरी/,
+    /फंस\s*गया/,
+  ],
+  lic_insurance: [
+    /\blic\b/i,
+    /\blic\s+(?:policy|premium|bonus|refund|claim|maturity|scheme|amount)\b/i,
+    /\binsurance\s+(?:policy|premium|refund|claim|bonus|payback)\b/i,
+    /\bpremium\s+refund\b/i,
+    /\bpolicy\s+refund\b/i,
+    /\bmaturity\s+(?:amount|claim|payout)\b/i,
+    /\brelease\s+(?:your\s+)?(?:LIC|policy|bonus|maturity)\b/i,
+    /\bunlock\s+(?:your\s+)?(?:LIC|policy|bonus|maturity)\b/i,
+    /एलआईसी/,
+    /बीमा/,
+    /पॉलिसी/,
+    /प्रीमियम/,
+    /प्रीमियम\s*रिफंड/,
+    /पॉलिसी\s*रिफंड/,
+  ],
+  govt_impersonation: [
+    /\bEPFO\b/i,
+    /\bRBI\b/i,
+    /\bTRAI\b/i,
+    /\bincome\s*tax\b/i,
+    /\bGST\b/i,
+    /\b(?:govt\.?|government)\s+(?:of\s+india|notice|scheme|refund|department)\b/i,
+    /\bincome\s*tax\s+refund\b/i,
+    /\bdirect\s+benefit\s+transfer\b/i,
+    /\bcyber\s+(?:cell|crime)\b/i,
+    /\bCBIC\b/i,
+    /\bcustoms\s+department\b/i,
+    /सरकार/,
+    /आयकर/,
+    /जीएसटी/,
+    /टैक्स/,
+    /ईपीएफओ/,
+    /विभाग/,
+    /कस्टम/,
+    /\bsarkar\b/i,
+    /\bsarkari\b/i,
+    /\btax\s+refund\b/i,
+  ],
+  crypto_returns: [
+    /\bcrypto(?:currency)?\b/i,
+    /\bbitcoin\b/i,
+    /\bguaranteed\s+returns?\b/i,
+    /\bdouble\s+your\s+money\b/i,
+    /\b(?:100%|\d{2,3}%)\s+returns?\b/i,
+    /\binvest\s+and\s+earn\b/i,
+    /\btrading\s+(?:app|platform|profit)\b/i,
+    /क्रिप्टो/,
+    /बिटकॉइन/,
+    /गारंटी/,
+    /डबल/,
+    /निवेश/,
+  ],
+  utility_disconnect: [
+    /\b(?:electricity|power|gas|lpg|water)\b[^.!?\n]{0,50}\b(?:disconnect|disconnection|cut)\b/i,
+    /\bdisconnect(?:ed|ion)?\s+(?:notice|today|within|soon|now)\b/i,
+    /\breconnect\s+fee\b/i,
+    /\bpending\s+(?:electricity|gas|water)\s+bill\b/i,
+    /बिजली/,
+    /गैस\s*बिल/,
+    /पानी\s*का\s*बिल/,
+    /कनेक्शन\s*काट/,
+    /बिजली\s*काट/,
+    /बिल\s*काट/,
+    /\bbijli\b/i,
+    /\bgas\s+bill\b/i,
+    /\bdisconnect\b/i,
+  ],
+  refund_trap: [
+    /\b(?:claim|get|receive|unlock)\s+your\s+(?:refund|money|amount)\b/i,
+    /\brefund\s+(?:of|amount)\b[^.!?\n]{0,40}\b(?:fee|tax|processing|charge|deposit)\b/i,
+    /\bpay\s+(?:a\s+)?(?:fee|amount|charge|deposit)\s+to\s+(?:get|receive|claim|release)\s+your\s+(?:refund|money)\b/i,
+    /\brefund\s+(?:processing\s+)?fee\b/i,
+    /\brefund\s+alert\b/i,
+    /\b(?:money\s+back|refund)\s+(?:offer|guarantee)\b/i,
+    /\bcongratulations.{0,40}refund/i,
+    /रिफंड/,
+    /पैसे\s*वापस/,
+    /मनी\s*बैक/,
+    /रिफंड\s*(?:दावा|पाने|क्लेम)/,
+    /\bmoney\s+back\b/i,
+  ],
+};
+
+/**
+ * True TRAI DLT subscriber IDs look like "XX-XXXXXX" or "XX-XXXXXX-T/P/S/G"
+ * (e.g. "AD-ADITI", "VM-RBIBNK"). Anything else at the message head that
+ * looks like a sender — a phone number, a @-address, an all-caps brand, or a
+ * "NAME:" prefix — is classified as unknown/personal. A message with NO header
+ * is treated like an unknown sender (no verifiable sender = no legitimacy).
+ */
+function detectSenderHeader(text) {
+  const head = (typeof text === "string" ? text : "").trim();
+  if (!head) {
+    return { present: false, kind: "none", header: null };
+  }
+  const colon = head.match(/^[ \t]*([^\s:{}\n]{1,30}):[ \t]?/);
+  const firstToken = colon ? colon[1] : head.split(/\s+/)[0];
+
+  const DLT_RE = /^[A-Z]{2,3}-[A-Z0-9]{4,10}(?:-[TPGS])?$/i;
+  if (DLT_RE.test(firstToken)) {
+    return { present: true, kind: "dlt", header: firstToken };
+  }
+
+  const phoneLike = /^\+?\d[\d\- ]{5,16}$/.test(firstToken);
+  const emailLike = /^[^\s@]+@[^\s@]+$/.test(firstToken);
+  const brandLike = /^[A-Z0-9]{2,12}$/.test(firstToken);
+  if (phoneLike || emailLike || brandLike || (colon && firstToken.length >= 2)) {
+    return { present: true, kind: "unknown", header: firstToken };
+  }
+  return { present: false, kind: "none", header: null };
+}
+
+function detectArchetypes(text) {
+  const hits = [];
+  for (const [id, rules] of Object.entries(ARCHETYPE_RULES)) {
+    let snippet = null;
+    if (typeof rules === "function") {
+      snippet = rules(text);
+    } else {
+      snippet = matchAnyRegex(text, rules);
+    }
+    if (snippet !== null) {
+      hits.push({ id, snippet });
+    }
+  }
+  return hits;
+}
+
 function findEvidence(text, pattern) {
   const rules = PATTERN_RULES[pattern];
   if (typeof rules === "function") {
@@ -448,6 +673,9 @@ function detectScamPatterns(text) {
     }
   }
 
+  const archetypes = detectArchetypes(safeText).map((hit) => hit.id);
+  const senderHeader = detectSenderHeader(safeText);
+
   let riskLevel = "low";
   const hasHighRiskPattern = matchedPatterns.some((p) => HIGH_RISK_PATTERNS.has(p));
   if (matchedPatterns.length >= 2 || hasHighRiskPattern) {
@@ -456,7 +684,30 @@ function detectScamPatterns(text) {
     riskLevel = "medium";
   }
 
-  return { riskLevel, matchedPatterns, evidence };
+  // Scored escalation: an archetype with a NON-DLT sender strengthens the
+  // verdict (scam theme + unverifiable sender); a verified DLT header only
+  // nudges when multiple archetypes stack. Never downgrades a base verdict.
+  if (archetypes.length > 0) {
+    const dltVerified = senderHeader.kind === "dlt";
+    if (!dltVerified) {
+      if (riskLevel === "low") {
+        riskLevel = "medium";
+      } else if (riskLevel === "medium") {
+        riskLevel = "high";
+      }
+    } else if (riskLevel === "low" && archetypes.length >= 2) {
+      riskLevel = "medium";
+    }
+  }
+
+  return {
+    riskLevel,
+    matchedPatterns,
+    evidence,
+    archetypes,
+    senderHeader,
+    archetype: archetypes.length > 0 ? archetypes[0] : null,
+  };
 }
 
 module.exports = { detectScamPatterns };

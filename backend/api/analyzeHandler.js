@@ -12,6 +12,9 @@ const { validateAnalyzeRequest } = require("./validation");
 const { ApiError } = require("./errors");
 const { redactText } = require("../redaction/redact");
 const { detectScamPatterns } = require("../detection/scamDetector");
+const { extractEntities } = require("../detection/entityExtractor");
+const { scoreUrl } = require("../detection/urlLexicalScorer");
+const { checkBlocklist } = require("../reputation/blocklistCheck");
 const { generateExplanation } = require("../ai/explainRisk");
 const { analyzeWithRules } = require("../ai/analyzeWithRules");
 const { lookupReputation } = require("../reputation/lookup");
@@ -78,7 +81,49 @@ async function analyze(rawRequest) {
 
   // 1. Deterministic regex pass — always runs, supplies the fixed pattern
   //    keys the contract promises and acts as the safety net.
-  const { riskLevel, matchedPatterns, evidence } = detectScamPatterns(redactedText);
+  const detection = detectScamPatterns(redactedText);
+  let { riskLevel, matchedPatterns, evidence } = detection;
+
+  // 1b. Entity extraction + URL lexical scoring + blocklist reputation —
+  //     deterministic, fail-open, no paid APIs. Runs on the redacted text
+  //     only (URL hosts survive redaction; phones/UPIs are masked by design,
+  //     so phone/UPI blocklist hits only fire on unredacted paths).
+  const entities = extractEntities(redactedText);
+  const urlSignals = entities.urls.map((url) => ({ url, ...scoreUrl(url) }));
+  const highRiskUrls = urlSignals.filter((s) => s.risk === "high");
+
+  let blocklist = { checked: false, hits: [] };
+  const hasLookupEntities =
+    entities.urls.length > 0 || entities.upiIds.length > 0 || entities.phones.length > 0;
+  if (hasLookupEntities) {
+    try {
+      blocklist = await checkBlocklist(
+        entities,
+        process.env.BLOCKLIST_TABLE_NAME || "BlocklistTable"
+      );
+    } catch (error) {
+      console.error("Blocklist check threw, continuing without it:", error.name || "UnknownError");
+      blocklist = { checked: false, hits: [] };
+    }
+  }
+
+  // Merge the new deterministic signals into the verdict. A URLhaus/PhishTank
+  // hit or a lexically high-risk URL is a strong signal: escalate to high.
+  const extraPatterns = [];
+  const extraEvidence = [];
+  if (highRiskUrls.length > 0) {
+    extraPatterns.push("url_lexical_high_risk");
+    extraEvidence.push({ pattern: "url_lexical_high_risk", snippet: highRiskUrls[0].url });
+  }
+  if (blocklist.hits.length > 0) {
+    extraPatterns.push("blocklist_hit");
+    extraEvidence.push({ pattern: "blocklist_hit", snippet: blocklist.hits[0].value });
+  }
+  if (extraPatterns.length > 0) {
+    matchedPatterns = unionPatterns(matchedPatterns, extraPatterns);
+    evidence = [...evidence, ...extraEvidence];
+    if (riskLevel !== "high") riskLevel = "high";
+  }
 
   // 2. Optional online reputation lookup — strictly opt-in (frontend sends
   //    lookupPhones only with explicit user consent). Degrades gracefully.
@@ -104,6 +149,8 @@ async function analyze(rawRequest) {
     language,
     reputation,
     regexResult: { riskLevel, matchedPatterns },
+    urlSignals,
+    blocklist,
   });
 
   // 4. Explanation + evidence checklist (existing path; also the fallback
@@ -178,6 +225,10 @@ async function analyze(rawRequest) {
     reportingLinks: REPORTING_LINKS,
     evidenceBundle: evidenceBundleResult,
     ...(reputation ? { reputation } : {}),
+    ...(urlSignals.length
+      ? { urlSignals: urlSignals.map(({ url, risk, score }) => ({ url, risk, score })) }
+      : {}),
+    ...(blocklist.hits.length ? { blocklist: { checked: true, hits: blocklist.hits } } : {}),
   };
 }
 
